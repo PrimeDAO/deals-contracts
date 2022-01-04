@@ -1,0 +1,10 @@
+/node_modules/
+/.idea/
+.env
+/cache/
+/coverage/
+**.dbg.json
+
+# don't check in artifacts and build, instead check in exports folder
+artifacts
+build
