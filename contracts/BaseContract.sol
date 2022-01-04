@@ -46,6 +46,7 @@ contract BaseContract is Ownable {
         external
         onlyOwner
     {
+        // solhint-disable-next-line reason-string
         require(
             _newImplementation != address(0),
             "BASECONTRACT-INVALID-IMPLEMENTATION-ADDRESS"
@@ -55,16 +56,19 @@ contract BaseContract is Ownable {
 
     // Sets a new address for the deposit contract implementation
     function setWETHAddress(address _newWETH) external onlyOwner {
+        // solhint-disable-next-line reason-string
         require(_newWETH != address(0), "BASECONTRACT-INVALID-WETH-ADDRESS");
         weth = _newWETH;
     }
 
     // Registers a new module
     function registerModule(address _moduleAddress) external onlyOwner {
+        // solhint-disable-next-line reason-string
         require(
             _moduleAddress != address(0),
             "BASECONTRACT-INVALID-MODULE-ADDRESS"
         );
+        // solhint-disable-next-line reason-string
         require(
             IModuleBase(_moduleAddress).baseContract() == address(this),
             "BASECONTRACT-MODULE-SETUP-INVALID"
@@ -79,6 +83,7 @@ contract BaseContract is Ownable {
 
     // Deactivates a module
     function deactivateModule(address _moduleAddress) external onlyOwner {
+        // solhint-disable-next-line reason-string
         require(
             _moduleAddress != address(0),
             "BASECONTRACT-INVALID-MODULE-ADDRESS"
@@ -115,6 +120,7 @@ contract BaseContract is Ownable {
         address[] calldata _representatives,
         bool[] calldata _active
     ) external onlyDAOorOwner(_dao) {
+        // solhint-disable-next-line reason-string
         require(
             _representatives.length == _active.length,
             "BASECONTRACT-INVALID-ARRAY-LENGTH"
@@ -127,10 +133,12 @@ contract BaseContract is Ownable {
     // Creates a deposit contract for a DAO
     function createDepositContract(address _dao) external {
         require(_dao != address(0), "BASECONTRACT-INVALID-DAO-ADDRESS");
+        // solhint-disable-next-line reason-string
         require(
             depositContract[_dao] == address(0),
             "BASECONTRACT-DEPOSIT-CONTRACT-ALREADY-EXISTS"
         );
+        // solhint-disable-next-line reason-string
         require(
             depositContractImplementation != address(0),
             "BASECONTRACT-DEPOSIT-CONTRACT-IMPLEMENTATION-IS-NOT-SET"
@@ -211,6 +219,7 @@ contract BaseContract is Ownable {
     }
 
     modifier onlyModule() {
+        // solhint-disable-next-line reason-string
         require(
             addressIsModule(msg.sender),
             "BASECONTRACT-CAN-ONLY-BE-CALLED-BY-MODULE"

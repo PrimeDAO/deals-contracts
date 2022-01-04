@@ -97,7 +97,7 @@ contract DepositContract {
         tokenBalances[_token] += _amount;
         availableModuleBalances[_token][_processID] += _amount;
         verifyBalance(_token);
-
+        // solhint-disable-next-line not-rely-on-time
         deposits[_processID].push(
             Deposit(msg.sender, _token, _amount, 0, block.timestamp)
         );
@@ -116,6 +116,7 @@ contract DepositContract {
         address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external payable {
+        // solhint-disable-next-line reason-string
         require(
             _tokens.length == _amounts.length,
             "D2D-DEPOSIT-ARRAY-LENGTH-MISMATCH"
@@ -249,11 +250,14 @@ contract DepositContract {
         uint256 _start,
         uint256 _end
     ) external onlyModule {
+        // solhint-disable-next-line reason-string
         require(
             _token != address(0),
             "D2D-DEPOSIT-VESTING-INVALID-TOKEN-ADDRESS"
         );
+        // solhint-disable-next-line reason-string
         require(_amount > 0, "D2D-DEPOSIT-VESTING-INVALID-AMOUNT");
+        // solhint-disable-next-line reason-string
         require(
             _start < _end,
             "D2D-DEPOSIT-VESTING-INVALID-START-AND-END-TIMES"
@@ -280,7 +284,7 @@ contract DepositContract {
                     amount = (vestings[i].amount * fullDuration) / elapsed;
                     vestings[i].sent += amount;
                 }
-
+                // solhint-disable-next-line reason-string
                 require(
                     vestings[i].sent <= vestings[i].amount,
                     "D2D-VESTING-CLAIM-AMOUNT-MISMATCH"
@@ -440,6 +444,7 @@ contract DepositContract {
     }
 
     modifier onlyBaseContract() {
+        // solhint-disable-next-line reason-string
         require(
             msg.sender == address(baseContract),
             "D2D-DEPOSIT-ONLY-BASE-CONTRACT-CAN-ACCESS"

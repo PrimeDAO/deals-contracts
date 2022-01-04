@@ -2,7 +2,8 @@
   "name": "hardhat-project",
   "scripts": {
     "compile": "npx hardhat compile",
-    "test": "npx hardhat test"
+    "test": "npx hardhat test",
+    "lint": "eslint . --ext .js && solhint 'contracts/**/*.sol'"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
@@ -16,7 +17,13 @@
     "hardhat": "^2.6.7",
     "hardhat-contract-sizer": "^2.1.1",
     "hardhat-gas-reporter": "^1.0.4",
+    "eslint": "^7.28.0",
+    "eslint-config-prettier": "^8.3.0",
+    "solhint": "^3.3.6"
+  },
+  "dependencies": {
     "prettier": "^2.3.2",
-    "prettier-plugin-solidity": "^1.0.0-beta.17"
+    "prettier-plugin-solidity": "^1.0.0-beta.17",
+    "solhint-plugin-prettier": "^0.0.5"
   }
 }
