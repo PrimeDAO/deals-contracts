@@ -3,6 +3,8 @@ require("@nomiclabs/hardhat-ethers");
 require("@openzeppelin/hardhat-upgrades");
 require("hardhat-gas-reporter");
 require("hardhat-contract-sizer");
+require("solidity-coverage");
+
 
 /**
  * @type import('hardhat/config').HardhatUserConfig

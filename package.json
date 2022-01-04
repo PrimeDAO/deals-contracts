@@ -3,7 +3,8 @@
   "scripts": {
     "compile": "npx hardhat compile",
     "test": "npx hardhat test",
-    "lint": "eslint . --ext .js && solhint 'contracts/**/*.sol'"
+    "lint": "eslint . --ext .js && solhint 'contracts/**/*.sol'",
+    "coverage": "hardhat coverage"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
@@ -19,7 +20,8 @@
     "hardhat-gas-reporter": "^1.0.4",
     "eslint": "^7.28.0",
     "eslint-config-prettier": "^8.3.0",
-    "solhint": "^3.3.6"
+    "solhint": "^3.3.6",
+    "solidity-coverage": "^0.7.16"
   },
   "dependencies": {
     "prettier": "^2.3.2",
