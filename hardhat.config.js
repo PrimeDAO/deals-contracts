@@ -1,3 +1,4 @@
+// require("dotenv").config({ path: "./.env" });
 require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-ethers");
 require("@openzeppelin/hardhat-upgrades");
@@ -19,9 +20,6 @@ if (PK) {
   };
 }
 
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
 module.exports = {
   paths: {
     artifacts: "build/artifacts",
@@ -44,11 +42,62 @@ module.exports = {
       initialBaseFeePerGas: 0,
       hardfork: "london",
     },
+    mainnet: {
+      ...sharedNetworkConfig,
+      url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
+      saveDeployments: true,
+    },
+    rinkeby: {
+      ...sharedNetworkConfig,
+      url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
+      saveDeployments: true,
+    },
+    kovan: {
+      ...sharedNetworkConfig,
+      url: `https://kovan.infura.io/v3/${INFURA_KEY}`,
+      saveDeployments: true,
+    },
+    ganache: {
+      ...sharedNetworkConfig,
+      url: "http://127.0.0.1:7545",
+      saveDeployments: false,
+    },
   },
-  solidity: "0.8.9",
-  gasReporter: {
-    currency: "USD",
-    gasPrice: 100,
+  solidity: {
+    compilers: [
+      {
+        version: "0.8.10",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: "0.8.9",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: "0.8.6",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      { version: "0.6.12" },
+      { version: "0.5.16" },
+    ],
+  },
+  etherscan: {
+    apiKey: ETHERSCAN_API_KEY,
   },
   namedAccounts: {
     root: 0,
