@@ -1,0 +1,13 @@
+# test contracts
+contracts/test
+
+# legacy contracts that have been deployed already
+contracts/utils/Signer.sol
+contracts/utils/CloneFactory.sol
+contracts/migration/MerkleDrop.sol
+contracts/Reputation.sol
+contracts/seed/Seed.sol
+contracts/seed/SeedFactory.sol
+
+# interfaces
+contracts/interfaces/IUniswapV2Router01.sol
