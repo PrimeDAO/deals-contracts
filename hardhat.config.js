@@ -1,4 +1,3 @@
-// require("dotenv").config({ path: "./.env" });
 require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-ethers");
 require("@openzeppelin/hardhat-upgrades");
@@ -7,6 +6,7 @@ require("hardhat-contract-sizer");
 require("solidity-coverage");
 require("hardhat-deploy");
 require("hardhat-deploy-ethers");
+require("@nomiclabs/hardhat-etherscan");
 
 const { INFURA_KEY, MNEMONIC, ETHERSCAN_API_KEY, PK } = process.env;
 const DEFAULT_MNEMONIC = "hello darkness my old friend";
