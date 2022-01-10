@@ -449,6 +449,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
                 _approveDepositContract(_lpToken, _la.daos[k], payout);
                 IDepositContract(baseContract.getDepositContract(_la.daos[k]))
                     .startVesting(
+                        keccak256(abi.encode(moduleIdentifierString, _id)),
                         _lpToken,
                         payout, // amount
                         _la.pathTo[k * 4 + 2], // start

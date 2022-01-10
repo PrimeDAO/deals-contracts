@@ -42,6 +42,7 @@ interface IDepositContract {
     ) external returns (bool);
 
     function startVesting(
+        bytes32 _actionId,
         address _token,
         uint256 _amount,
         uint256 _start,

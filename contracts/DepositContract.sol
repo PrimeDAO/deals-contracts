@@ -31,6 +31,7 @@ contract DepositContract {
     }
 
     struct Vesting {
+        bytes32 actionID;
         address token;
         uint256 amount;
         uint256 sent;
@@ -245,6 +246,7 @@ contract DepositContract {
     }
 
     function startVesting(
+        bytes32 _actionId,
         address _token,
         uint256 _amount,
         uint256 _start,
@@ -265,7 +267,7 @@ contract DepositContract {
 
         _transferTokenFrom(_token, msg.sender, address(this), _amount);
         vestedBalances[_token] += _amount;
-        vestings.push(Vesting(_token, _amount, 0, _start, _end));
+        vestings.push(Vesting(_actionId, _token, _amount, 0, _start, _end));
     }
 
     function claimVestings() external onlyAuthorized {
