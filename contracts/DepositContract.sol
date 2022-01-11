@@ -305,6 +305,42 @@ contract DepositContract {
         }
     }
 
+    function claimDealVestings(bytes32 _id) external onlyAuthorized {
+        for (uint256 i = 0; i < vestings.length; i++) {
+            if (vestings[i].actionId == _id) {
+                if (vestings[i].sent < vestings[i].amount) {
+                    if (block.timestamp < vestings[i].start) {
+                        break;
+                    }
+                    uint256 amount = 0;
+                    if (block.timestamp >= vestings[i].end) {
+                        amount = vestings[i].amount - vestings[i].sent;
+                        vestings[i].sent = vestings[i].amount;
+                    } else {
+                        uint256 fullDuration = vestings[i].end -
+                            vestings[i].start;
+                        uint256 elapsed = vestings[i].end - block.timestamp;
+                        amount = (vestings[i].amount * elapsed) / fullDuration;
+                        vestings[i].sent += amount;
+                    }
+                    // solhint-disable-next-line reason-string
+                    require(
+                        vestings[i].sent <= vestings[i].amount,
+                        "D2D-VESTING-CLAIM-AMOUNT-MISMATCH"
+                    );
+                    vestedBalances[vestings[i].token] -= amount;
+                    if (vestings[i].token != baseContract.weth()) {
+                        _transferToken(vestings[i].token, dao, amount);
+                    } else {
+                        IWETH(baseContract.weth()).withdraw(amount);
+                        (bool sent, ) = dao.call{value: amount}("");
+                        require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
+                    }
+                }
+            }
+        }
+    }
+
     function verifyBalance(address _token) public view {
         if (_token == address(0)) {
             _token = baseContract.weth();
