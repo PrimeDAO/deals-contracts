@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IBaseContract.sol";
 import "./interfaces/IWETH.sol";
+import "hardhat/console.sol";
 
 contract DepositContract {
     address public dao;
@@ -31,7 +32,7 @@ contract DepositContract {
     }
 
     struct Vesting {
-        bytes32 actionID;
+        bytes32 actionId;
         address token;
         uint256 amount;
         uint256 sent;
@@ -283,7 +284,7 @@ contract DepositContract {
                 } else {
                     uint256 fullDuration = vestings[i].end - vestings[i].start;
                     uint256 elapsed = vestings[i].end - block.timestamp;
-                    amount = (vestings[i].amount * fullDuration) / elapsed;
+                    amount = (vestings[i].amount * elapsed) / fullDuration;
                     vestings[i].sent += amount;
                 }
                 // solhint-disable-next-line reason-string
@@ -291,6 +292,7 @@ contract DepositContract {
                     vestings[i].sent <= vestings[i].amount,
                     "D2D-VESTING-CLAIM-AMOUNT-MISMATCH"
                 );
+
                 vestedBalances[vestings[i].token] -= amount;
                 if (vestings[i].token != baseContract.weth()) {
                     _transferToken(vestings[i].token, dao, amount);
