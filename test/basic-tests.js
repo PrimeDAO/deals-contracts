@@ -721,7 +721,7 @@ contract("Whole rundown", async (accounts) => {
       { from: daos[2] }
     );
 
-    // Test only that one swap is ready for executability
+    // Test that only Swap 1 is ready for executability
     assert.equal(await tokenSwapInstance.checkExecutability(SWAP1), true);
     assert.equal(await tokenSwapInstance.checkExecutability(SWAP2), false);
 
@@ -762,7 +762,7 @@ contract("Whole rundown", async (accounts) => {
       { from: daos[2] }
     );
 
-    // Test both swaps are executable
+    // Test both Swaps are executable
     assert.equal(await tokenSwapInstance.checkExecutability(SWAP1), true);
     assert.equal(await tokenSwapInstance.checkExecutability(SWAP2), true);
 
@@ -878,7 +878,7 @@ contract("Whole rundown", async (accounts) => {
       accurateBlock.timestamp - currTime + (vestingEnd - vestingStart) / 2
     );
 
-    // Claim vesting for swap 1
+    // Claim vesting for Swap 1
     await depositContractDAO1Instance.claimDealVestings(processIDSwap1, {
       from: admin,
     });
@@ -889,7 +889,7 @@ contract("Whole rundown", async (accounts) => {
       from: admin,
     });
 
-    // Test balances after swap 1
+    // Test balances after Swap 1
     assert.equal(
       Math.round(
         web3.utils.fromWei(await testToken1.balanceOf(daos[1]), "ether")
@@ -951,6 +951,7 @@ contract("Whole rundown", async (accounts) => {
       web3.utils.toWei("1", "ether")
     );
 
+    // Claim vesting for Swap 2
     await depositContractDAO1Instance.claimDealVestings(processIDSwap2, {
       from: admin,
     });
@@ -961,7 +962,7 @@ contract("Whole rundown", async (accounts) => {
       from: admin,
     });
 
-    // Test balances after swap 1
+    // Test balances after Swap 2
     assert.equal(
       Math.round(
         web3.utils.fromWei(await testToken1.balanceOf(daos[1]), "ether")
