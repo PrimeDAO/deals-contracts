@@ -4,13 +4,17 @@
     "compile": "npx hardhat compile",
     "test": "npx hardhat test",
     "lint": "eslint . --ext .js && solhint 'contracts/**/*.sol'",
-    "coverage": "hardhat coverage"
+    "coverage": "hardhat coverage",
+    "deploy:contracts:rinkeby": "npx hardhat deploy --network rinkeby --tags Export,$npm_config_tags",
+    "deploy:contracts:kovan": "npx hardhat deploy --network kovan --tags Export,$npm_config_tags",
+    "deploy:contracts:mainnet": "npx hardhat deploy --network mainnet --tags Export,$npm_config_tags"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.13",
+    "@nomiclabs/hardhat-etherscan": "^2.1.8",
     "@nomiclabs/hardhat-truffle5": "^2.0.2",
     "@nomiclabs/hardhat-web3": "^2.0.0",
-    "@openzeppelin/contracts": "^4.3.1",
+    "@openzeppelin/contracts": "^4.4.1",
     "@openzeppelin/hardhat-upgrades": "^1.11.0",
     "@openzeppelin/test-helpers": "^0.5.15",
     "eslint": "^7.28.0",
