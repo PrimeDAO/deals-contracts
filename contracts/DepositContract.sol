@@ -4,7 +4,6 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IBaseContract.sol";
 import "./interfaces/IWETH.sol";
-import "hardhat/console.sol";
 
 contract DepositContract {
     address public dao;
@@ -273,34 +272,37 @@ contract DepositContract {
 
     function claimVestings() external onlyAuthorized {
         for (uint256 i = 0; i < vestings.length; i++) {
-            if (vestings[i].sent < vestings[i].amount) {
-                if (block.timestamp < vestings[i].start) {
-                    break;
-                }
-                uint256 amount = 0;
-                if (block.timestamp >= vestings[i].end) {
-                    amount = vestings[i].amount - vestings[i].sent;
-                    vestings[i].sent = vestings[i].amount;
-                } else {
-                    uint256 fullDuration = vestings[i].end - vestings[i].start;
-                    uint256 elapsed = vestings[i].end - block.timestamp;
-                    amount = (vestings[i].amount * elapsed) / fullDuration;
-                    vestings[i].sent += amount;
-                }
-                // solhint-disable-next-line reason-string
-                require(
-                    vestings[i].sent <= vestings[i].amount,
-                    "D2D-VESTING-CLAIM-AMOUNT-MISMATCH"
-                );
+            calculateReleasedClaim(vestings[i]);
+        }
+    }
 
-                vestedBalances[vestings[i].token] -= amount;
-                if (vestings[i].token != baseContract.weth()) {
-                    _transferToken(vestings[i].token, dao, amount);
-                } else {
-                    IWETH(baseContract.weth()).withdraw(amount);
-                    (bool sent, ) = dao.call{value: amount}("");
-                    require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
-                }
+    function calculateReleasedClaim(Vesting memory vesting) private {
+        if (vesting.sent < vesting.amount) {
+            if (block.timestamp < vesting.start) {
+                return;
+            }
+            uint256 amount = 0;
+            if (block.timestamp >= vesting.end) {
+                amount = vesting.amount - vesting.sent;
+                vesting.sent = vesting.amount;
+            } else {
+                uint256 fullDuration = vesting.end - vesting.start;
+                uint256 elapsed = vesting.end - block.timestamp;
+                amount = (vesting.amount * elapsed) / fullDuration;
+                vesting.sent += amount;
+            }
+            // solhint-disable-next-line reason-string
+            require(
+                vesting.sent <= vesting.amount,
+                "D2D-VESTING-CLAIM-AMOUNT-MISMATCH"
+            );
+            vestedBalances[vesting.token] -= amount;
+            if (vesting.token != baseContract.weth()) {
+                _transferToken(vesting.token, dao, amount);
+            } else {
+                IWETH(baseContract.weth()).withdraw(amount);
+                (bool sent, ) = dao.call{value: amount}("");
+                require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
             }
         }
     }
@@ -308,35 +310,7 @@ contract DepositContract {
     function claimDealVestings(bytes32 _id) external onlyAuthorized {
         for (uint256 i = 0; i < vestings.length; i++) {
             if (vestings[i].actionId == _id) {
-                if (vestings[i].sent < vestings[i].amount) {
-                    if (block.timestamp < vestings[i].start) {
-                        break;
-                    }
-                    uint256 amount = 0;
-                    if (block.timestamp >= vestings[i].end) {
-                        amount = vestings[i].amount - vestings[i].sent;
-                        vestings[i].sent = vestings[i].amount;
-                    } else {
-                        uint256 fullDuration = vestings[i].end -
-                            vestings[i].start;
-                        uint256 elapsed = vestings[i].end - block.timestamp;
-                        amount = (vestings[i].amount * elapsed) / fullDuration;
-                        vestings[i].sent += amount;
-                    }
-                    // solhint-disable-next-line reason-string
-                    require(
-                        vestings[i].sent <= vestings[i].amount,
-                        "D2D-VESTING-CLAIM-AMOUNT-MISMATCH"
-                    );
-                    vestedBalances[vestings[i].token] -= amount;
-                    if (vestings[i].token != baseContract.weth()) {
-                        _transferToken(vestings[i].token, dao, amount);
-                    } else {
-                        IWETH(baseContract.weth()).withdraw(amount);
-                        (bool sent, ) = dao.call{value: amount}("");
-                        require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
-                    }
-                }
+                calculateReleasedClaim(vestings[i]);
             }
         }
     }
