@@ -268,7 +268,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
         // distribute the tokens from this module to the DAOs
         // and (if applicable) and their vesting contracts
-        uint256[] memory amountsOut = _distributeTokens(ts);
+        uint256[] memory amountsOut = _distributeTokens(ts, _id);
 
         // verify whether the amounts being pulled and pushed match
         for (uint256 i = 0; i < ts.tokens.length; i++) {
@@ -285,9 +285,10 @@ contract TokenSwapModule is ModuleBaseWithFee {
                             information to the DAOs or their vesting contracts
       * @param _ts          TokenSwap object containing all the information
                             of the action
+        //TODO: Add comment
       * @return amountsOut  The two min values for the token amounts _ts
     */
-    function _distributeTokens(TokenSwap memory _ts)
+    function _distributeTokens(TokenSwap memory _ts, uint256 _id)
         internal
         returns (uint256[] memory amountsOut)
     {
@@ -318,6 +319,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
                     IDepositContract(
                         baseContract.getDepositContract(_ts.daos[k])
                     ).startVesting(
+                            keccak256(abi.encode(moduleIdentifierString, _id)),
                             _ts.tokens[i],
                             amount, // amount
                             _ts.pathTo[i][k * 4 + 2], // start

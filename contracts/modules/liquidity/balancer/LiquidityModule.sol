@@ -317,6 +317,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
     /**
       * @dev                Distributes the LP tokens as well as any leftover tokens
                             back to the DAOs based on their LP token shares
+      * @param _id          The ID of the action (position in the array)
       * @param _la          The LiquidityPool object containg the information
       * @param _lpToken     Address of the lp token
       * @param _amount      Amount of lp tokens
@@ -324,6 +325,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
                             in basis points (1% = 10000)
     */
     function _distributeLPTokens(
+        uint256 _id,
         LiquidityAction memory _la,
         address _lpToken,
         uint256 _amount
@@ -350,6 +352,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
                 _approveDepositContract(_lpToken, _la.daos[k], payout);
                 IDepositContract(baseContract.getDepositContract(_la.daos[k]))
                     .startVesting(
+                        keccak256(abi.encode(moduleIdentifierString, _id)),
                         _lpToken,
                         payout, // amount
                         _la.pathTo[k * 4 + 2], // start
