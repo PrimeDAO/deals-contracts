@@ -1,5 +1,6 @@
 const ownDeployedContracts = {
   Prime: {
+    address: "0xF70d807A0828d2498fa01246c88bA5BaCd70889b",
     abi: "ERC20",
   },
 };
