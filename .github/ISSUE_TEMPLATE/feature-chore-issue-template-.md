@@ -1,30 +1,43 @@
 ---
 name: Feature/Chore issue template.
 about: Describe the feature/chore.
-title: ''
-labels: ''
-assignees: ''
-
+title: ""
+labels: ""
+assignees: ""
 ---
 
 ## Naming
+
 When creating a name for the issue please follow the convention:
 
-feat-*[short feature description]*
+feat:_[short feature description]_
 
 **OR**
 
-chore-*[short chore description]*
+chore:_[short chore description]_
 
 ## User Story
+
 **As a** \<type of user\>, **I want to** \<perform some task\>, **so that** \<achieve some goal\>.
 
-## Status Quo
-Describe how the situation is right now.
+## Scenario
 
-## Acceptance Criteria
-Describe the requirements that need to be met to complete the stated aim in the user story.
+A description of a specific scenario of the narrative with the following structure:
+
+### Given
+
+The initial context at the beginning of the scenario, in one or more clauses
+
+### When
+
+The event that triggers the scenario
+
+### Then
+
+The expected outcome, in one or more clauses
 
 ## Tags
+
 It might be helpful to add tags that will describe the issue, such as “enhancement” or “documentation”.
 
+[_Extra resources on how the issue should be structured can be found here_](https://en.wikipedia.org/wiki/Behavior-driven_development)
