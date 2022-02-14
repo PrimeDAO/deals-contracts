@@ -130,8 +130,14 @@ contract BaseContract is Ownable {
         }
     }
 
+    function approvePropsolaLead(address _dao, address _representative) public {
+        require(msg.sender == _dao || msg.sender == owner(), "error message");
+        createDepositContract(_dao);
+        setRepresentative(_dao, _representative, true);
+    }
+
     // Creates a deposit contract for a DAO
-    function createDepositContract(address _dao) external {
+    function createDepositContract(address _dao) public {
         require(_dao != address(0), "BASECONTRACT-INVALID-DAO-ADDRESS");
         // solhint-disable-next-line reason-string
         require(
