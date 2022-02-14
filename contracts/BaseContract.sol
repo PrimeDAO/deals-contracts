@@ -130,7 +130,7 @@ contract BaseContract is Ownable {
         }
     }
 
-    function approvePropsolaLead(address _dao, address _representative) public {
+    function setPropsolaLead(address _dao, address _representative) public {
         require(msg.sender == _dao || msg.sender == owner(), "error message");
         createDepositContract(_dao);
         setRepresentative(_dao, _representative, true);
