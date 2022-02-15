@@ -130,8 +130,18 @@ contract BaseContract is Ownable {
         }
     }
 
+    function setPropsolaLead(address _dao, address _representative) public {
+        // solhint-disable-next-line reason-string
+        require(
+            msg.sender == _dao || msg.sender == owner(),
+            "BASECONTRACT-NOT-CALLED-BY-OWNER-OR-DAO"
+        );
+        createDepositContract(_dao);
+        setRepresentative(_dao, _representative, true);
+    }
+
     // Creates a deposit contract for a DAO
-    function createDepositContract(address _dao) external {
+    function createDepositContract(address _dao) public {
         require(_dao != address(0), "BASECONTRACT-INVALID-DAO-ADDRESS");
         // solhint-disable-next-line reason-string
         require(

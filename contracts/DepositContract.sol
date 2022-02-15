@@ -270,7 +270,7 @@ contract DepositContract {
         vestings.push(Vesting(_actionId, _token, _amount, 0, _start, _end));
     }
 
-    function claimVestings() external onlyAuthorized {
+    function claimVestings() external {
         for (uint256 i = 0; i < vestings.length; i++) {
             calculateReleasedClaim(vestings[i]);
         }
@@ -307,7 +307,7 @@ contract DepositContract {
         }
     }
 
-    function claimDealVestings(bytes32 _id) external onlyAuthorized {
+    function claimDealVestings(bytes32 _id) external {
         for (uint256 i = 0; i < vestings.length; i++) {
             if (vestings[i].actionId == _id) {
                 calculateReleasedClaim(vestings[i]);

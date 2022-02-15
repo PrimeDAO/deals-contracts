@@ -30,7 +30,10 @@ contract BlueprintModule is ModuleBase {
 
     constructor(address _baseContract)
         ModuleBase(_baseContract, "BLUEPRINT_MODULE")
-    {}
+    // solhint-disable-next-line no-empty-blocks
+    {
+
+    }
 
     function createAction(
         address[] calldata _daos,
