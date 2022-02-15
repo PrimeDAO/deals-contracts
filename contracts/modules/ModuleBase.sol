@@ -59,7 +59,7 @@ contract ModuleBase {
         amountsIn = new uint256[](_tokens.length);
 
         for (uint256 i = 0; i < _tokens.length; i++) {
-            require(_path[i].length == _daos.length, "asd");
+            require(_path[i].length == _daos.length, "Module: length mismatch");
             for (uint256 j = 0; j < _path[i].length; j++) {
                 if (_path[i][j] > 0) {
                     amountsIn[i] += _path[i][j];

@@ -131,7 +131,11 @@ contract BaseContract is Ownable {
     }
 
     function setPropsolaLead(address _dao, address _representative) public {
-        require(msg.sender == _dao || msg.sender == owner(), "error message");
+        // solhint-disable-next-line reason-string
+        require(
+            msg.sender == _dao || msg.sender == owner(),
+            "BASECONTRACT-NOT-CALLED-BY-OWNER-OR-DAO"
+        );
         createDepositContract(_dao);
         setRepresentative(_dao, _representative, true);
     }
