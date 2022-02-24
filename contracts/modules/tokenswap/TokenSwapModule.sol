@@ -34,6 +34,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
     // [[123, 0, 123], [0, 123, 0]]
     // token 1: dao 1 sends 123, dao 2 sends 0, dao 3 sends 123, etc.
 
+    //ToDO: Describe new vesting methods
     // pathTo:
     // how much tokens does each dao receive from the module
     // includes vesting
@@ -296,6 +297,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         // Distribute tokens from the module
         for (uint256 i = 0; i < _ts.tokens.length; i++) {
             for (uint256 k = 0; k < _ts.pathTo[i].length / 4; k++) {
+                //ToDO: adapt comments to match vesting changes
                 // every 4 values, the values for a new dao start
                 // value 0 = instant amount
                 // value 1 = vested amount
