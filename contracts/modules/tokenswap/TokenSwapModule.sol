@@ -28,22 +28,31 @@ contract TokenSwapModule is ModuleBaseWithFee {
         Status status;
     }
 
-    // pathFrom:
-    // how much tokens does each dao send to the module
-    // token -> dao -> amount
-    // [[123, 0, 123], [0, 123, 0]]
-    // token 1: dao 1 sends 123, dao 2 sends 0, dao 3 sends 123, etc.
+    /**
+     * @dev
+     * pathFrom Description:
+     * Used to storing how much tokens does each DAO send to the module
+     *
+     * Example on how the values are stored:
+     * token -> DAO -> amount
+     * [[123, 0, 123], [0, 123, 0]]
+     * token 1: DAO 1 sends 123, DAO 2 sends 0, DAO 3 sends 123, etc.
+     */
 
-    //ToDO: Describe new vesting methods
-    // pathTo:
-    // how much tokens does each dao receive from the module
-    // includes vesting
-    // token -> dao -> tuple(4)
-    // for each DAO there is a tuple of four values:
-    // instant amount, vested amount, vesting start, vesting end
-    // which then makes this array look like:
-    // [[instantAmount_dao1, vestedAmount_dao1, vestingStart_dao1,
-    // vestingEnd_dao1, instantAmount_dao2, ...], [...]]
+    /**
+     * @dev
+     * pathTo:
+     * Used for storing how much tokens does each DAO receive from the module
+     * includes vesting. For each DAO there is a tuple of four values:
+     * instant amount, vested amount, vesting cliff, vesting duration.
+     * The start time will be the bock.timestamp when executing the deal.
+     * This timestamp + vestingDuration can be used to calculate the vesting end.
+     *
+     * Example on how the values are stored:
+     * token -> DAO -> tuple(4)
+     * [[instantAmount_dao1, vestedAmount_dao1, vestingCliff_dao1,
+     * vestingDuration_dao1, instantAmount_dao2, ...], [...]]
+     */
 
     event TokenSwapCreated(
         uint256 indexed id,
