@@ -308,15 +308,10 @@ contract DepositContract {
             if (elapsedSeconds < vesting.vestingCliff) {
                 return 0;
             }
-            // if (block.timestamp < vesting.vestingCliff) {
-            //     return 0;
-            // }
             if (elapsedSeconds >= vesting.vestingDuration) {
                 amount = vesting.amount - vesting.sent;
                 vesting.sent = vesting.amount;
             } else {
-                // uint256 fullDuration = vesting.end - vesting.vestingStartTime;
-                // uint256 elapsed = vesting.end - block.timestamp;
                 amount =
                     (vesting.amount * elapsedSeconds) /
                     vesting.vestingDuration;
