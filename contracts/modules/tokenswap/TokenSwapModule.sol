@@ -295,7 +295,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
                             information to the DAOs or their vesting contracts
       * @param _ts          TokenSwap object containing all the information
                             of the action
-        //TODO: Add comment
+      * @param _id          The ID of the action (position in the array)
       * @return amountsOut  The two min values for the token amounts _ts
     */
     function _distributeTokens(TokenSwap memory _ts, uint256 _id)
@@ -306,12 +306,11 @@ contract TokenSwapModule is ModuleBaseWithFee {
         // Distribute tokens from the module
         for (uint256 i = 0; i < _ts.tokens.length; i++) {
             for (uint256 k = 0; k < _ts.pathTo[i].length / 4; k++) {
-                //ToDO: adapt comments to match vesting changes
                 // every 4 values, the values for a new dao start
                 // value 0 = instant amount
                 // value 1 = vested amount
-                // value 2 = vesting start
-                // value 3 = vesting end
+                // value 2 = vesting cliff
+                // value 3 = vesting duration
                 if (_ts.pathTo[i][k * 4] > 0) {
                     amountsOut[i] += _ts.pathTo[i][k * 4];
                     _transferTokenWithFee(
