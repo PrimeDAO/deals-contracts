@@ -61,7 +61,8 @@ contract DepositContract {
         address token,
         uint256 amount,
         uint256 vestingStart,
-        uint256 vestingEnd
+        uint256 vestingCliff,
+        uint256 vestingduration
     );
 
     function initialize(address _dao) external {
@@ -268,7 +269,7 @@ contract DepositContract {
 
         _transferTokenFrom(_token, msg.sender, address(this), _amount);
         vestedBalances[_token] += _amount;
-        //ToDO: Add event
+
         vestings.push(
             Vesting(
                 _actionId,
@@ -279,6 +280,14 @@ contract DepositContract {
                 _vestingCliff,
                 _vestingDuration
             )
+        );
+        emit VestingStarted(
+            _actionId,
+            _token,
+            _amount,
+            block.timestamp,
+            _vestingCliff,
+            _vestingDuration
         );
     }
 
