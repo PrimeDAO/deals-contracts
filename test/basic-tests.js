@@ -1,6 +1,7 @@
 const { expectRevert } = require("@openzeppelin/test-helpers");
 const timeMachine = require("ganache-time-traveler");
-const { assert } = require("hardhat");
+const { expect, assert } = require("chai");
+const { ethers } = require("hardhat");
 
 const baseContract = artifacts.require("BaseContract");
 const depositContract = artifacts.require("DepositContract");
@@ -15,7 +16,7 @@ const SWAP2 = 1;
 
 contract("Whole rundown", async (accounts) => {
   let testToken1, testToken2, testToken3, testToken4, testToken5, testToken6;
-  let currBlockNum, currBlock, currTime, vestingStart, vestingEnd;
+  let currBlockNum, currBlock, currTime, vestingCliff, vestingDuration;
   let depositContractInstance;
   let admin = accounts[0];
   let daos = [accounts[1], accounts[2], accounts[3]];
@@ -214,8 +215,8 @@ contract("Whole rundown", async (accounts) => {
     currBlockNum = await web3.eth.getBlockNumber();
     currBlock = await web3.eth.getBlock(currBlockNum);
     currTime = currBlock.timestamp;
-    vestingStart = currTime + HOUR;
-    vestingEnd = currTime + DAY;
+    vestingCliff = HOUR * 2;
+    vestingDuration = DAY;
 
     // Create Swap
     let pathFrom = [
@@ -232,26 +233,26 @@ contract("Whole rundown", async (accounts) => {
         0,
         web3.utils.toWei("1", "ether"), // sub(2)
         web3.utils.toWei("2", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
         web3.utils.toWei("1", "ether"), // sub(2)
         web3.utils.toWei("2", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
       ],
       [
         web3.utils.toWei("1", "ether"), // sub(2)
         web3.utils.toWei("2", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
         0,
         0,
         0,
         0,
         web3.utils.toWei("1", "ether"), // sub(2)
         web3.utils.toWei("2", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
       ],
       [
         web3.utils.toWei("3", "ether"),
@@ -387,7 +388,9 @@ contract("Whole rundown", async (accounts) => {
       web3.utils.toWei("0", "ether")
     );
 
-    await tokenSwapInstance.executeSwap(0, { from: daos[0] });
+    await tokenSwapInstance.executeSwap(0, {
+      from: daos[0],
+    });
 
     assert.equal(
       await testToken1.balanceOf(daos[0]),
@@ -444,7 +447,7 @@ contract("Whole rundown", async (accounts) => {
     assert.equal(await testToken2.balanceOf(daos[2]), web3.utils.toWei("1"));
 
     await timeMachine.advanceTimeAndBlock(
-      HOUR + (vestingEnd - vestingStart) / 2
+      HOUR + (vestingDuration - vestingCliff) / 2
     );
     await depositContractDAO1.claimVestings({ from: admin });
     await depositContractDAO2.claimVestings({ from: admin });
@@ -519,8 +522,8 @@ contract("Whole rundown", async (accounts) => {
     currBlockNum = await web3.eth.getBlockNumber();
     currBlock = await web3.eth.getBlock(currBlockNum);
     currTime = currBlock.timestamp;
-    vestingStart = currTime + HOUR;
-    vestingEnd = currTime + DAY;
+    vestingCliff = HOUR * 2;
+    vestingDuration = DAY;
 
     // Set up parameters Swap 1
     let pathFrom = [
@@ -537,36 +540,36 @@ contract("Whole rundown", async (accounts) => {
         0,
         web3.utils.toWei("2", "ether"),
         web3.utils.toWei("4", "ether"),
-        vestingStart,
-        vestingEnd,
+        0,
+        vestingDuration,
         web3.utils.toWei("2", "ether"),
         web3.utils.toWei("2", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
       ],
       [
         web3.utils.toWei("1", "ether"),
         web3.utils.toWei("2", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
         0,
         0,
         0,
         0,
         web3.utils.toWei("3", "ether"),
         web3.utils.toWei("4", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
       ],
       [
         web3.utils.toWei("2", "ether"),
         web3.utils.toWei("2", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
         web3.utils.toWei("4", "ether"),
         web3.utils.toWei("2", "ether"),
-        vestingStart,
-        vestingEnd,
+        0,
+        vestingDuration,
         0,
         0,
         0,
@@ -589,36 +592,36 @@ contract("Whole rundown", async (accounts) => {
         0,
         web3.utils.toWei("1", "ether"),
         web3.utils.toWei("2", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
         web3.utils.toWei("3", "ether"),
         web3.utils.toWei("4", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
       ],
       [
         web3.utils.toWei("1", "ether"),
         web3.utils.toWei("4", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
         0,
         0,
         0,
         0,
         web3.utils.toWei("3", "ether"),
         web3.utils.toWei("2", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
       ],
       [
         web3.utils.toWei("3", "ether"),
         web3.utils.toWei("2", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
         web3.utils.toWei("1", "ether"),
         web3.utils.toWei("4", "ether"),
-        vestingStart,
-        vestingEnd,
+        vestingCliff,
+        vestingDuration,
         0,
         0,
         0,
@@ -875,7 +878,7 @@ contract("Whole rundown", async (accounts) => {
     const accurateBlock = await web3.eth.getBlock(accurateBlockNum);
 
     await timeMachine.advanceTimeAndBlock(
-      accurateBlock.timestamp - currTime + (vestingEnd - vestingStart) / 2
+      accurateBlock.timestamp - currTime + (vestingDuration - vestingCliff) / 2
     );
 
     // Claim vesting for Swap 1
