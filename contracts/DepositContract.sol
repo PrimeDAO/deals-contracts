@@ -62,7 +62,7 @@ contract DepositContract {
         uint256 amount,
         uint256 vestingStart,
         uint256 vestingCliff,
-        uint256 vestingduration
+        uint256 vestingDuration
     );
 
     function initialize(address _dao) external {
@@ -264,7 +264,7 @@ contract DepositContract {
         // solhint-disable-next-line reason-string
         require(
             _vestingCliff < _vestingDuration,
-            "D2D-DEPOSIT-VESTINGCLIFF-BIGGER-THEN-DURATION"
+            "D2D-DEPOSIT-VESTINGCLIFF-BIGGER-THAN-DURATION"
         );
 
         _transferTokenFrom(_token, msg.sender, address(this), _amount);

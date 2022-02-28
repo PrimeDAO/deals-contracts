@@ -31,7 +31,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
     /**
      * @dev
      * pathFrom Description:
-     * Used to storing how much tokens does each DAO send to the module
+     * Used to storing how many tokens does each DAO send to the module
      *
      * Example on how the values are stored:
      * token -> DAO -> amount
@@ -42,10 +42,10 @@ contract TokenSwapModule is ModuleBaseWithFee {
     /**
      * @dev
      * pathTo:
-     * Used for storing how much tokens does each DAO receive from the module
+     * Used for storing how many tokens does each DAO receive from the module
      * includes vesting. For each DAO there is a tuple of four values:
      * instant amount, vested amount, vesting cliff, vesting duration.
-     * The start time will be the bock.timestamp when executing the deal.
+     * The start time will be the block.timestamp when executing the deal.
      * This timestamp + vestingDuration can be used to calculate the vesting end.
      *
      * Example on how the values are stored:
