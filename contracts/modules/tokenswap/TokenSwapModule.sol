@@ -101,10 +101,6 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256[][] calldata _pathTo,
         uint256 _deadline
     ) public returns (uint256) {
-        require(
-            baseContract.isDAOorOwnerFromArray(msg.sender, _daos),
-            "Module: not authorized"
-        );
         require(_daos.length >= 2, "Module: at least 2 daos required");
         require(_tokens.length >= 1, "Module: at least 1 token required");
         require(
@@ -177,43 +173,6 @@ contract TokenSwapModule is ModuleBaseWithFee {
     }
 
     /**
-     * @dev        Cancels a token swap action
-     * @param _id  The ID of the action (position in the array)
-     */
-    function cancelSwap(uint256 _id)
-        external
-        validId(_id)
-        authorized(_id)
-        activeStatus(_id)
-    {
-        tokenSwaps[_id].status = Status.CANCELLED;
-        emit TokenSwapCancelled(_id);
-    }
-
-    /**
-      * @dev            Cancels a token swap action
-      * @param _id      The ID of the action (position in the array)
-      * @param _amount  Amount of seconds that the current deadline will be pushed
-                        back by
-    */
-    function extendDeadline(uint256 _id, uint256 _amount)
-        external
-        validId(_id)
-        authorized(_id)
-        activeStatus(_id)
-    {
-        uint256 newDeadline = tokenSwaps[_id].deadline + _amount;
-        require(
-            newDeadline > block.timestamp,
-            "Module: new deadline is in the past"
-        );
-
-        tokenSwaps[_id].deadline = newDeadline;
-
-        emit TokenSwapDeadlineExtended(_id, newDeadline);
-    }
-
-    /**
       * @dev            Checks whether a token swap action can be executed
                         (which is the case if all DAOs have deposited)
       * @param _id      The ID of the action (position in the array)
@@ -257,12 +216,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
      * @dev            Executes a token swap action
      * @param _id      The ID of the action (position in the array)
      */
-    function executeSwap(uint256 _id)
-        external
-        validId(_id)
-        activeStatus(_id)
-        authorized(_id)
-    {
+    function executeSwap(uint256 _id) external validId(_id) activeStatus(_id) {
         TokenSwap memory ts = tokenSwaps[_id];
 
         require(ts.deadline >= block.timestamp, "Module: swap expired");
@@ -349,17 +303,6 @@ contract TokenSwapModule is ModuleBaseWithFee {
         require(
             tokenSwaps[_id].status == Status.ACTIVE,
             "Module: id not active"
-        );
-        _;
-    }
-
-    modifier authorized(uint256 _id) {
-        require(
-            baseContract.isDAOorOwnerFromArray(
-                msg.sender,
-                tokenSwaps[_id].daos
-            ),
-            "Module: not authorized"
         );
         _;
     }
