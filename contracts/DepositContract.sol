@@ -35,8 +35,9 @@ contract DepositContract {
         address token;
         uint256 amount;
         uint256 sent;
-        uint256 start;
-        uint256 end;
+        uint256 vestingStartTime;
+        uint256 vestingCliff;
+        uint256 vestingDuration;
     }
 
     event Deposited(
@@ -60,7 +61,8 @@ contract DepositContract {
         address token,
         uint256 amount,
         uint256 vestingStart,
-        uint256 vestingEnd
+        uint256 vestingCliff,
+        uint256 vestingDuration
     );
 
     function initialize(address _dao) external {
@@ -249,8 +251,8 @@ contract DepositContract {
         bytes32 _actionId,
         address _token,
         uint256 _amount,
-        uint256 _start,
-        uint256 _end
+        uint256 _vestingCliff,
+        uint256 _vestingDuration
     ) external onlyModule {
         // solhint-disable-next-line reason-string
         require(
@@ -261,34 +263,58 @@ contract DepositContract {
         require(_amount > 0, "D2D-DEPOSIT-VESTING-INVALID-AMOUNT");
         // solhint-disable-next-line reason-string
         require(
-            _start < _end,
-            "D2D-DEPOSIT-VESTING-INVALID-START-AND-END-TIMES"
+            _vestingCliff < _vestingDuration,
+            "D2D-DEPOSIT-VESTINGCLIFF-BIGGER-THAN-DURATION"
         );
 
         _transferTokenFrom(_token, msg.sender, address(this), _amount);
         vestedBalances[_token] += _amount;
-        vestings.push(Vesting(_actionId, _token, _amount, 0, _start, _end));
+
+        vestings.push(
+            Vesting(
+                _actionId,
+                _token,
+                _amount,
+                0,
+                block.timestamp,
+                _vestingCliff,
+                _vestingDuration
+            )
+        );
+        emit VestingStarted(
+            _actionId,
+            _token,
+            _amount,
+            block.timestamp,
+            _vestingCliff,
+            _vestingDuration
+        );
     }
 
-    function claimVestings() external {
+    function claimVestings() external returns (uint256 amount) {
         for (uint256 i = 0; i < vestings.length; i++) {
-            calculateReleasedClaim(vestings[i]);
+            amount += calculateReleasedClaim(vestings[i]);
         }
     }
 
-    function calculateReleasedClaim(Vesting memory vesting) private {
+    function calculateReleasedClaim(Vesting memory vesting)
+        private
+        returns (uint256 amount)
+    {
         if (vesting.sent < vesting.amount) {
-            if (block.timestamp < vesting.start) {
-                return;
+            // Check cliff was reached
+            uint256 elapsedSeconds = block.timestamp - vesting.vestingStartTime;
+
+            if (elapsedSeconds < vesting.vestingCliff) {
+                return 0;
             }
-            uint256 amount = 0;
-            if (block.timestamp >= vesting.end) {
+            if (elapsedSeconds >= vesting.vestingDuration) {
                 amount = vesting.amount - vesting.sent;
                 vesting.sent = vesting.amount;
             } else {
-                uint256 fullDuration = vesting.end - vesting.start;
-                uint256 elapsed = vesting.end - block.timestamp;
-                amount = (vesting.amount * elapsed) / fullDuration;
+                amount =
+                    (vesting.amount * elapsedSeconds) /
+                    vesting.vestingDuration;
                 vesting.sent += amount;
             }
             // solhint-disable-next-line reason-string
@@ -307,10 +333,10 @@ contract DepositContract {
         }
     }
 
-    function claimDealVestings(bytes32 _id) external {
+    function claimDealVestings(bytes32 _id) external returns (uint256 amount) {
         for (uint256 i = 0; i < vestings.length; i++) {
             if (vestings[i].actionId == _id) {
-                calculateReleasedClaim(vestings[i]);
+                amount = calculateReleasedClaim(vestings[i]);
             }
         }
     }
