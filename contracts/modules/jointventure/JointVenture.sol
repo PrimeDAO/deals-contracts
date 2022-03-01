@@ -97,10 +97,6 @@ contract JointVentureModule is ModuleBase {
         uint256[][] calldata _pathFrom,
         uint256 _deadline
     ) public returns (uint256) {
-        require(
-            baseContract.isDAOorOwnerFromArray(msg.sender, _daos),
-            "Module: not authorized"
-        );
         require(_daos.length >= 2, "Module: at least 2 daos required");
 
         require(
@@ -180,20 +176,6 @@ contract JointVentureModule is ModuleBase {
     }
 
     /**
-     * @dev        Cancels a joint venture action
-     * @param _id  The ID of the action (position in the array)
-     */
-    function cancelJointVentureAction(uint256 _id)
-        external
-        validId(_id)
-        activeStatus(_id)
-        authorized(_id)
-    {
-        jointVentures[_id].status = Status.CANCELLED;
-        emit JointVentureActionCancelled(_id);
-    }
-
-    /**
       * @dev            Checks whether a joint venture action can be executed
                         (which is the case if all DAOs have deposited)
       * @param _id      The ID of the action (position in the array)
@@ -243,7 +225,6 @@ contract JointVentureModule is ModuleBase {
     function executeJointVentureAction(uint256 _id)
         external
         validId(_id)
-        authorized(_id)
         activeStatus(_id)
     {
         JointVenture memory jv = jointVentures[_id];
@@ -331,17 +312,6 @@ contract JointVentureModule is ModuleBase {
         require(
             jointVentures[_id].status == Status.ACTIVE,
             "Module: id not active"
-        );
-        _;
-    }
-
-    modifier authorized(uint256 _id) {
-        require(
-            baseContract.isDAOorOwnerFromArray(
-                msg.sender,
-                jointVentures[_id].daos
-            ),
-            "Module: not authorized"
         );
         _;
     }
