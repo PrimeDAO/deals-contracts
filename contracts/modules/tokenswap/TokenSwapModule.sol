@@ -24,6 +24,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256 deadline;
         // unix timestamp of the execution
         uint256 executionDate;
+        // hash of the deal information.
+        bytes metadata; //                  <---------------------------------------------
         // status of the deal
         Status status;
     }
@@ -60,6 +62,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         address[] tokens,
         uint256[][] pathFrom,
         uint256[][] pathTo,
+        bytes metadata,
         uint256 deadline
     );
 
@@ -99,6 +102,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         address[] calldata _tokens,
         uint256[][] calldata _pathFrom,
         uint256[][] calldata _pathTo,
+        bytes calldata _metadata,
         uint256 _deadline
     ) public returns (uint256) {
         require(_daos.length >= 2, "Module: at least 2 daos required");
@@ -118,6 +122,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
             _pathTo,
             _deadline,
             0,
+            _metadata,
             Status.ACTIVE
         );
         tokenSwaps.push(ts);
@@ -128,6 +133,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
             _tokens,
             _pathFrom,
             _pathTo,
+            _metadata,
             _deadline
         );
 
@@ -161,6 +167,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         address[] calldata _tokens,
         uint256[][] calldata _pathFrom,
         uint256[][] calldata _pathTo,
+        bytes calldata _metadata,
         uint256 _deadline
     ) external returns (uint256) {
         for (uint256 i = 0; i < _daos.length; i++) {
@@ -169,7 +176,15 @@ contract TokenSwapModule is ModuleBaseWithFee {
             }
         }
 
-        return createSwap(_daos, _tokens, _pathFrom, _pathTo, _deadline);
+        return
+            createSwap(
+                _daos,
+                _tokens,
+                _pathFrom,
+                _pathTo,
+                _metadata,
+                _deadline
+            );
     }
 
     /**
