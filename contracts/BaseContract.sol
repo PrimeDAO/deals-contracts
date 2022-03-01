@@ -104,42 +104,6 @@ contract BaseContract is Ownable {
             ];
     }
 
-    // Marks an address as a representative of a dao
-    function setRepresentative(
-        address _dao,
-        address _representative,
-        bool _active
-    ) public onlyDAOorOwner(_dao) {
-        representative[_dao][_representative] = _active;
-        emit RepresentativeStatusChanged(_dao, _representative, _active);
-    }
-
-    // Marks addresses as representatives of a dao
-    function setRepresentatives(
-        address _dao,
-        address[] calldata _representatives,
-        bool[] calldata _active
-    ) external onlyDAOorOwner(_dao) {
-        // solhint-disable-next-line reason-string
-        require(
-            _representatives.length == _active.length,
-            "BASECONTRACT-INVALID-ARRAY-LENGTH"
-        );
-        for (uint256 i = 0; i < _representatives.length; i++) {
-            setRepresentative(_dao, _representatives[i], _active[i]);
-        }
-    }
-
-    function setPropsolaLead(address _dao, address _representative) public {
-        // solhint-disable-next-line reason-string
-        require(
-            msg.sender == _dao || msg.sender == owner(),
-            "BASECONTRACT-NOT-CALLED-BY-OWNER-OR-DAO"
-        );
-        createDepositContract(_dao);
-        setRepresentative(_dao, _representative, true);
-    }
-
     // Creates a deposit contract for a DAO
     function createDepositContract(address _dao) public {
         require(_dao != address(0), "BASECONTRACT-INVALID-DAO-ADDRESS");
@@ -167,61 +131,6 @@ contract BaseContract is Ownable {
     // Returns the deposit contract of a DAO
     function getDepositContract(address _dao) public view returns (address) {
         return depositContract[_dao];
-    }
-
-    // Returns whether the address is the DAO, a representative or
-    // the contract owner
-    function isDAOorOwner(address _caller, address _dao)
-        public
-        view
-        returns (bool)
-    {
-        // If caller is the contract owner, or...
-        if (_caller == owner()) {
-            return true;
-        }
-        // If caller is the DAO, or..
-        if (_caller == _dao && hasDepositContract(_dao)) {
-            return true;
-        }
-        // If caller is a representative of the dao
-        if (representative[_dao][_caller]) {
-            return true;
-        }
-        // Rest: not DAO, DAOplomat or Owner -> false
-        return false;
-    }
-
-    // Returns whether the address is the DAO or a representative of
-    // a DAO from an array of DAOs or the contract owner.
-    function isDAOorOwnerFromArray(
-        address _caller,
-        address[] memory _involvedDAOs
-    ) public view returns (bool) {
-        // If caller is the contract owner, or...
-        if (_caller == owner()) {
-            return true;
-        }
-        for (uint256 i = 0; i < _involvedDAOs.length; i++) {
-            // If caller is one of the registered DAOs, or..
-            if (
-                _caller == _involvedDAOs[i] &&
-                hasDepositContract(_involvedDAOs[i])
-            ) {
-                return true;
-            }
-            // If caller is a representative of one of the daos
-            if (representative[_involvedDAOs[i]][_caller]) {
-                return true;
-            }
-        }
-        // Rest: not DAO, DAOplomat or Owner -> false
-        return false;
-    }
-
-    modifier onlyDAOorOwner(address _dao) {
-        require(isDAOorOwner(msg.sender, _dao), "BASECONTRACT-NOT-AUTHROIZED");
-        _;
     }
 
     function addressIsModule(address _address) public view returns (bool) {
