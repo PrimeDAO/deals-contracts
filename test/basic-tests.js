@@ -431,13 +431,16 @@ contract("Whole rundown", async (accounts) => {
       web3.utils.toWei("3", "ether")
     );
 
-    await depositContractDAO1.withdraw(processID, 0, {
-      from: admin,
-    });
+    await expectRevert(
+      depositContractDAO1.withdraw(processID, 0, {
+        from: admin,
+      }),
+      "D2D-WITHDRAW-NOT-AUTHORIZED"
+    );
 
     assert.equal(
       await testToken1.balanceOf(daos[0]),
-      web3.utils.toWei("4", "ether")
+      web3.utils.toWei("3", "ether")
     );
 
     // test claim
