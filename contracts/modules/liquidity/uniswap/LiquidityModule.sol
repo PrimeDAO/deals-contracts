@@ -105,10 +105,6 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         uint256 _maxDiff,
         uint256 _deadline
     ) public returns (uint256) {
-        require(
-            baseContract.isDAOorOwnerFromArray(msg.sender, _daos),
-            "Module: not authorized"
-        );
         require(_daos.length >= 2, "Module: at least 2 daos required");
 
         require(
@@ -196,43 +192,6 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
     }
 
     /**
-     * @dev        Cancels a liquidity action
-     * @param _id  The ID of the action (position in the array)
-     */
-    function cancelLiquidityAction(uint256 _id)
-        external
-        validId(_id)
-        activeStatus(_id)
-        authorized(_id)
-    {
-        liquidityActions[_id].status = Status.CANCELLED;
-        emit LiquidityActionCancelled(_id);
-    }
-
-    /**
-      * @dev            Cancels a liquidity action
-      * @param _id      The ID of the action (position in the array)
-      * @param _amount  Amount of seconds that the current deadline will be pushed
-                        back by
-    */
-    function extendDeadline(uint256 _id, uint256 _amount)
-        external
-        validId(_id)
-        authorized(_id)
-        activeStatus(_id)
-    {
-        uint256 newDeadline = liquidityActions[_id].deadline + _amount;
-        require(
-            newDeadline > block.timestamp,
-            "Module: new deadline is in the past"
-        );
-
-        liquidityActions[_id].deadline = newDeadline;
-
-        emit LiquidityActionDeadlineExtended(_id, newDeadline);
-    }
-
-    /**
       * @dev            Checks whether a liquidity action can be executed
                         (which is the case if all DAOs have deposited)
       * @param _id      The ID of the action (position in the array)
@@ -281,7 +240,6 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         external
         validId(_id)
         activeStatus(_id)
-        authorized(_id)
     {
         LiquidityAction memory la = liquidityActions[_id];
 
@@ -523,17 +481,6 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         require(
             liquidityActions[_id].status == Status.ACTIVE,
             "Module: id not active"
-        );
-        _;
-    }
-
-    modifier authorized(uint256 _id) {
-        require(
-            baseContract.isDAOorOwnerFromArray(
-                msg.sender,
-                liquidityActions[_id].daos
-            ),
-            "Module: not authorized"
         );
         _;
     }

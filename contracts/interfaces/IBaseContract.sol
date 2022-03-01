@@ -8,16 +8,6 @@ interface IBaseContract {
 
     function getDepositContract(address _dao) external view returns (address);
 
-    function isDAOorOwner(address _caller, address _dao)
-        external
-        view
-        returns (bool);
-
-    function isDAOorOwnerFromArray(
-        address _caller,
-        address[] calldata _involvedDAOs
-    ) external view returns (bool);
-
     function owner() external view returns (address);
 
     function weth() external view returns (address);

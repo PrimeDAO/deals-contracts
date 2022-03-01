@@ -41,10 +41,6 @@ contract BlueprintModule is ModuleBase {
         address _value2,
         string calldata _value3
     ) public returns (uint256) {
-        require(
-            baseContract.isDAOorOwnerFromArray(msg.sender, _daos),
-            "Module: not authorized"
-        );
         require(_daos.length >= 2, "Module: at least 2 daos required");
 
         require(
@@ -81,16 +77,6 @@ contract BlueprintModule is ModuleBase {
         return newId;
     }
 
-    function cancelAction(uint256 _id)
-        external
-        validId(_id)
-        activeStatus(_id)
-        authorized(_id)
-    {
-        blueprints[_id].status = Status.CANCELLED;
-        emit ActionCancelled(_id);
-    }
-
     function checkExecutability(uint256 _id)
         external
         view
@@ -116,7 +102,6 @@ contract BlueprintModule is ModuleBase {
     function executeAction(uint256 _id)
         external
         validId(_id)
-        authorized(_id)
         activeStatus(_id)
     {
         Blueprint memory blueprint = blueprints[_id];
@@ -142,17 +127,6 @@ contract BlueprintModule is ModuleBase {
         require(
             blueprints[_id].status == Status.ACTIVE,
             "Module: id not active"
-        );
-        _;
-    }
-
-    modifier authorized(uint256 _id) {
-        require(
-            baseContract.isDAOorOwnerFromArray(
-                msg.sender,
-                blueprints[_id].daos
-            ),
-            "Module: not authorized"
         );
         _;
     }
