@@ -129,10 +129,7 @@ contract DepositContract {
         }
     }
 
-    function registerDeposit(bytes32 _processID, address _token)
-        public
-        onlyAuthorized
-    {
+    function registerDeposit(bytes32 _processID, address _token) public {
         uint256 currentBalance = 0;
         if (_token != address(0)) {
             currentBalance = IERC20(_token).balanceOf(address(this));
@@ -184,11 +181,7 @@ contract DepositContract {
         Deposit storage d = deposits[_processID][_depositID];
         // Either the caller did the deposit or it's a dao deposit
         // and the caller is the dao or a representative
-        require(
-            d.sender == msg.sender ||
-                (d.sender == dao && baseContract.isDAOorOwner(msg.sender, dao)),
-            "D2D-WITHDRAW-NOT-AUTHORIZED"
-        );
+        require(d.sender == msg.sender, "D2D-WITHDRAW-NOT-AUTHORIZED");
 
         uint256 freeAmount = d.amount - d.used;
         // Deposit can't be used by a module or withdrawn already
@@ -488,14 +481,6 @@ contract DepositContract {
         require(
             msg.sender == address(baseContract),
             "D2D-DEPOSIT-ONLY-BASE-CONTRACT-CAN-ACCESS"
-        );
-        _;
-    }
-
-    modifier onlyAuthorized() {
-        require(
-            baseContract.isDAOorOwner(msg.sender, dao),
-            "D2D-NOT-AUTHORIZED"
         );
         _;
     }
