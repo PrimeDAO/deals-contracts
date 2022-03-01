@@ -63,10 +63,6 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256 deadline
     );
 
-    event TokenSwapCancelled(uint256 indexed id);
-
-    event TokenSwapDeadlineExtended(uint256 indexed id, uint256 newDeadline);
-
     event TokenSwapExecuted(uint256 indexed id);
 
     constructor(address _baseContract)
