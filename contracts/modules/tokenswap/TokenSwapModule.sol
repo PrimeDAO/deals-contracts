@@ -11,6 +11,8 @@ import "../ModuleBaseWithFee.sol";
 contract TokenSwapModule is ModuleBaseWithFee {
     TokenSwap[] public tokenSwaps;
 
+    mapping(bytes => uint256) public metadataToId;
+
     struct TokenSwap {
         // the participating DAOs
         address[] daos;
@@ -25,7 +27,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         // unix timestamp of the execution
         uint256 executionDate;
         // hash of the deal information.
-        bytes metadata; //                  <---------------------------------------------
+        bytes metadata;
         // status of the deal
         Status status;
     }
@@ -58,11 +60,11 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
     event TokenSwapCreated(
         uint256 indexed id,
+        bytes indexed metadata,
         address[] daos,
         address[] tokens,
         uint256[][] pathFrom,
         uint256[][] pathTo,
-        bytes metadata,
         uint256 deadline
     );
 
@@ -105,6 +107,10 @@ contract TokenSwapModule is ModuleBaseWithFee {
         bytes calldata _metadata,
         uint256 _deadline
     ) public returns (uint256) {
+        require(
+            metadataToId[_metadata] == 0,
+            "Module: metadata already exists"
+        );
         require(_daos.length >= 2, "Module: at least 2 daos required");
         require(_tokens.length >= 1, "Module: at least 1 token required");
         require(
@@ -127,13 +133,15 @@ contract TokenSwapModule is ModuleBaseWithFee {
         );
         tokenSwaps.push(ts);
 
+        metadataToId[_metadata] = tokenSwaps.length - 1;
+
         emit TokenSwapCreated(
             tokenSwaps.length - 1,
+            _metadata,
             _daos,
             _tokens,
             _pathFrom,
             _pathTo,
-            _metadata,
             _deadline
         );
 
@@ -307,6 +315,14 @@ contract TokenSwapModule is ModuleBaseWithFee {
                 }
             }
         }
+    }
+
+    function getTokenswap(bytes memory _metadata)
+        public
+        view
+        returns (TokenSwap memory swap)
+    {
+        return tokenSwaps[metadataToId[_metadata]];
     }
 
     modifier validId(uint256 _id) {
