@@ -213,7 +213,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
      * @param _id      The ID of the action (position in the array)
      */
     function executeSwap(uint256 _id) external validId(_id) activeStatus(_id) {
-        TokenSwap memory ts = tokenSwaps[_id];
+        TokenSwap storage ts = tokenSwaps[_id];
 
         require(ts.deadline >= block.timestamp, "Module: swap expired");
         require(checkExecutability(_id), "Module: swap not executable");
