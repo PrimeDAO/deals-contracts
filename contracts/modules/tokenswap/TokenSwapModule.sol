@@ -90,13 +90,13 @@ contract TokenSwapModule is ModuleBaseWithFee {
       * @param _deadline    Time until which this action can be executed (unix timestamp)
       * @return             The ID of the new action
     */
-    function createSwap(
+    function _createSwap(
         address[] calldata _daos,
         address[] calldata _tokens,
         uint256[][] calldata _pathFrom,
         uint256[][] calldata _pathTo,
         uint256 _deadline
-    ) public returns (uint256) {
+    ) internal returns (uint256) {
         require(_daos.length >= 2, "Module: at least 2 daos required");
         require(_tokens.length >= 1, "Module: at least 1 token required");
         require(
@@ -165,7 +165,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
             }
         }
 
-        return createSwap(_daos, _tokens, _pathFrom, _pathTo, _deadline);
+        return _createSwap(_daos, _tokens, _pathFrom, _pathTo, _deadline);
     }
 
     /**
