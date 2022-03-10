@@ -10,6 +10,7 @@ import "../ModuleBaseWithFee.sol";
  */
 contract TokenSwapModule is ModuleBaseWithFee {
     TokenSwap[] public tokenSwaps;
+    mapping(bytes => uint256) public metadataToId;
 
     struct TokenSwap {
         // the participating DAOs
@@ -24,6 +25,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256 deadline;
         // unix timestamp of the execution
         uint256 executionDate;
+        // hash of the deal information.
+        bytes metadata;
         // status of the deal
         Status status;
     }
@@ -56,6 +59,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
     event TokenSwapCreated(
         uint256 indexed id,
+        bytes indexed metadata,
         address[] daos,
         address[] tokens,
         uint256[][] pathFrom,
@@ -95,8 +99,13 @@ contract TokenSwapModule is ModuleBaseWithFee {
         address[] calldata _tokens,
         uint256[][] calldata _pathFrom,
         uint256[][] calldata _pathTo,
+        bytes calldata _metadata,
         uint256 _deadline
     ) internal returns (uint256) {
+        require(
+            metadataToId[_metadata] == 0,
+            "Module: metadata already exists"
+        );
         require(_daos.length >= 2, "Module: at least 2 daos required");
         require(_tokens.length >= 1, "Module: at least 1 token required");
         require(
@@ -114,12 +123,16 @@ contract TokenSwapModule is ModuleBaseWithFee {
             _pathTo,
             _deadline,
             0,
+            _metadata,
             Status.ACTIVE
         );
         tokenSwaps.push(ts);
 
+        metadataToId[_metadata] = tokenSwaps.length - 1;
+
         emit TokenSwapCreated(
             tokenSwaps.length - 1,
+            _metadata,
             _daos,
             _tokens,
             _pathFrom,
@@ -157,6 +170,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         address[] calldata _tokens,
         uint256[][] calldata _pathFrom,
         uint256[][] calldata _pathTo,
+        bytes calldata _metadata,
         uint256 _deadline
     ) external returns (uint256) {
         for (uint256 i = 0; i < _daos.length; i++) {
@@ -165,7 +179,15 @@ contract TokenSwapModule is ModuleBaseWithFee {
             }
         }
 
-        return _createSwap(_daos, _tokens, _pathFrom, _pathTo, _deadline);
+        return
+            _createSwap(
+                _daos,
+                _tokens,
+                _pathFrom,
+                _pathTo,
+                _metadata,
+                _deadline
+            );
     }
 
     /**
