@@ -181,7 +181,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         }
 
         return
-            createSwap(
+            _createSwap(
                 _daos,
                 _tokens,
                 _pathFrom,
