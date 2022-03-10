@@ -33,8 +33,8 @@ contract DepositContract {
     struct Vesting {
         bytes32 actionId;
         address token;
-        uint256 amount;
-        uint256 sent;
+        uint256 totalVested;
+        uint256 totalClaimed;
         uint256 vestingStartTime;
         uint256 vestingCliff;
         uint256 vestingDuration;
@@ -63,6 +63,13 @@ contract DepositContract {
         uint256 vestingStart,
         uint256 vestingCliff,
         uint256 vestingDuration
+    );
+
+    event VestingClaimed(
+        bytes32 actionId,
+        address token,
+        uint256 claimed,
+        address dao
     );
 
     function initialize(address _dao) external {
@@ -294,7 +301,7 @@ contract DepositContract {
         private
         returns (uint256 amount)
     {
-        if (vesting.sent < vesting.amount) {
+        if (vesting.totalClaimed < vesting.totalVested) {
             // Check cliff was reached
             uint256 elapsedSeconds = block.timestamp - vesting.vestingStartTime;
 
@@ -302,17 +309,17 @@ contract DepositContract {
                 return 0;
             }
             if (elapsedSeconds >= vesting.vestingDuration) {
-                amount = vesting.amount - vesting.sent;
-                vesting.sent = vesting.amount;
+                amount = vesting.totalVested - vesting.totalClaimed;
+                vesting.totalClaimed = vesting.totalVested;
             } else {
                 amount =
-                    (vesting.amount * elapsedSeconds) /
+                    (vesting.totalVested * elapsedSeconds) /
                     vesting.vestingDuration;
-                vesting.sent += amount;
+                vesting.totalClaimed += amount;
             }
             // solhint-disable-next-line reason-string
             require(
-                vesting.sent <= vesting.amount,
+                vesting.totalClaimed <= vesting.totalVested,
                 "D2D-VESTING-CLAIM-AMOUNT-MISMATCH"
             );
             vestedBalances[vesting.token] -= amount;
@@ -323,6 +330,7 @@ contract DepositContract {
                 (bool sent, ) = dao.call{value: amount}("");
                 require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
             }
+            emit VestingClaimed(vesting.actionId, vesting.token, amount, dao);
         }
     }
 
