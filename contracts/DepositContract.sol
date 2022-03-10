@@ -286,11 +286,11 @@ contract DepositContract {
 
     function claimVestings() external returns (uint256 amount) {
         for (uint256 i = 0; i < vestings.length; i++) {
-            amount += calculateReleasedClaim(vestings[i]);
+            amount += sentReleasableClaim(vestings[i]);
         }
     }
 
-    function calculateReleasedClaim(Vesting memory vesting)
+    function sentReleasableClaim(Vesting memory vesting)
         private
         returns (uint256 amount)
     {
@@ -329,7 +329,7 @@ contract DepositContract {
     function claimDealVestings(bytes32 _id) external returns (uint256 amount) {
         for (uint256 i = 0; i < vestings.length; i++) {
             if (vestings[i].actionId == _id) {
-                amount = calculateReleasedClaim(vestings[i]);
+                amount = sentReleasableClaim(vestings[i]);
             }
         }
     }
