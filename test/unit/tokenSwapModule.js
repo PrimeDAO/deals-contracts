@@ -515,7 +515,7 @@ describe.only("> Contract: TokenSwapModule", () => {
         ).to.revertedWith("Module: id not active");
       });
     });
-    describe("# when");
+    // describe("# when");
     describe("# when able to execute", () => {
       beforeEach(async () => {
         ({ tokenSwapModuleInstance, tokenInstances } =
