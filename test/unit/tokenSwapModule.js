@@ -515,6 +515,7 @@ describe.only("> Contract: TokenSwapModule", () => {
         ).to.revertedWith("Module: id not active");
       });
     });
+    describe("# when");
     describe("# when able to execute", () => {
       beforeEach(async () => {
         ({ tokenSwapModuleInstance, tokenInstances } =
@@ -653,7 +654,7 @@ describe.only("> Contract: TokenSwapModule", () => {
       });
     });
   });
-  describe("$ Function: executeSwap", () => {
+  describe("$ Function: claimVesting", () => {
     describe("# when not able to execute", () => {});
   });
 });
