@@ -653,4 +653,7 @@ describe.only("> Contract: TokenSwapModule", () => {
       });
     });
   });
+  describe("$ Function: executeSwap", () => {
+    describe("# when not able to execute", () => {});
+  });
 });
