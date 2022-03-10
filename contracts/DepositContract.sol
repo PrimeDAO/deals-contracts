@@ -35,9 +35,9 @@ contract DepositContract {
         address token;
         uint256 totalVested;
         uint256 totalClaimed;
-        uint256 vestingStartTime;
-        uint256 vestingCliff;
-        uint256 vestingDuration;
+        uint256 StartTime;
+        uint256 Cliff;
+        uint256 Duration;
     }
 
     event Deposited(
@@ -303,18 +303,18 @@ contract DepositContract {
     {
         if (vesting.totalClaimed < vesting.totalVested) {
             // Check cliff was reached
-            uint256 elapsedSeconds = block.timestamp - vesting.vestingStartTime;
+            uint256 elapsedSeconds = block.timestamp - vesting.StartTime;
 
-            if (elapsedSeconds < vesting.vestingCliff) {
+            if (elapsedSeconds < vesting.Cliff) {
                 return 0;
             }
-            if (elapsedSeconds >= vesting.vestingDuration) {
+            if (elapsedSeconds >= vesting.Duration) {
                 amount = vesting.totalVested - vesting.totalClaimed;
                 vesting.totalClaimed = vesting.totalVested;
             } else {
                 amount =
                     (vesting.totalVested * elapsedSeconds) /
-                    vesting.vestingDuration;
+                    vesting.Duration;
                 vesting.totalClaimed += amount;
             }
             // solhint-disable-next-line reason-string
