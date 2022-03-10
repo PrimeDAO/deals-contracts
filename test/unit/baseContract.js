@@ -44,7 +44,7 @@ const setupFixture = deployments.createFixture(
   }
 );
 
-describe.only("> Contract: BaseContract", () => {
+describe("> Contract: BaseContract", () => {
   let root, baseContractMock, dao, depositer1, depositer2;
   let tokenAddresses;
   let depositContractInstance,
