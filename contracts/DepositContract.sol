@@ -35,9 +35,9 @@ contract DepositContract {
         address token;
         uint256 totalVested;
         uint256 totalClaimed;
-        uint256 StartTime;
-        uint256 Cliff;
-        uint256 Duration;
+        uint256 startTime;
+        uint256 cliff;
+        uint256 duration;
     }
 
     event Deposited(
