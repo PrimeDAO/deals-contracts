@@ -33,11 +33,11 @@ contract DepositContract {
     struct Vesting {
         bytes32 actionId;
         address token;
-        uint256 amount;
-        uint256 sent;
-        uint256 vestingStartTime;
-        uint256 vestingCliff;
-        uint256 vestingDuration;
+        uint256 totalVested;
+        uint256 totalClaimed;
+        uint256 startTime;
+        uint256 cliff;
+        uint256 duration;
     }
 
     event Deposited(
@@ -63,6 +63,13 @@ contract DepositContract {
         uint256 vestingStart,
         uint256 vestingCliff,
         uint256 vestingDuration
+    );
+
+    event VestingClaimed(
+        bytes32 actionId,
+        address token,
+        uint256 claimed,
+        address dao
     );
 
     function initialize(address _dao) external {
@@ -286,33 +293,33 @@ contract DepositContract {
 
     function claimVestings() external returns (uint256 amount) {
         for (uint256 i = 0; i < vestings.length; i++) {
-            amount += calculateReleasedClaim(vestings[i]);
+            amount += sentReleasableClaim(vestings[i]);
         }
     }
 
-    function calculateReleasedClaim(Vesting memory vesting)
+    function sentReleasableClaim(Vesting memory vesting)
         private
         returns (uint256 amount)
     {
-        if (vesting.sent < vesting.amount) {
+        if (vesting.totalClaimed < vesting.totalVested) {
             // Check cliff was reached
-            uint256 elapsedSeconds = block.timestamp - vesting.vestingStartTime;
+            uint256 elapsedSeconds = block.timestamp - vesting.startTime;
 
-            if (elapsedSeconds < vesting.vestingCliff) {
+            if (elapsedSeconds < vesting.cliff) {
                 return 0;
             }
-            if (elapsedSeconds >= vesting.vestingDuration) {
-                amount = vesting.amount - vesting.sent;
-                vesting.sent = vesting.amount;
+            if (elapsedSeconds >= vesting.duration) {
+                amount = vesting.totalVested - vesting.totalClaimed;
+                vesting.totalClaimed = vesting.totalVested;
             } else {
                 amount =
-                    (vesting.amount * elapsedSeconds) /
-                    vesting.vestingDuration;
-                vesting.sent += amount;
+                    (vesting.totalVested * elapsedSeconds) /
+                    vesting.duration;
+                vesting.totalClaimed += amount;
             }
             // solhint-disable-next-line reason-string
             require(
-                vesting.sent <= vesting.amount,
+                vesting.totalClaimed <= vesting.totalVested,
                 "D2D-VESTING-CLAIM-AMOUNT-MISMATCH"
             );
             vestedBalances[vesting.token] -= amount;
@@ -323,13 +330,14 @@ contract DepositContract {
                 (bool sent, ) = dao.call{value: amount}("");
                 require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
             }
+            emit VestingClaimed(vesting.actionId, vesting.token, amount, dao);
         }
     }
 
     function claimDealVestings(bytes32 _id) external returns (uint256 amount) {
         for (uint256 i = 0; i < vestings.length; i++) {
             if (vestings[i].actionId == _id) {
-                amount = calculateReleasedClaim(vestings[i]);
+                amount = sentReleasableClaim(vestings[i]);
             }
         }
     }

@@ -637,7 +637,7 @@ contract("Whole rundown", async (accounts) => {
     ];
 
     // Create deposit contracts and first Swap
-    await tokenSwapInstance.createDepositContractAndCreateSwap(
+    await tokenSwapInstance.createSwap(
       [daos[0], daos[1], daos[2]],
       [testToken1.address, testToken2.address, testToken3.address],
       pathFrom,

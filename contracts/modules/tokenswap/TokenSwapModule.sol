@@ -95,7 +95,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
       * @param _deadline    Time until which this action can be executed (unix timestamp)
       * @return             The ID of the new action
     */
-    function createSwap(
+    function _createSwap(
         address[] calldata _daos,
         address[] calldata _tokens,
         uint256[][] calldata _pathFrom,
@@ -166,7 +166,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
       * @param _deadline    Time until which this action can be executed (unix timestamp)
       * @return             The ID of the new action
     */
-    function createDepositContractAndCreateSwap(
+    function createSwap(
         address[] calldata _daos,
         address[] calldata _tokens,
         uint256[][] calldata _pathFrom,
@@ -181,7 +181,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         }
 
         return
-            createSwap(
+            _createSwap(
                 _daos,
                 _tokens,
                 _pathFrom,
