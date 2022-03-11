@@ -303,18 +303,18 @@ contract DepositContract {
     {
         if (vesting.totalClaimed < vesting.totalVested) {
             // Check cliff was reached
-            uint256 elapsedSeconds = block.timestamp - vesting.StartTime;
+            uint256 elapsedSeconds = block.timestamp - vesting.startTime;
 
-            if (elapsedSeconds < vesting.Cliff) {
+            if (elapsedSeconds < vesting.cliff) {
                 return 0;
             }
-            if (elapsedSeconds >= vesting.Duration) {
+            if (elapsedSeconds >= vesting.duration) {
                 amount = vesting.totalVested - vesting.totalClaimed;
                 vesting.totalClaimed = vesting.totalVested;
             } else {
                 amount =
                     (vesting.totalVested * elapsedSeconds) /
-                    vesting.Duration;
+                    vesting.duration;
                 vesting.totalClaimed += amount;
             }
             // solhint-disable-next-line reason-string
