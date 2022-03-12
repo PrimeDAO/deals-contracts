@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.13",
-    "@nomiclabs/hardhat-etherscan": "^2.1.8",
+    "@nomiclabs/hardhat-etherscan": "^3.0.0",
     "@nomiclabs/hardhat-truffle5": "^2.0.2",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/contracts": "^4.4.1",
@@ -30,6 +30,7 @@
     "solidity-coverage": "^0.7.16"
   },
   "dependencies": {
+    "dotenv": "^16.0.0",
     "prettier": "^2.3.2",
     "prettier-plugin-solidity": "^1.0.0-beta.17",
     "solhint-plugin-prettier": "^0.0.5"
