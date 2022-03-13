@@ -340,9 +340,13 @@ contract DepositContract {
         uint256 amountOfTokens = tokensPerDeal[_id];
         tokens = new address[](amountOfTokens);
         amounts = new uint256[](amountOfTokens);
+        uint256 counter = 0;
         for (uint256 i = 0; i < vestings.length; i++) {
             if (vestings[i].actionId == _id) {
-                (tokens[i], amounts[i]) = sendReleasableClaim(vestings[i]);
+                (tokens[counter], amounts[counter]) = sendReleasableClaim(
+                    vestings[i]
+                );
+                counter++;
             }
         }
     }
