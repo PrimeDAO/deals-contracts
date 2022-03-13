@@ -21,6 +21,9 @@ contract DepositContract {
     mapping(bytes32 => Deposit[]) public deposits;
 
     Vesting[] public vestings;
+    address[] public vestedTokenAddresses;
+    mapping(address => uint256) public vestedTokenAmounts;
+    mapping(bytes32 => uint256) public tokensPerDeal;
 
     struct Deposit {
         address sender;
@@ -281,6 +284,19 @@ contract DepositContract {
                 _vestingDuration
             )
         );
+
+        if (vestedTokenAmounts[_token] == 0) {
+            vestedTokenAddresses.push(_token);
+        }
+
+        vestedTokenAmounts[_token] += _amount;
+
+        // Outside of the if-clause above to catch the
+        // unlikely edge-case of multiple vestings of the
+        // same token for one deal. This is necessary
+        // for deal-based vesting claims to work.
+        tokensPerDeal[_actionId]++;
+
         emit VestingStarted(
             _actionId,
             _token,
@@ -291,54 +307,106 @@ contract DepositContract {
         );
     }
 
-    function claimVestings() external returns (uint256 amount) {
+    function claimVestings()
+        external
+        returns (address[] memory tokens, uint256[] memory amounts)
+    {
+        uint256 vestingCount = vestedTokenAddresses.length;
+        tokens = new address[](vestingCount);
+        amounts = new uint256[](vestingCount);
+
+        // Copy storage array to memory, since the "original"
+        // array might change during sendReleasableClaim() if
+        // the amount of a token reaches zero
+        for (uint256 i = 0; i < vestingCount; i++) {
+            tokens[i] = vestedTokenAddresses[i];
+        }
+
         for (uint256 i = 0; i < vestings.length; i++) {
-            amount += sentReleasableClaim(vestings[i]);
+            (address token, uint256 amount) = sendReleasableClaim(vestings[i]);
+            for (uint256 j = 0; j < vestingCount; j++) {
+                if (token == tokens[j]) {
+                    amounts[j] += amount;
+                }
+            }
+        }
+        return (tokens, amounts);
+    }
+
+    function claimDealVestings(bytes32 _id)
+        external
+        returns (address[] memory tokens, uint256[] memory amounts)
+    {
+        uint256 amountOfTokens = tokensPerDeal[_id];
+        tokens = new address[](amountOfTokens);
+        amounts = new uint256[](amountOfTokens);
+        for (uint256 i = 0; i < vestings.length; i++) {
+            if (vestings[i].actionId == _id) {
+                (tokens[i], amounts[i]) = sendReleasableClaim(vestings[i]);
+            }
         }
     }
 
-    function sentReleasableClaim(Vesting memory vesting)
+    function sendReleasableClaim(Vesting memory vesting)
         private
-        returns (uint256 amount)
+        returns (address token, uint256 amount)
     {
         if (vesting.totalClaimed < vesting.totalVested) {
             // Check cliff was reached
             uint256 elapsedSeconds = block.timestamp - vesting.startTime;
 
             if (elapsedSeconds < vesting.cliff) {
-                return 0;
+                return (address(0), 0);
             }
             if (elapsedSeconds >= vesting.duration) {
                 amount = vesting.totalVested - vesting.totalClaimed;
                 vesting.totalClaimed = vesting.totalVested;
+                tokensPerDeal[vesting.actionId]--;
             } else {
                 amount =
                     (vesting.totalVested * elapsedSeconds) /
                     vesting.duration;
                 vesting.totalClaimed += amount;
             }
+
+            token = vesting.token;
+            vestedTokenAmounts[token] -= amount;
+
+            // if the corresponding token doesn't have any
+            // vested amounts in any vesting anymore,
+            // we remove it from the array
+            if (vestedTokenAmounts[token] == 0) {
+                uint256 arrLen = vestedTokenAddresses.length;
+                for (uint256 i = 0; i < arrLen; i++) {
+                    if (vestedTokenAddresses[i] == token) {
+                        // if it's not the last element
+                        // move the last to the current slot
+                        if (i != arrLen - 1) {
+                            vestedTokenAddresses[i] = vestedTokenAddresses[
+                                arrLen - 1
+                            ];
+                        }
+                        // remove the last entry
+                        vestedTokenAddresses.pop();
+                    }
+                }
+            }
+
             // solhint-disable-next-line reason-string
             require(
                 vesting.totalClaimed <= vesting.totalVested,
                 "D2D-VESTING-CLAIM-AMOUNT-MISMATCH"
             );
-            vestedBalances[vesting.token] -= amount;
-            if (vesting.token != baseContract.weth()) {
-                _transferToken(vesting.token, dao, amount);
+            vestedBalances[token] -= amount;
+            if (token != baseContract.weth()) {
+                _transferToken(token, dao, amount);
             } else {
                 IWETH(baseContract.weth()).withdraw(amount);
                 (bool sent, ) = dao.call{value: amount}("");
                 require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
             }
-            emit VestingClaimed(vesting.actionId, vesting.token, amount, dao);
-        }
-    }
 
-    function claimDealVestings(bytes32 _id) external returns (uint256 amount) {
-        for (uint256 i = 0; i < vestings.length; i++) {
-            if (vestings[i].actionId == _id) {
-                amount = sentReleasableClaim(vestings[i]);
-            }
+            emit VestingClaimed(vesting.actionId, token, amount, dao);
         }
     }
 
