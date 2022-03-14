@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "../ModuleBaseWithFee.sol";
+import "hardhat/console.sol";
 
 /**
  * @title PrimeDeals Token Swap Module
@@ -313,12 +314,34 @@ contract TokenSwapModule is ModuleBaseWithFee {
         }
     }
 
-    function getTokenswap(bytes memory _metadata)
+    function getTokenswapFromMetadata(bytes memory _metadata)
         public
         view
+        validMetadata(_metadata)
         returns (TokenSwap memory swap)
     {
         return tokenSwaps[metadataToId[_metadata]];
+    }
+
+    function getTokenswapFromId(uint256 _id)
+        public
+        view
+        validId(_id)
+        returns (TokenSwap memory swap)
+    {
+        return tokenSwaps[_id];
+    }
+
+    modifier validMetadata(bytes memory _metadata) {
+        uint256 id = metadataToId[_metadata];
+
+        if (id == 0) {
+            require(
+                keccak256(tokenSwaps[id].metadata) == keccak256(_metadata),
+                "Module: metadata does not exist"
+            );
+            _;
+        }
     }
 
     modifier validId(uint256 _id) {
