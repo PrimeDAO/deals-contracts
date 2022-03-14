@@ -313,6 +313,14 @@ contract TokenSwapModule is ModuleBaseWithFee {
         }
     }
 
+    function getTokenswap(bytes memory _metadata)
+        public
+        view
+        returns (TokenSwap memory swap)
+    {
+        return tokenSwaps[metadataToId[_metadata]];
+    }
+
     modifier validId(uint256 _id) {
         require(_id <= tokenSwaps.length, "Module: id doesn't exist");
         _;

@@ -1,3 +1,4 @@
+require("dotenv").config({ path: "./.env" });
 require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-ethers");
 require("@openzeppelin/hardhat-upgrades");
@@ -99,7 +100,10 @@ module.exports = {
     ],
   },
   etherscan: {
-    apiKey: ETHERSCAN_API_KEY,
+    apiKey: {
+      mainnet: ETHERSCAN_API_KEY,
+      rinkeby: ETHERSCAN_API_KEY,
+    },
   },
   namedAccounts: {
     root: 0,

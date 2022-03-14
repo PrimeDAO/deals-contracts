@@ -25,6 +25,9 @@ contract("Whole rundown", async (accounts) => {
     [accounts[6], accounts[7]],
     [accounts[8], accounts[9]],
   ];
+  const METADATA1 = "0x";
+  const METADATA2 = "0x1";
+
   let outsider = accounts[10];
 
   let baseContractInstance;
@@ -294,6 +297,7 @@ contract("Whole rundown", async (accounts) => {
       ],
       pathFrom,
       pathTo,
+      METADATA1,
       currTime + DAY * 7,
       { from: daos[0] }
     );
@@ -633,11 +637,12 @@ contract("Whole rundown", async (accounts) => {
     ];
 
     // Create deposit contracts and first Swap
-    await tokenSwapInstance.createDepositContractAndCreateSwap(
+    await tokenSwapInstance.createSwap(
       [daos[0], daos[1], daos[2]],
       [testToken1.address, testToken2.address, testToken3.address],
       pathFrom,
       pathTo,
+      METADATA1,
       currTime + DAY * 7,
       { from: daos[0] }
     );
@@ -674,6 +679,7 @@ contract("Whole rundown", async (accounts) => {
       [testToken4.address, testToken5.address, testToken6.address],
       pathFrom1,
       pathTo1,
+      METADATA2,
       currTime + DAY * 7,
       { from: daos[0] }
     );
