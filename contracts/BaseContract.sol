@@ -23,9 +23,6 @@ contract BaseContract is Ownable {
     // address DAO => address deposit contract of the DAO
     mapping(address => address) public depositContract;
 
-    // address DAO => address representative => true/false
-    mapping(address => mapping(address => bool)) public representative;
-
     // the module identifier (bytes32) is e.g.
     // keccak256(abi.encode(TOKEN_SWAP_MODULE))
     mapping(bytes32 => address[]) public modules;
@@ -34,12 +31,6 @@ contract BaseContract is Ownable {
     mapping(address => bool) public isModule;
 
     event DepositContractCreated(address dao, address depositContract);
-
-    event RepresentativeStatusChanged(
-        address dao,
-        address representative,
-        bool status
-    );
 
     // Sets a new address for the deposit contract implementation
     function setDepositContractImplementation(address _newImplementation)
