@@ -103,10 +103,12 @@ contract TokenSwapModule is ModuleBaseWithFee {
         bytes calldata _metadata,
         uint256 _deadline
     ) internal returns (uint256) {
-        require(
-            metadataToId[_metadata] == 0,
-            "Module: metadata already exists"
-        );
+        if (tokenSwaps.length >= 1) {
+            require(
+                _validMetadata(_metadata),
+                "Module: metadata already exists"
+            );
+        }
         require(_daos.length >= 2, "Module: at least 2 daos required");
         require(_tokens.length >= 1, "Module: at least 1 token required");
         require(
@@ -320,6 +322,11 @@ contract TokenSwapModule is ModuleBaseWithFee {
         validMetadata(_metadata)
         returns (TokenSwap memory swap)
     {
+        // require(
+        //     _validMetadata(_metadata) == false,
+        //     "Module: metadata does not exist"
+        // );
+
         return tokenSwaps[metadataToId[_metadata]];
     }
 
@@ -332,8 +339,25 @@ contract TokenSwapModule is ModuleBaseWithFee {
         return tokenSwaps[_id];
     }
 
+    function _validMetadata(bytes memory _metadata)
+        internal
+        view
+        returns (bool)
+    {
+        uint256 id = metadataToId[_metadata];
+        // console.logUint(id);
+
+        if (id == 0) {
+            if (keccak256(tokenSwaps[id].metadata) == keccak256(_metadata)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     modifier validMetadata(bytes memory _metadata) {
         uint256 id = metadataToId[_metadata];
+        console.logUint(id);
 
         if (id == 0) {
             require(
