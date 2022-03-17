@@ -8,7 +8,7 @@ const {
 } = require("@openzeppelin/test-helpers");
 const { BigNumber } = require("@ethersproject/bignumber");
 
-const tokens = require("../helpers/tokens.js");
+const { setupFixture } = require("../helpers/setupFixture.js");
 const {
   setupPathFromDeal1,
   setupPathToDeal1,
@@ -22,69 +22,6 @@ const {
   fundDepositContracts,
   initializeParameters,
 } = require("../helpers/tokenSwapSetupHelper.js");
-
-const setupFixture = deployments.createFixture(
-  async ({ deployments }, options) => {
-    const { deploy } = deployments;
-    const { root, prime } = await ethers.getNamedSigners();
-
-    // Set up BaseContract contract
-    await deploy("BaseContract", {
-      contract: "BaseContract",
-      from: root.address,
-      log: true,
-    });
-
-    await deploy("DepositContract", {
-      contract: "DepositContract",
-      from: root.address,
-      log: true,
-    });
-
-    await deploy("WETH", {
-      contract: "ERC20Mock",
-      from: root.address,
-      args: ["Wrapped Ether", "WETH"],
-      logs: true,
-    });
-
-    const depositContractInstance = await ethers.getContract("DepositContract");
-    const baseContractInstance = await ethers.getContract("BaseContract");
-    const wethInstance = await ethers.getContract("WETH");
-
-    await baseContractInstance.setWETHAddress(wethInstance.address);
-    await baseContractInstance.setDepositContractImplementation(
-      depositContractInstance.address
-    );
-
-    // Set up TokenSwapModule contract
-    await deploy("TokenSwapModule", {
-      contract: "TokenSwapModule",
-      from: root.address,
-      args: [baseContractInstance.address],
-      logs: true,
-    });
-
-    const tokenSwapModuleInstance = await ethers.getContract("TokenSwapModule");
-    await tokenSwapModuleInstance.setFeeWallet(prime.address);
-    await tokenSwapModuleInstance.setFee(30);
-
-    // Register TokenSwapModule in BaseContract
-    await baseContractInstance.registerModule(tokenSwapModuleInstance.address);
-
-    // Return contract instances
-    const contractInstances = {
-      baseContractInstance: await ethers.getContract("BaseContract"),
-      tokenInstances: await tokens.getErc20TokenInstances(4, root),
-      tokenSwapModuleInstance: tokenSwapModuleInstance,
-      depositContractFactoryInstance: await ethers.getContractFactory(
-        "DepositContract"
-      ),
-    };
-
-    return { ...contractInstances };
-  }
-);
 
 const setupMultipleCreateSwapStates = async (
   contractInstances,
@@ -248,7 +185,7 @@ const setupExecuteSwapState = async (
   return { tokenSwapModuleInstance, tokenInstances };
 };
 
-describe.only("> Contract: TokenSwapModule", () => {
+describe("> Contract: TokenSwapModule", () => {
   let root,
     prime,
     dao1,
@@ -845,7 +782,6 @@ describe.only("> Contract: TokenSwapModule", () => {
         ));
       });
       it("» succeeds with valid metadata1", async () => {
-        console.log("swap1");
         const tokenSwap1 =
           await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA1);
 
@@ -857,12 +793,8 @@ describe.only("> Contract: TokenSwapModule", () => {
         expect(tokenSwap1.status).to.equal(1);
       });
       it("» succeeds with valid metadata2", async () => {
-        console.log("swap2");
         const tokenSwap2 =
           await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA2);
-        // console.log("swap2");
-        // console.log(tokenSwap2);
-        // console.log(tokenSwap2);
         expect(tokenSwap2.daos).to.eql(createSwapParametersArray[1][0]);
         expect(tokenSwap2.tokens).to.eql(createSwapParametersArray[1][1]);
         expect(tokenSwap2.executionDate).to.equal(0);
@@ -871,7 +803,6 @@ describe.only("> Contract: TokenSwapModule", () => {
         expect(tokenSwap2.status).to.equal(1);
       });
       it("» succeeds with valid metadata1", async () => {
-        console.log("swap3");
         const tokenSwap3 =
           await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA3);
         expect(tokenSwap3.daos).to.eql(createSwapParametersArray[2][0]);

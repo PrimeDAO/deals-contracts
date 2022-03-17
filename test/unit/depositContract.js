@@ -7,72 +7,21 @@ const {
 } = require("@openzeppelin/test-helpers");
 const { BigNumber } = require("@ethersproject/bignumber");
 
-const tokens = require("../helpers/tokens.js");
+const { setupFixture } = require("../helpers/setupFixture.js");
+const {
+  setupPathFromDeal1,
+  setupPathToDeal1,
+  setupPathToDeal2,
+  setupPathFromDeal2,
+  setupPathFromDeal3,
+  setupPathToDeal3,
+} = require("../helpers/setupPaths.js");
 const {
   fundDepositContracts,
   initializeParameters,
 } = require("../helpers/tokenSwapSetupHelper.js");
 
-const setupFixture = deployments.createFixture(
-  async ({ deployments }, options) => {
-    const { deploy } = deployments;
-    const { root } = await ethers.getNamedSigners();
-
-    await deploy("BaseContract", {
-      contract: "BaseContract",
-      from: root.address,
-      log: true,
-    });
-
-    await deploy("DepositContract", {
-      contract: "DepositContract",
-      from: root.address,
-      log: true,
-    });
-
-    await deploy("WETH", {
-      contract: "ERC20Mock",
-      from: root.address,
-      args: ["Wrapped Ether", "WETH"],
-      logs: true,
-    });
-
-    const depositContractInstance = await ethers.getContract("DepositContract");
-    const baseContractInstance = await ethers.getContract("BaseContract");
-    const wethInstance = await ethers.getContract("WETH");
-
-    await baseContractInstance.setWETHAddress(wethInstance.address);
-    await baseContractInstance.setDepositContractImplementation(
-      depositContractInstance.address
-    );
-
-    // Set up TokenSwapModule contract
-    await deploy("TokenSwapModule", {
-      contract: "TokenSwapModule",
-      from: root.address,
-      args: [baseContractInstance.address],
-      logs: true,
-    });
-
-    const tokenSwapModuleInstance = await ethers.getContract("TokenSwapModule");
-    await tokenSwapModuleInstance.setFeeWallet(prime.address);
-    await tokenSwapModuleInstance.setFee(30);
-
-    // Register TokenSwapModule in BaseContract
-    await baseContractInstance.registerModule(tokenSwapModuleInstance.address);
-
-    const contractInstances = {
-      baseContractInstance: await ethers.getContract("BaseContract"),
-      tokenInstances: await tokens.getErc20TokenInstances(10, root),
-      depositContractInstance: depositContractInstance,
-      tokenSwapModuleInstance: tokenSwapModuleInstance,
-    };
-
-    return { ...contractInstances };
-  }
-);
-
-describe.only("> Contract: DepositContract", () => {
+describe("> Contract: DepositContract", () => {
   let root,
     dao1,
     dao2,
@@ -130,6 +79,7 @@ describe.only("> Contract: DepositContract", () => {
       tokenSwapModuleInstance,
     } = contractInstances);
     deadline = BigNumber.from((await time.latest()).toNumber() + DAY * 7);
+    tokenAddresses = tokenInstances.map((token) => token.address);
 
     deal1Parameters = initializeParameters(
       [daosDeal1[0].address, daosDeal1[1].address, daosDeal1[2].address],
@@ -171,8 +121,6 @@ describe.only("> Contract: DepositContract", () => {
       deadline
     );
     dealParametersArray = [deal1Parameters, deal2Parameters, deal3Parameters];
-
-    tokenAddresses = tokenInstances.map((token) => token.address);
   });
   describe("$ DepositContract solo", () => {
     describe("# When initializing with invalid parameters", () => {
@@ -191,8 +139,8 @@ describe.only("> Contract: DepositContract", () => {
       });
     });
   });
-  describe("$ DepositContract through TokenSwapModule (end-to-end)", () => {
-    beforeEach(async () => {});
-    // describe("# ");
-  });
+  // describe("$ DepositContract through TokenSwapModule (end-to-end)", () => {
+  //   beforeEach(async () => {});
+  //   // describe("# ");
+  // });
 });
