@@ -322,11 +322,6 @@ contract TokenSwapModule is ModuleBaseWithFee {
         validMetadata(_metadata)
         returns (TokenSwap memory swap)
     {
-        // require(
-        //     _validMetadata(_metadata) == false,
-        //     "Module: metadata does not exist"
-        // );
-
         return tokenSwaps[metadataToId[_metadata]];
     }
 
@@ -345,7 +340,6 @@ contract TokenSwapModule is ModuleBaseWithFee {
         returns (bool)
     {
         uint256 id = metadataToId[_metadata];
-        // console.logUint(id);
 
         if (id == 0) {
             if (keccak256(tokenSwaps[id].metadata) == keccak256(_metadata)) {
@@ -357,7 +351,6 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
     modifier validMetadata(bytes memory _metadata) {
         uint256 id = metadataToId[_metadata];
-        console.logUint(id);
 
         if (id == 0) {
             require(
