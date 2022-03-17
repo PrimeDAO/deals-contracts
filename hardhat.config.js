@@ -21,6 +21,8 @@ if (PK) {
   };
 }
 
+require("./tasks/tokenSwapModuleManagement");
+
 module.exports = {
   paths: {
     artifacts: "build/artifacts",
