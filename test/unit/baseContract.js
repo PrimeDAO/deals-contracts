@@ -1,21 +1,20 @@
 const { expect } = require("chai");
-const { ethers, deployments } = require("hardhat");
+const { ethers } = require("hardhat");
 const {
   constants: { ZERO_ADDRESS },
 } = require("@openzeppelin/test-helpers");
-const { BigNumber } = require("@ethersproject/bignumber");
 const { setupFixture } = require("../helpers/setupFixture.js");
 
-describe.only("> Contract: BaseContract", () => {
-  let root, baseContractMock, dao1, dao2, dao3, depositer1, depositer2;
-  let tokenAddresses;
-  let depositContractInstance,
-    tokenInstances,
-    wethInstance,
-    baseContractInstance,
-    tokenSwapModuleInstance,
-    depositContractFactoryInstance;
+let root, baseContractMock, dao1, dao2, dao3, depositer1, depositer2;
+let tokenAddresses;
+let depositContractInstance,
+  tokenInstances,
+  wethInstance,
+  baseContractInstance,
+  tokenSwapModuleInstance,
+  depositContractFactoryInstance;
 
+describe("> Contract: BaseContract", () => {
   before(async () => {
     const signers = await ethers.getSigners();
     [root, baseContractMock, dao1, dao2, dao3, depositer1, depositer2] =
@@ -36,19 +35,19 @@ describe.only("> Contract: BaseContract", () => {
     tokenAddresses = tokenInstances.map((token) => token.address);
   });
   describe("$ When setting the DepositContract", () => {
-    it("» fails on executed not by the owner", async () => {
+    it("» should fail on executed not by the owner", async () => {
       await expect(
         baseContractInstance
           .connect(dao1)
           .setDepositContractImplementation(depositContractInstance.address)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
-    it("» fails on parsing zero address", async () => {
+    it("» should fail on parsing zero address", async () => {
       await expect(
         baseContractInstance.setDepositContractImplementation(ZERO_ADDRESS)
       ).to.be.revertedWith("BASECONTRACT-INVALID-IMPLEMENTATION-ADDRESS");
     });
-    it("» succeeds on setting DepositContract", async () => {
+    it("» should succeed on setting DepositContract", async () => {
       await baseContractInstance.setDepositContractImplementation(
         depositContractInstance.address
       );
@@ -58,35 +57,35 @@ describe.only("> Contract: BaseContract", () => {
     });
   });
   describe("$ When setting the WETH address", () => {
-    it("» fails on executed not by the owner", async () => {
+    it("» should fail on executed not by the owner", async () => {
       await expect(
         baseContractInstance.connect(dao1).setWETHAddress(wethInstance.address)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
-    it("» fails on parsing zero address", async () => {
+    it("» should fail on parsing zero address", async () => {
       await expect(
         baseContractInstance.setWETHAddress(ZERO_ADDRESS)
       ).to.be.revertedWith("BASECONTRACT-INVALID-WETH-ADDRESS");
     });
-    it("» succeeds on setting the WETH address", async () => {
+    it("» should succeed on setting the WETH address", async () => {
       await baseContractInstance.setWETHAddress(wethInstance.address);
       expect(await baseContractInstance.weth()).to.equal(wethInstance.address);
     });
   });
   describe("$ When registering a new Module", () => {
-    it("» fails on executed not by the owner", async () => {
+    it("» should fail on executed not by the owner", async () => {
       await expect(
         baseContractInstance
           .connect(dao1)
           .registerModule(tokenSwapModuleInstance.address)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
-    it("» fails on parsing zero address", async () => {
+    it("» should fail on parsing zero address", async () => {
       await expect(
         baseContractInstance.registerModule(ZERO_ADDRESS)
       ).to.be.revertedWith("BASECONTRACT-INVALID-MODULE-ADDRESS");
     });
-    it("» fails on invalid mdule setup", async () => {
+    it("» should fail on invalid mdule setup", async () => {
       const TokenSwapModuleFactory = await ethers.getContractFactory(
         "TokenSwapModule"
       );
@@ -98,7 +97,7 @@ describe.only("> Contract: BaseContract", () => {
         baseContractInstance.registerModule(tokenswapModuleInstance2.address)
       ).to.be.revertedWith("BASECONTRACT-MODULE-SETUP-INVALID");
     });
-    it("» succeeds on rigister module", async () => {
+    it("» should succeed on rigister module", async () => {
       await baseContractInstance.registerModule(
         tokenSwapModuleInstance.address
       );
@@ -115,19 +114,19 @@ describe.only("> Contract: BaseContract", () => {
         tokenSwapModuleInstance.address
       );
     });
-    it("» fails on executed not by the owner", async () => {
+    it("» should fail on executed not by the owner", async () => {
       await expect(
         baseContractInstance
           .connect(dao1)
           .deactivateModule(tokenSwapModuleInstance.address)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
-    it("» fails on parsing zero address", async () => {
+    it("» should fail on parsing zero address", async () => {
       await expect(
         baseContractInstance.deactivateModule(ZERO_ADDRESS)
       ).to.be.revertedWith("BASECONTRACT-INVALID-MODULE-ADDRESS");
     });
-    it("» succeeds on rigister module", async () => {
+    it("» should succeed on rigister module", async () => {
       expect(
         await baseContractInstance.addressIsModule(
           tokenSwapModuleInstance.address
@@ -145,12 +144,12 @@ describe.only("> Contract: BaseContract", () => {
     });
   });
   describe("$ When creating a Deposit Contract", () => {
-    it("» fails on DAO address is zero", async () => {
+    it("» should fail on DAO address is zero", async () => {
       await expect(
         baseContractInstance.createDepositContract(ZERO_ADDRESS)
       ).to.be.revertedWith("BASECONTRACT-INVALID-DAO-ADDRESS");
     });
-    it("» fails on Deposit contract implementation not set", async () => {
+    it("» should fail on Deposit contract implementation not set", async () => {
       const BaseContractFactory = await ethers.getContractFactory(
         "BaseContract"
       );
@@ -161,7 +160,7 @@ describe.only("> Contract: BaseContract", () => {
         "BASECONTRACT-DEPOSIT-CONTRACT-IMPLEMENTATION-IS-NOT-SET"
       );
     });
-    it("» fails on Deposit contract already exist for DAO", async () => {
+    it("» should fail on Deposit contract already exist for DAO", async () => {
       await baseContractInstance.setDepositContractImplementation(
         depositContractInstance.address
       );
@@ -171,7 +170,7 @@ describe.only("> Contract: BaseContract", () => {
         baseContractInstance.createDepositContract(dao1.address)
       ).to.be.revertedWith("BASECONTRACT-DEPOSIT-CONTRACT-ALREADY-EXISTS");
     });
-    it("» succeeds in creating Deposit Contract", async () => {
+    it("» should succeed in creating Deposit Contract", async () => {
       await baseContractInstance.setDepositContractImplementation(
         depositContractInstance.address
       );

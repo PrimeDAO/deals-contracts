@@ -1,6 +1,5 @@
 const { expect } = require("chai");
-const { ethers, deployments } = require("hardhat");
-
+const { ethers } = require("hardhat");
 const { parseEther, formatBytes32String, formatUnits } = ethers.utils;
 const {
   constants: { ZERO_ADDRESS },
@@ -19,208 +18,47 @@ const {
 } = require("../helpers/setupPaths.js");
 
 const {
-  fundDepositContracts,
   initializeParameters,
-} = require("../helpers/tokenSwapSetupHelper.js");
+  setupMultipleCreateSwapStates,
+  setupExecuteSwapState,
+  setupCreateSwapState,
+} = require("../helpers/setupTokenSwapStates.js");
 
-const setupMultipleCreateSwapStates = async (
-  contractInstances,
-  allDaos,
-  metadatas,
-  tokenAddresses,
-  createSwapParameters
-) => {
-  const {
-    tokenSwapModuleInstance,
-    baseContractInstance,
-    depositContractFactoryInstance,
-  } = contractInstances;
+let root,
+  prime,
+  dao1,
+  dao2,
+  dao3,
+  dao4,
+  dao5,
+  daosDeal1,
+  daosDeal2,
+  daosDeal3,
+  allDaos;
+let tokenAddresses;
+let createSwapParameters, createSwapParametersArray;
+let baseContractInstance, tokenSwapModuleInstance, tokenInstances;
+let deadline;
 
-  const daos1 = [allDaos[0].address, allDaos[1].address, allDaos[2].address];
-  const daos2 = [allDaos[3].address, allDaos[1].address, allDaos[4].address];
-  const daos3 = [allDaos[0].address, allDaos[2].address, allDaos[3].address];
-  const tokenAddressesForSwap = [
-    tokenAddresses[0],
-    tokenAddresses[1],
-    tokenAddresses[2],
-    tokenAddresses[3],
-  ];
+const MONTH = 60 * 60 * 24 * 31;
+const DAY = 60 * 60 * 24;
+const HOUR = 60 * 60;
+const VESTING_CLIFF1 = HOUR * 2;
+const VESTING_CLIFF2 = HOUR * 4;
+const VESTING_CLIFF3 = HOUR * 6;
+const VESTING_DURATION1 = DAY;
+const VESTING_DURATION2 = DAY * 2;
+const VESTING_DURATION3 = DAY * 3;
+const SWAP1 = 0;
+const SWAP2 = 1;
+const SWAP3 = 2;
+const INVALID_SWAP = 20;
+const METADATA1 = formatBytes32String("hello");
+const METADATA2 = formatBytes32String("helloao");
+const METADATA3 = formatBytes32String("helloaodfs");
+const METADATAS = [METADATA1, METADATA2, METADATA3];
 
-  const createNewSwapParameters1 = initializeParameters(
-    daos1,
-    tokenAddressesForSwap,
-    createSwapParameters[2],
-    createSwapParameters[3],
-    metadatas[0],
-    createSwapParameters[5]
-  );
-  const createNewSwapParameters2 = initializeParameters(
-    daos2,
-    tokenAddressesForSwap,
-    createSwapParameters[2],
-    createSwapParameters[3],
-    metadatas[1],
-    createSwapParameters[5]
-  );
-  const createNewSwapParameters3 = initializeParameters(
-    daos3,
-    tokenAddressesForSwap,
-    createSwapParameters[2],
-    createSwapParameters[3],
-    metadatas[2],
-    createSwapParameters[5]
-  );
-  const createSwapParametersArray = [
-    createNewSwapParameters1,
-    createNewSwapParameters2,
-    createNewSwapParameters3,
-  ];
-
-  await tokenSwapModuleInstance.createSwap(...createNewSwapParameters1);
-  await tokenSwapModuleInstance.createSwap(...createNewSwapParameters2);
-  await tokenSwapModuleInstance.createSwap(...createNewSwapParameters3);
-
-  const depositContractInstanceDAO1 =
-    await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(allDaos[0].address)
-    );
-  const depositContractInstanceDAO2 =
-    await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(allDaos[1].address)
-    );
-  const depositContractInstanceDAO3 =
-    await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(allDaos[2].address)
-    );
-  const depositContractInstanceDAO4 =
-    await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(allDaos[3].address)
-    );
-  const depositContractInstanceDAO5 =
-    await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(allDaos[4].address)
-    );
-
-  const depositContractInstances = [
-    depositContractInstanceDAO1,
-    depositContractInstanceDAO2,
-    depositContractInstanceDAO3,
-    depositContractInstanceDAO4,
-    depositContractInstanceDAO5,
-  ];
-
-  return {
-    tokenSwapModuleInstance,
-    depositContractInstances,
-    createSwapParametersArray,
-  };
-};
-
-const setupCreateSwapState = async (
-  contractInstances,
-  daos,
-  createSwapParameters
-) => {
-  const {
-    tokenSwapModuleInstance,
-    baseContractInstance,
-    depositContractFactoryInstance,
-  } = contractInstances;
-
-  await tokenSwapModuleInstance.createSwap(...createSwapParameters);
-
-  const depositContractInstanceDAO1 =
-    await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(daos[0].address)
-    );
-  const depositContractInstanceDAO2 =
-    await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(daos[1].address)
-    );
-  const depositContractInstanceDAO3 =
-    await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(daos[2].address)
-    );
-
-  const depositContractInstances = [
-    depositContractInstanceDAO1,
-    depositContractInstanceDAO2,
-    depositContractInstanceDAO3,
-  ];
-
-  return {
-    tokenSwapModuleInstance,
-    depositContractInstances,
-  };
-};
-
-const fundDAOWithToken = async (tokenInstance, dao, amount) => {
-  await tokenInstance.transfer(dao.address, parseEther(amount));
-};
-
-const setupExecuteSwapState = async (
-  contractInstances,
-  daos,
-  createSwapParameters,
-  swapID
-) => {
-  const DAO_TOKEN_AMOUNT = "10";
-
-  const { tokenSwapModuleInstance, depositContractInstances } =
-    await setupCreateSwapState(contractInstances, daos, createSwapParameters);
-  const { tokenInstances } = contractInstances;
-
-  await fundDAOWithToken(tokenInstances[0], daos[0], DAO_TOKEN_AMOUNT);
-  await fundDAOWithToken(tokenInstances[1], daos[1], DAO_TOKEN_AMOUNT);
-  await fundDAOWithToken(tokenInstances[2], daos[2], DAO_TOKEN_AMOUNT);
-  await fundDAOWithToken(tokenInstances[3], daos[2], DAO_TOKEN_AMOUNT);
-
-  await fundDepositContracts(
-    tokenInstances,
-    depositContractInstances,
-    daos,
-    swapID,
-    createSwapParameters
-  );
-  return { tokenSwapModuleInstance, tokenInstances };
-};
-
-describe("> Contract: TokenSwapModule", () => {
-  let root,
-    prime,
-    dao1,
-    dao2,
-    dao3,
-    dao4,
-    dao5,
-    daosDeal1,
-    daosDeal2,
-    daosDeal3,
-    allDaos;
-  let tokenAddresses;
-  let createSwapParameters, createSwapParametersArray;
-  let baseContractInstance, tokenSwapModuleInstance, tokenInstances;
-  let depositContractInstances;
-  let deadline;
-
-  const MONTH = 60 * 60 * 24 * 31;
-  const DAY = 60 * 60 * 24;
-  const HOUR = 60 * 60;
-  const VESTING_CLIFF1 = HOUR * 2;
-  const VESTING_CLIFF2 = HOUR * 4;
-  const VESTING_CLIFF3 = HOUR * 6;
-  const VESTING_DURATION1 = DAY;
-  const VESTING_DURATION2 = DAY * 2;
-  const VESTING_DURATION3 = DAY * 3;
-  const SWAP1 = 0;
-  const SWAP2 = 1;
-  const SWAP3 = 2;
-  const INVALID_SWAP = 20;
-  const METADATA1 = formatBytes32String("hello");
-  const METADATA2 = formatBytes32String("helloao");
-  const METADATA3 = formatBytes32String("helloaodfs");
-  const METADATAS = [METADATA1, METADATA2, METADATA3];
-
+describe.only("> Contract: TokenSwapModule", () => {
   before(async () => {
     const signers = await ethers.getSigners();
     [root, prime, dao1, dao2, dao3, dao4, dao5] = signers;
@@ -254,7 +92,7 @@ describe("> Contract: TokenSwapModule", () => {
   });
   describe("$ Function: createSwap", () => {
     describe("# when initializing with invalid parameters", () => {
-      it("» fails on invalid DAO address", async () => {
+      it("» should fail on invalid DAO address", async () => {
         const invalidParameters = [
           [dao1.address, ZERO_ADDRESS],
           createSwapParameters[1],
@@ -268,7 +106,7 @@ describe("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...invalidParameters)
         ).to.be.revertedWith("BASECONTRACT-INVALID-DAO-ADDRESS");
       });
-      it("» fails on number of DAOs has to be bigger then 1", async () => {
+      it("» should fail on number of DAOs has to be bigger then 1", async () => {
         const invalidParameters = [
           [dao1.address],
           createSwapParameters[1],
@@ -282,7 +120,7 @@ describe("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...invalidParameters)
         ).to.be.revertedWith("Module: at least 2 daos required");
       });
-      it("» fails on metadata not unique", async () => {
+      it("» should fail on metadata not unique", async () => {
         await tokenSwapModuleInstance.createSwap(...createSwapParameters);
 
         const createSwapParameters1 = [
@@ -299,7 +137,7 @@ describe("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...createSwapParameters)
         ).to.be.revertedWith("Module: metadata already exists");
       });
-      it("» fails on number of tokens is 0", async () => {
+      it("» should fail on number of tokens is 0", async () => {
         const invalidParameters = [
           createSwapParameters[0],
           [],
@@ -313,7 +151,7 @@ describe("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...invalidParameters)
         ).to.be.revertedWith("Module: at least 1 token required");
       });
-      it("» fails on input array lengths don't match", async () => {
+      it("» should fail on input array lengths don't match", async () => {
         const mismatchLengthTokensAndPathFrom = [
           createSwapParameters[0],
           createSwapParameters[1],
@@ -375,7 +213,7 @@ describe("> Contract: TokenSwapModule", () => {
       });
     });
     describe("# when initializing with valid parameters", () => {
-      it("» succeeds in creating the swap", async () => {
+      it("» should succeed in creating the swap", async () => {
         await expect(
           tokenSwapModuleInstance.createSwap(...createSwapParameters)
         ).to.emit(tokenSwapModuleInstance, "TokenSwapCreated");
@@ -387,7 +225,7 @@ describe("> Contract: TokenSwapModule", () => {
         expect(await baseContractInstance.depositContract(dao3.address)).to.not
           .be.empty;
       });
-      it("» succeeds in creating 2 swaps", async () => {
+      it("» should succeed in creating 2 swaps", async () => {
         await expect(
           tokenSwapModuleInstance.createSwap(
             [daosDeal2[0].address, daosDeal2[1].address, daosDeal2[2].address],
@@ -411,7 +249,7 @@ describe("> Contract: TokenSwapModule", () => {
         expect(await baseContractInstance.depositContract(dao4.address)).to.not
           .be.empty;
       });
-      it("» succeeds in creating 3 swaps", async () => {
+      it("» should succeed in creating 3 swaps", async () => {
         const createSwapParameters1 = [
           [daosDeal2[0].address, daosDeal2[1].address, daosDeal2[2].address],
           createSwapParameters[1],
@@ -468,7 +306,7 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters
         ));
       });
-      it("» when using an invalid ID", async () => {
+      it("» should revert when using an invalid ID", async () => {
         await expect(
           tokenSwapModuleInstance.checkExecutability(INVALID_SWAP)
         ).to.revertedWith("Module: id doesn't exist");
@@ -482,18 +320,18 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters
         ));
       });
-      it("» when deadline exeeded", async () => {
+      it("» should be false when deadline exeeded", async () => {
         await time.increase(DAY * 8);
         expect(
           await tokenSwapModuleInstance.checkExecutability(SWAP1)
         ).to.equal(false);
       });
-      it("» when not fully funded", async () => {
+      it("» should be false when not fully funded", async () => {
         expect(
           await tokenSwapModuleInstance.checkExecutability(SWAP1)
         ).to.equal(false);
       });
-      it("» when status not ACTIVE", async () => {
+      it("» should be false when status not ACTIVE", async () => {
         const createNewSwapParameters = initializeParameters(
           [dao1.address, dao2.address, dao3.address],
           [
@@ -529,7 +367,7 @@ describe("> Contract: TokenSwapModule", () => {
           SWAP1
         ));
       });
-      it("» when funded", async () => {
+      it("» should be true when funded", async () => {
         expect(
           await tokenSwapModuleInstance.checkExecutability(SWAP1)
         ).to.equal(true);
@@ -546,24 +384,24 @@ describe("> Contract: TokenSwapModule", () => {
             createSwapParameters
           ));
       });
-      it("» fails on invalid ID", async () => {
+      it("» should fail on invalid ID", async () => {
         await expect(
           tokenSwapModuleInstance.executeSwap(INVALID_SWAP)
         ).to.revertedWith("Module: id doesn't exist");
       });
-      it("» fails on DepositContracts not funded", async () => {
+      it("» should fail on DepositContracts not funded", async () => {
         await expect(
           tokenSwapModuleInstance.executeSwap(SWAP1)
         ).to.revertedWith("Module: swap not executable");
       });
-      it("» fails on deadline exeeded", async () => {
+      it("» should fail on deadline exeeded", async () => {
         await time.increase(DAY * 10);
 
         await expect(
           tokenSwapModuleInstance.executeSwap(SWAP1)
         ).to.revertedWith("Module: swap expired");
       });
-      it("» fails on not ACITVE status", async () => {
+      it("» should fail on not ACITVE status", async () => {
         const createNewSwapParameters = initializeParameters(
           [dao1.address, dao2.address, dao3.address],
           [
@@ -600,7 +438,7 @@ describe("> Contract: TokenSwapModule", () => {
             SWAP1
           ));
       });
-      it("» succeeds in executing the swap", async () => {
+      it("» should succeed in executing the swap", async () => {
         // Balance before swap
         expect(
           await tokenInstances[0].balanceOf(daosDeal1[0].address)
@@ -738,7 +576,7 @@ describe("> Contract: TokenSwapModule", () => {
             createSwapParameters
           ));
       });
-      it("» fails with invalid metadata", async () => {
+      it("» should fail with invalid metadata", async () => {
         await expect(
           tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA2)
         ).to.revertedWith("Module: metadata does not exist");
@@ -781,7 +619,7 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters
         ));
       });
-      it("» succeeds with valid metadata1", async () => {
+      it("» should succeed with valid metadata1", async () => {
         const tokenSwap1 =
           await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA1);
 
@@ -792,7 +630,7 @@ describe("> Contract: TokenSwapModule", () => {
         expect(tokenSwap1.deadline).to.eql(createSwapParametersArray[0][5]);
         expect(tokenSwap1.status).to.equal(1);
       });
-      it("» succeeds with valid metadata2", async () => {
+      it("» should succeed with valid metadata2", async () => {
         const tokenSwap2 =
           await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA2);
         expect(tokenSwap2.daos).to.eql(createSwapParametersArray[1][0]);
@@ -802,7 +640,7 @@ describe("> Contract: TokenSwapModule", () => {
         expect(tokenSwap2.deadline).to.eql(createSwapParametersArray[1][5]);
         expect(tokenSwap2.status).to.equal(1);
       });
-      it("» succeeds with valid metadata1", async () => {
+      it("» should succeed with valid metadata1", async () => {
         const tokenSwap3 =
           await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA3);
         expect(tokenSwap3.daos).to.eql(createSwapParametersArray[2][0]);
@@ -824,7 +662,7 @@ describe("> Contract: TokenSwapModule", () => {
             createSwapParameters
           ));
       });
-      it("» fails with invalid id", async () => {
+      it("» should fail with invalid id", async () => {
         await expect(
           tokenSwapModuleInstance.getTokenswapFromId(INVALID_SWAP)
         ).to.revertedWith("Module: id doesn't exist");
@@ -844,7 +682,7 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters
         ));
       });
-      it("» succeeds with valid id1", async () => {
+      it("» should succeed with valid id1", async () => {
         const tokenSwap1 = await tokenSwapModuleInstance.getTokenswapFromId(
           SWAP1
         );
@@ -855,7 +693,7 @@ describe("> Contract: TokenSwapModule", () => {
         expect(tokenSwap1.deadline).to.eql(createSwapParametersArray[0][5]);
         expect(tokenSwap1.status).to.equal(1);
       });
-      it("» succeeds with valid id1", async () => {
+      it("» should succeed with valid id1", async () => {
         const tokenSwap2 = await tokenSwapModuleInstance.getTokenswapFromId(
           SWAP2
         );
@@ -866,7 +704,7 @@ describe("> Contract: TokenSwapModule", () => {
         expect(tokenSwap2.deadline).to.eql(createSwapParametersArray[1][5]);
         expect(tokenSwap2.status).to.equal(1);
       });
-      it("» succeeds with valid id1", async () => {
+      it("» should succeed with valid id1", async () => {
         const tokenSwap3 = await tokenSwapModuleInstance.getTokenswapFromId(
           SWAP3
         );

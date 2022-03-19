@@ -1,4 +1,5 @@
 const { ethers, deployments } = require("hardhat");
+const { parseEther } = ethers.utils;
 
 const initializeParameters = (
   daos,
@@ -173,8 +174,80 @@ const fundDepositContracts = async (
     );
 };
 
+const setupExecuteSwapState = async (
+  contractInstances,
+  daos,
+  createSwapParameters,
+  swapID
+) => {
+  const DAO_TOKEN_AMOUNT = "10";
+
+  const { tokenSwapModuleInstance, depositContractInstances } =
+    await setupCreateSwapState(contractInstances, daos, createSwapParameters);
+  const { tokenInstances } = contractInstances;
+
+  await fundDAOWithToken(tokenInstances[0], daos[0], DAO_TOKEN_AMOUNT);
+  await fundDAOWithToken(tokenInstances[1], daos[1], DAO_TOKEN_AMOUNT);
+  await fundDAOWithToken(tokenInstances[2], daos[2], DAO_TOKEN_AMOUNT);
+  await fundDAOWithToken(tokenInstances[3], daos[2], DAO_TOKEN_AMOUNT);
+
+  await fundDepositContracts(
+    tokenInstances,
+    depositContractInstances,
+    daos,
+    swapID,
+    createSwapParameters
+  );
+  return { tokenSwapModuleInstance, tokenInstances };
+};
+
+const fundDAOWithToken = async (tokenInstance, dao, amount) => {
+  await tokenInstance.transfer(dao.address, parseEther(amount));
+};
+
+const setupCreateSwapState = async (
+  contractInstances,
+  daos,
+  createSwapParameters
+) => {
+  const {
+    tokenSwapModuleInstance,
+    baseContractInstance,
+    depositContractFactoryInstance,
+  } = contractInstances;
+
+  await tokenSwapModuleInstance.createSwap(...createSwapParameters);
+
+  const depositContractInstanceDAO1 =
+    await depositContractFactoryInstance.attach(
+      await baseContractInstance.depositContract(daos[0].address)
+    );
+  const depositContractInstanceDAO2 =
+    await depositContractFactoryInstance.attach(
+      await baseContractInstance.depositContract(daos[1].address)
+    );
+  const depositContractInstanceDAO3 =
+    await depositContractFactoryInstance.attach(
+      await baseContractInstance.depositContract(daos[2].address)
+    );
+
+  const depositContractInstances = [
+    depositContractInstanceDAO1,
+    depositContractInstanceDAO2,
+    depositContractInstanceDAO3,
+  ];
+
+  return {
+    tokenSwapModuleInstance,
+    depositContractInstances,
+  };
+};
+
 module.exports = {
   setupMultipleCreateSwapStates,
   fundDepositContracts,
   initializeParameters,
+  setupExecuteSwapState,
+  fundDAOWithToken,
+  setupCreateSwapState,
 };

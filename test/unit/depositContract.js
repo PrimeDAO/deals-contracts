@@ -19,47 +19,47 @@ const {
 const {
   fundDepositContracts,
   initializeParameters,
-} = require("../helpers/tokenSwapSetupHelper.js");
+} = require("../helpers/setupTokenSwapStates.js");
+
+let root,
+  dao1,
+  dao2,
+  dao3,
+  dao4,
+  dao5,
+  daosDeal1,
+  daosDeal2,
+  daosDeal3,
+  allDaos,
+  depositer1,
+  depositer2;
+let tokenAddresses;
+let deal1Parameters, deal2Parameters, deal3Parameters;
+let depositContractInstance,
+  tokenInstances,
+  wethInstance,
+  baseContractInstance,
+  tokenSwapModuleInstance;
+let deadline;
+
+const DAY = 60 * 60 * 24;
+const HOUR = 60 * 60;
+const VESTING_CLIFF1 = HOUR * 2;
+const VESTING_CLIFF2 = HOUR * 4;
+const VESTING_CLIFF3 = HOUR * 6;
+const VESTING_DURATION1 = DAY;
+const VESTING_DURATION2 = DAY * 2;
+const VESTING_DURATION3 = DAY * 3;
+const SWAP1 = 0;
+const SWAP2 = 1;
+const SWAP3 = 2;
+const INVALID_SWAP = 20;
+const METADATA1 = formatBytes32String("hello");
+const METADATA2 = formatBytes32String("helloao");
+const METADATA3 = formatBytes32String("helloaodfs");
+const METADATAS = [METADATA1, METADATA2, METADATA3];
 
 describe("> Contract: DepositContract", () => {
-  let root,
-    dao1,
-    dao2,
-    dao3,
-    dao4,
-    dao5,
-    daosDeal1,
-    daosDeal2,
-    daosDeal3,
-    allDaos,
-    depositer1,
-    depositer2;
-  let tokenAddresses;
-  let deal1Parameters, deal2Parameters, deal3Parameters;
-  let depositContractInstance,
-    tokenInstances,
-    wethInstance,
-    baseContractInstance,
-    tokenSwapModuleInstance;
-  let deadline;
-
-  const DAY = 60 * 60 * 24;
-  const HOUR = 60 * 60;
-  const VESTING_CLIFF1 = HOUR * 2;
-  const VESTING_CLIFF2 = HOUR * 4;
-  const VESTING_CLIFF3 = HOUR * 6;
-  const VESTING_DURATION1 = DAY;
-  const VESTING_DURATION2 = DAY * 2;
-  const VESTING_DURATION3 = DAY * 3;
-  const SWAP1 = 0;
-  const SWAP2 = 1;
-  const SWAP3 = 2;
-  const INVALID_SWAP = 20;
-  const METADATA1 = formatBytes32String("hello");
-  const METADATA2 = formatBytes32String("helloao");
-  const METADATA3 = formatBytes32String("helloaodfs");
-  const METADATAS = [METADATA1, METADATA2, METADATA3];
-
   before(async () => {
     const signers = await ethers.getSigners();
     [root, prime, dao1, dao2, dao3, dao4, dao5, depositer1, depositer2] =
@@ -124,14 +124,14 @@ describe("> Contract: DepositContract", () => {
   });
   describe("$ DepositContract solo", () => {
     describe("# When initializing with invalid parameters", () => {
-      it("» fails on invalid DAO address", async () => {
+      it("» should fail on invalid DAO address", async () => {
         await expect(
           depositContractInstance.initialize(ZERO_ADDRESS)
         ).to.be.revertedWith("D2D-DEPOSIT-INVALID-DAO-ADDRESS");
       });
     });
     describe("# When initializing again", () => {
-      it("» fails on initializing twice", async () => {
+      it("» should fail on initializing twice", async () => {
         await depositContractInstance.initialize(dao1.address);
         await expect(
           depositContractInstance.initialize(dao1.address)
@@ -139,8 +139,8 @@ describe("> Contract: DepositContract", () => {
       });
     });
   });
-  // describe("$ DepositContract through TokenSwapModule (end-to-end)", () => {
-  //   beforeEach(async () => {});
-  //   // describe("# ");
-  // });
+  describe("$ DepositContract through TokenSwapModule (end-to-end)", () => {
+    beforeEach(async () => {});
+    // describe("# ");
+  });
 });
