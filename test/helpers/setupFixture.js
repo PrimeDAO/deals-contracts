@@ -59,6 +59,7 @@ const setupFixture = deployments.createFixture(
       depositContractFactoryInstance: await ethers.getContractFactory(
         "DepositContract"
       ),
+      wethInstance: wethInstance,
     };
 
     return { ...contractInstances };

@@ -4,57 +4,9 @@ const {
   constants: { ZERO_ADDRESS },
 } = require("@openzeppelin/test-helpers");
 const { BigNumber } = require("@ethersproject/bignumber");
+const { setupFixture } = require("../helpers/setupFixture.js");
 
-const tokens = require("../helpers/tokens.js");
-
-const setupFixture = deployments.createFixture(
-  async ({ deployments }, options) => {
-    const { deploy } = deployments;
-    const { root } = await ethers.getNamedSigners();
-
-    await deploy("BaseContract", {
-      contract: "BaseContract",
-      from: root.address,
-      log: true,
-    });
-
-    await deploy("DepositContract", {
-      contract: "DepositContract",
-      from: root.address,
-      log: true,
-    });
-
-    await deploy("WETH", {
-      contract: "ERC20Mock",
-      from: root.address,
-      args: ["Wrapped Ether", "WETH"],
-      logs: true,
-    });
-
-    const baseContractInstance = await ethers.getContract("BaseContract");
-    await deploy("TokenSwapModule", {
-      contract: "TokenSwapModule",
-      from: root.address,
-      args: [baseContractInstance.address],
-      logs: true,
-    });
-
-    const contractInstances = {
-      depositContractInstance: await ethers.getContract("DepositContract"),
-      baseContractInstance: baseContractInstance,
-      tokenInstances: await tokens.getErc20TokenInstances(4, root),
-      wethInstance: await ethers.getContract("WETH"),
-      tokenSwapModuleInstance: await ethers.getContract("TokenSwapModule"),
-      depositContractFactoryInstance: await ethers.getContractFactory(
-        "DepositContract"
-      ),
-    };
-
-    return { ...contractInstances };
-  }
-);
-
-describe("> Contract: BaseContract", () => {
+describe.only("> Contract: BaseContract", () => {
   let root, baseContractMock, dao1, dao2, dao3, depositer1, depositer2;
   let tokenAddresses;
   let depositContractInstance,
@@ -199,8 +151,12 @@ describe("> Contract: BaseContract", () => {
       ).to.be.revertedWith("BASECONTRACT-INVALID-DAO-ADDRESS");
     });
     it("» fails on Deposit contract implementation not set", async () => {
+      const BaseContractFactory = await ethers.getContractFactory(
+        "BaseContract"
+      );
+      const localBaseContractInstance = await BaseContractFactory.deploy();
       await expect(
-        baseContractInstance.createDepositContract(dao1.address)
+        localBaseContractInstance.createDepositContract(dao1.address)
       ).to.be.revertedWith(
         "BASECONTRACT-DEPOSIT-CONTRACT-IMPLEMENTATION-IS-NOT-SET"
       );
