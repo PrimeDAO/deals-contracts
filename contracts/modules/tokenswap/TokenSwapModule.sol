@@ -105,7 +105,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
     ) internal returns (uint256) {
         if (tokenSwaps.length >= 1) {
             require(
-                _validMetadata(_metadata),
+                _metadataDoesNotExist(_metadata),
                 "Module: metadata already exists"
             );
         }
@@ -334,35 +334,29 @@ contract TokenSwapModule is ModuleBaseWithFee {
         return tokenSwaps[_id];
     }
 
-    function _validMetadata(bytes memory _metadata)
+    function _metadataDoesNotExist(bytes memory _metadata)
         internal
         view
         returns (bool)
     {
         uint256 id = metadataToId[_metadata];
-
-        if (id == 0) {
-            if (keccak256(tokenSwaps[id].metadata) == keccak256(_metadata)) {
-                return false;
-            }
-        }
-        return true;
+        return (id == 0 &&
+            keccak256(tokenSwaps[id].metadata) != keccak256(_metadata) &&
+            _metadata.length > 0);
     }
 
     modifier validMetadata(bytes memory _metadata) {
         uint256 id = metadataToId[_metadata];
-
-        if (id == 0) {
-            require(
+        require(
+            id != 0 ||
                 keccak256(tokenSwaps[id].metadata) == keccak256(_metadata),
-                "Module: metadata does not exist"
-            );
-            _;
-        }
+            "Module: metadata does not exist"
+        );
+        _;
     }
 
     modifier validId(uint256 _id) {
-        require(_id <= tokenSwaps.length, "Module: id doesn't exist");
+        require(_id < tokenSwaps.length, "Module: id doesn't exist");
         _;
     }
 
