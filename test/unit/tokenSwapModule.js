@@ -622,12 +622,13 @@ describe.only("> Contract: TokenSwapModule", () => {
       it("» should succeed with valid metadata1", async () => {
         const tokenSwap1 =
           await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA1);
-
         expect(tokenSwap1.daos).to.eql(createSwapParametersArray[0][0]);
         expect(tokenSwap1.tokens).to.eql(createSwapParametersArray[0][1]);
         expect(tokenSwap1.executionDate).to.equal(0);
         expect(tokenSwap1.metadata).to.equal(createSwapParametersArray[0][4]);
-        expect(tokenSwap1.deadline).to.eql(createSwapParametersArray[0][5]);
+        expect(BigNumber.from(tokenSwap1.deadline)).to.eql(
+          createSwapParametersArray[0][5]
+        );
         expect(tokenSwap1.status).to.equal(1);
       });
       it("» should succeed with valid metadata2", async () => {
@@ -637,17 +638,21 @@ describe.only("> Contract: TokenSwapModule", () => {
         expect(tokenSwap2.tokens).to.eql(createSwapParametersArray[1][1]);
         expect(tokenSwap2.executionDate).to.equal(0);
         expect(tokenSwap2.metadata).to.equal(createSwapParametersArray[1][4]);
-        expect(tokenSwap2.deadline).to.eql(createSwapParametersArray[1][5]);
+        expect(BigNumber.from(tokenSwap2.deadline)).to.eql(
+          createSwapParametersArray[1][5]
+        );
         expect(tokenSwap2.status).to.equal(1);
       });
-      it("» should succeed with valid metadata1", async () => {
+      it("» should succeed with valid metadata3", async () => {
         const tokenSwap3 =
           await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA3);
         expect(tokenSwap3.daos).to.eql(createSwapParametersArray[2][0]);
         expect(tokenSwap3.tokens).to.eql(createSwapParametersArray[2][1]);
         expect(tokenSwap3.executionDate).to.equal(0);
         expect(tokenSwap3.metadata).to.equal(createSwapParametersArray[2][4]);
-        expect(tokenSwap3.deadline).to.eql(createSwapParametersArray[2][5]);
+        expect(BigNumber.from(tokenSwap3.deadline)).to.eql(
+          createSwapParametersArray[2][5]
+        );
         expect(tokenSwap3.status).to.equal(1);
       });
     });
@@ -690,10 +695,12 @@ describe.only("> Contract: TokenSwapModule", () => {
         expect(tokenSwap1.tokens).to.eql(createSwapParametersArray[0][1]);
         expect(tokenSwap1.executionDate).to.equal(0);
         expect(tokenSwap1.metadata).to.equal(createSwapParametersArray[0][4]);
-        expect(tokenSwap1.deadline).to.eql(createSwapParametersArray[0][5]);
+        expect(BigNumber.from(tokenSwap1.deadline)).to.eql(
+          createSwapParametersArray[0][5]
+        );
         expect(tokenSwap1.status).to.equal(1);
       });
-      it("» should succeed with valid id1", async () => {
+      it("» should succeed with valid id2", async () => {
         const tokenSwap2 = await tokenSwapModuleInstance.getTokenswapFromId(
           SWAP2
         );
@@ -701,10 +708,12 @@ describe.only("> Contract: TokenSwapModule", () => {
         expect(tokenSwap2.tokens).to.eql(createSwapParametersArray[1][1]);
         expect(tokenSwap2.executionDate).to.equal(0);
         expect(tokenSwap2.metadata).to.equal(createSwapParametersArray[1][4]);
-        expect(tokenSwap2.deadline).to.eql(createSwapParametersArray[1][5]);
+        expect(BigNumber.from(tokenSwap2.deadline)).to.eql(
+          createSwapParametersArray[1][5]
+        );
         expect(tokenSwap2.status).to.equal(1);
       });
-      it("» should succeed with valid id1", async () => {
+      it("» should succeed with valid id3", async () => {
         const tokenSwap3 = await tokenSwapModuleInstance.getTokenswapFromId(
           SWAP3
         );
@@ -712,7 +721,9 @@ describe.only("> Contract: TokenSwapModule", () => {
         expect(tokenSwap3.tokens).to.eql(createSwapParametersArray[2][1]);
         expect(tokenSwap3.executionDate).to.equal(0);
         expect(tokenSwap3.metadata).to.equal(createSwapParametersArray[2][4]);
-        expect(tokenSwap3.deadline).to.eql(createSwapParametersArray[2][5]);
+        expect(BigNumber.from(tokenSwap3.deadline)).to.eql(
+          createSwapParametersArray[2][5]
+        );
         expect(tokenSwap3.status).to.equal(1);
       });
     });
