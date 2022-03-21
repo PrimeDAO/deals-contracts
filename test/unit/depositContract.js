@@ -19,6 +19,7 @@ const {
 const {
   fundDepositContracts,
   initializeParameters,
+  callCreateSwap,
 } = require("../helpers/setupTokenSwapStates.js");
 
 let root,
@@ -36,10 +37,10 @@ let root,
 let tokenAddresses;
 let deal1Parameters, deal2Parameters, deal3Parameters;
 let depositContractInstance,
-  tokenInstances,
-  wethInstance,
+  depositContractInstances,
   baseContractInstance,
   tokenSwapModuleInstance;
+let tokenInstances, wethInstance;
 let deadline;
 
 const DAY = 60 * 60 * 24;
@@ -139,8 +140,38 @@ describe("> Contract: DepositContract", () => {
       });
     });
   });
-  describe("$ DepositContract through TokenSwapModule (end-to-end)", () => {
-    beforeEach(async () => {});
-    // describe("# ");
-  });
+  // describe("$ DepositContract through TokenSwapModule (end-to-end)", () => {
+  //   describe("# single deposit ", async () => {
+  //     beforeEach(async () => {
+  //       depositContractInstances = await callCreateSwap(
+  //         baseContractInstance,
+  //         tokenSwapModuleInstance,
+  //         deal1Parameters
+  //       );
+  //     });
+  //     it("» should fail on token address being ZERO and amount 0", async () => {});
+  //     it("» should fail on token not being ZERO and amount being 0", async () => {});
+  //     it("» should succeed in depositing token", async () => {});
+  //     it("» should succeed in depositing WETH", async () => {});
+  //   });
+  //   describe("# multiple deposits ", async () => {
+  //     beforeEach(async () => {
+  //       depositContractInstances = await callCreateSwap(
+  //         baseContractInstance,
+  //         tokenSwapModuleInstance,
+  //         deal1Parameters
+  //       );
+  //     });
+  //     it("» should fail arrays mismatch", async () => {});
+  //     it("» should succeed on depositing tokens", async () => {});
+  //   });
+  //   describe("# withdraw ", async () => {
+  //     beforeEach(async () => {});
+  //   });
+  //   it("» should fail on using an invalid ID", async () => {});
+  //   it("» should succeed in depositing token", async () => {});
+  //   describe("# multiple deposits ", async () => {
+  //     beforeEach(async () => {});
+  //   });
+  // });
 });

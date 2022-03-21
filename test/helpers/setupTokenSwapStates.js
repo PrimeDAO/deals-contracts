@@ -1,4 +1,4 @@
-const { ethers, deployments } = require("hardhat");
+const { ethers } = require("hardhat");
 const { parseEther } = ethers.utils;
 
 const initializeParameters = (
@@ -103,6 +103,194 @@ const setupMultipleCreateSwapStates = async (
     depositContractInstances,
     createSwapParametersArray,
   };
+};
+
+const getDepositContractsFromDAOArray = async (
+  baseContractInstance,
+  allDaos
+) => {
+  let depositContractInstances = [];
+
+  for (let i = 0; i < allDaos.length; i++) {
+    depositContractInstances.push(
+      await baseContractInstance.depositContract(allDaos[i].address)
+    );
+    i++;
+  }
+  return depositContractInstances;
+};
+
+const callCreateSwap = async (
+  baseContractInstance,
+  tokenSwapModuleInstance,
+  createSwapParameters
+) => {
+  await tokenSwapModuleInstance.createSwap(...createSwapParameters);
+
+  return getDepositContractsFromDAOArray(
+    baseContractInstance,
+    createSwapParameters[0]
+  );
+};
+
+const getDepositContractInstancesForSingleDeal = async (
+  depositContractInstances,
+  createSwapParameters
+) => {
+  let depositContractInstancesSubset = [];
+  for (let i = 0; i < createSwapParameters[0].length; i++) {
+    for (let j = 0; j < depositContractInstances.length; j++) {
+      if (depositContractInstances[j].dao() == createSwapParameters[0][i]) {
+        depositContractInstancesSubset.push(createSwapParameters[0][i]);
+        break;
+      }
+      j++;
+    }
+    i++;
+  }
+  return depositContractInstancesSubset;
+};
+
+const getDAOSignersForSingleDeal = async (allDaos, daoAddresses) => {
+  let allDaosSubset = [];
+  for (let i = 0; i < daoAddresses.length; i++) {
+    for (let j = 0; j < allDaos.length; j++) {
+      if (allDaos[j].address == daoAddresses[i]) {
+        allDaosSubset.push(allDaos[j]);
+        break;
+      }
+      j++;
+    }
+    i++;
+  }
+  return allDaosSubset;
+};
+
+const getTokenInstancesForSingleDeal = (
+  tokenInstances,
+  createSwapParameters
+) => {
+  let tokenInstancesSubset = [];
+  for (let i = 0; i < createSwapParameters[1].length; i++) {
+    for (let j = 0; j < tokenInstances.length; j++) {
+      if (createSwapParameters[1][i] == tokenInstances[j].address) {
+        tokenInstancesSubset.push(tokenInstances[j]);
+        break;
+      }
+      j++;
+    }
+    i++;
+  }
+  return tokenInstancesSubset;
+};
+
+const getIndex = (tokenPath) => {
+  for (let i = 0; i < tokenPath.length; i++)
+    if (tokenPath[i] != 0) {
+      return { daoIndex: i, amount: tokenPath[i] };
+    }
+  i++;
+};
+
+const getDAODepositContractFromDepositContractArray = async (
+  depositContractInstancesSubset,
+  daoAddress
+) => {
+  for (let i = 0; i < depositContractInstancesSubset.length; i++) {
+    if ((await depositContractInstancesSubset[i].dao()) == daoAddress) {
+      return depositContractInstancesSubset[i];
+    }
+    i++;
+  }
+};
+
+const fundDepositContractsForSingelDeal = async (
+  tokenInstances,
+  createNewSwapParameters,
+  depositContractSubset,
+  swapID
+) => {
+  for (let i = 0; i < createNewSwapParameters[2].length; i++) {
+    let { daoIndex, amount } = getIndex(createNewSwapParameters[2][i]);
+    let depositContractInstance = getDAODepositContractFromDepositContractArray(
+      depositContractSubset,
+      createNewSwapParameters[0][daoIndex]
+    );
+    await fundDAOWithToken(
+      tokenInstances[i],
+      createNewSwapParameters[0][daoIndex],
+      amount
+    );
+    await transferTokenToDepositContract(
+      tokenInstances[i],
+      depositContractInstance,
+      createNewSwapParameters[0][daoIndex],
+      amount,
+      swapID
+    );
+    i++;
+  }
+};
+
+const transferTokenToDepositContract = async (
+  tokenInstance,
+  depositContractInstance,
+  dao,
+  amount,
+  swapID
+) => {
+  const processID = await depositContractInstance.getProcessID(
+    "TOKEN_SWAP_MODULE",
+    swapID
+  );
+
+  await tokenInstance
+    .connect(dao)
+    .approve(depositContractInstance.address, amount);
+  await depositContractInstance
+    .connect(dao)
+    .deposit(processID, tokenInstance.address, amount);
+};
+
+const fundDepositContractsForMultipleDeals = async (
+  tokenInstances,
+  depositContractInstances,
+  allDaos,
+  swapIDs,
+  createSwapParametersArray
+) => {
+  for (let i = 0; i < swapIDs.length; i++) {
+    let tokenInstancesSubset = getTokenInstancesForSingleDeal(
+      tokenInstances,
+      createSwapParametersArray[i]
+    );
+    let depositContractSubset = getDepositContractInstancesForSingleDeal(
+      depositContractInstances,
+      createSwapParametersArray[i]
+    );
+    let allDaosSubset = getDAOSignersForSingleDeal(
+      allDaos,
+      createSwapParametersArray[i][0]
+    );
+    await transferTokensToDAOForSingleDeal(
+      tokenInstancesSubset,
+      createSwapParametersArray[i]
+    );
+    fundDepositContractsForSingelDeal(
+      tokenInstancesSubset,
+      createSwapParametersArray[i],
+      depositContractSubset,
+      allDaosSubset,
+      swapIDs[i]
+    );
+    i++;
+  }
+};
+
+const callExecuteSwap = async (tokenSwapModuleInstance, swapIDs) => {
+  for (let i = 0; i < swapIDs.length; i++) {
+    await tokenSwapModuleInstance.executeSwap(swapIDs[0]);
+  }
 };
 
 const fundDepositContracts = async (
@@ -250,4 +438,5 @@ module.exports = {
   setupExecuteSwapState,
   fundDAOWithToken,
   setupCreateSwapState,
+  callCreateSwap,
 };
