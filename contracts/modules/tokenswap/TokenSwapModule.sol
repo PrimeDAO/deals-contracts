@@ -311,8 +311,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
                             _dealId,
                             _ts.tokens[i],
                             amount, // amount
-                            _ts.pathTo[i][k * 4 + 2], // start
-                            _ts.pathTo[i][k * 4 + 3] // end
+                            uint32(_ts.pathTo[i][k * 4 + 2]), // start
+                            uint32(_ts.pathTo[i][k * 4 + 3]) // end
                         );
                 }
             }

@@ -416,8 +416,8 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
                         _dealId,
                         _lpToken,
                         payout, // amount
-                        _la.pathTo[k * 4 + 2], // start
-                        _la.pathTo[k * 4 + 3] // end
+                        uint32(_la.pathTo[k * 4 + 2]), // start
+                        uint32(_la.pathTo[k * 4 + 3]) // end
                     );
             }
 

@@ -33,7 +33,7 @@ contract DaoDepositManager {
         address token;
         uint256 amount;
         uint256 used;
-        uint256 depositedAt;
+        uint32 depositedAt;
     }
 
     struct Vesting {
@@ -42,9 +42,9 @@ contract DaoDepositManager {
         address token;
         uint256 totalVested;
         uint256 totalClaimed;
-        uint256 startTime;
-        uint256 cliff;
-        uint256 duration;
+        uint32 startTime;
+        uint32 cliff;
+        uint32 duration;
     }
 
     event Deposited(
@@ -69,8 +69,8 @@ contract DaoDepositManager {
         address indexed dealModule,
         uint32 indexed dealId,
         uint256 indexed vestingStart,
-        uint256 vestingCliff,
-        uint256 vestingDuration,
+        uint32 vestingCliff,
+        uint32 vestingDuration,
         address token,
         uint256 amount
     );
@@ -137,7 +137,7 @@ contract DaoDepositManager {
         verifyBalance(_token);
         // solhint-disable-next-line not-rely-on-time
         deposits[_module][_dealId].push(
-            Deposit(msg.sender, _token, _amount, 0, block.timestamp)
+            Deposit(msg.sender, _token, _amount, 0, uint32(block.timestamp))
         );
 
         emit Deposited(
@@ -186,7 +186,7 @@ contract DaoDepositManager {
             }
             availableDealBalances[_token][_module][_dealId] += amount;
             deposits[_module][_dealId].push(
-                Deposit(dao, _token, amount, 0, block.timestamp)
+                Deposit(dao, _token, amount, 0, uint32(block.timestamp))
             );
             emit Deposited(
                 _module,
@@ -309,8 +309,8 @@ contract DaoDepositManager {
         uint32 _dealId,
         address _token,
         uint256 _amount,
-        uint256 _vestingCliff,
-        uint256 _vestingDuration
+        uint32 _vestingCliff,
+        uint32 _vestingDuration
     ) external onlyModule {
         // solhint-disable-next-line reason-string
         require(
@@ -335,7 +335,7 @@ contract DaoDepositManager {
                 _token,
                 _amount,
                 0,
-                block.timestamp,
+                uint32(block.timestamp),
                 _vestingCliff,
                 _vestingDuration
             )
@@ -356,7 +356,7 @@ contract DaoDepositManager {
         emit VestingStarted(
             msg.sender,
             _dealId,
-            block.timestamp,
+            uint32(block.timestamp),
             _vestingCliff,
             _vestingDuration,
             _token,
@@ -417,7 +417,8 @@ contract DaoDepositManager {
     {
         if (vesting.totalClaimed < vesting.totalVested) {
             // Check cliff was reached
-            uint256 elapsedSeconds = block.timestamp - vesting.startTime;
+            uint256 elapsedSeconds = uint32(block.timestamp) -
+                vesting.startTime;
 
             if (elapsedSeconds < vesting.cliff) {
                 return (address(0), 0);
