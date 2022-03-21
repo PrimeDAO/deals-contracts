@@ -8,19 +8,19 @@ import "./interfaces/IDepositContract.sol";
 import "./interfaces/IModuleBase.sol";
 
 /**
- * @title PrimeDeals Base Contract
- * @dev   Smart contract to serve as the base
-          of the PrimeDeals architecture
+ * @title PrimeDeals Deal Manager
+ * @dev   Smart contract to serve as the manager
+          for the PrimeDeals architecture
  */
 contract BaseContract is Ownable {
-    // address of the current implementation of the
+    // Address of the current implementation of the
     // deposit contract
     address public depositContractImplementation;
 
-    // address of the eth wrapping contract
+    // Address of the ETH wrapping contract
     address public weth;
 
-    // address DAO => address deposit contract of the DAO
+    // Maaddress DAO => address deposit contract of the DAO
     mapping(address => address) public depositContract;
 
     // the module identifier (bytes32) is e.g.

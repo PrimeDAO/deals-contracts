@@ -75,6 +75,10 @@ contract DepositContract {
         address dao
     );
 
+    /**
+     * @dev                     Initialize the DaoDepositManager
+     * @param _dao              The DAO address to which this contract belongs
+     */
     function initialize(address _dao) external {
         require(dao == address(0), "D2D-DEPOSIT-ALREADY-INITIALIZED");
         require(_dao != address(0), "D2D-DEPOSIT-INVALID-DAO-ADDRESS");
@@ -82,13 +86,24 @@ contract DepositContract {
         baseContract = IBaseContract(msg.sender);
     }
 
-    function migrateBaseContract(address _newBaseContract)
+    /**
+     * @dev                     Sets a new address for the BaseContract implementation
+     * @param _newBaseContract  The address of the new BaseContract
+     */
+    function setBaseContractImplementation(address _newBaseContract)
         external
         onlyBaseContract
     {
         baseContract = IBaseContract(_newBaseContract);
     }
 
+    /**
+     * @dev                     Transfers the token amount to the DaoDepositManager and
+     *                          stores the parameters in a Deposit structure
+     * @param _processID        The address of the new BaseContract
+     * @param _token            The address of the token that is deposited
+     * @param _amount           The amount that is deposited
+     */
     function deposit(
         bytes32 _processID,
         address _token,

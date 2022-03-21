@@ -18,8 +18,14 @@ contract ModuleBase {
     // keccak256 of the identifier string
     bytes32 public moduleIdentifier;
 
+    // Address of the DealManager implementation
     IBaseContract public baseContract;
 
+    // @notics      Status of a deal
+    // NULL         Uninitialized deal
+    // ACTIVE       Deal has been created and is ready to be funded
+    // CANCELLED    Deal has been canceld and is no longer valid
+    // DONE         Deal has been executed
     enum Status {
         NULL,
         ACTIVE,
@@ -27,6 +33,11 @@ contract ModuleBase {
         DONE
     }
 
+    /**
+     * @dev                             Constructor
+     * @param _baseContract             The address of BaseContract implementation
+     * @param _moduleIdentifier         does not matter
+     */
     constructor(address _baseContract, string memory _moduleIdentifier) {
         require(
             _baseContract != address(0),

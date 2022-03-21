@@ -2,7 +2,6 @@
 pragma solidity ^0.8.9;
 
 import "../ModuleBaseWithFee.sol";
-import "hardhat/console.sol";
 
 /**
  * @title PrimeDeals Token Swap Module
@@ -11,26 +10,7 @@ import "hardhat/console.sol";
  */
 contract TokenSwapModule is ModuleBaseWithFee {
     TokenSwap[] public tokenSwaps;
-    mapping(bytes => uint256) public metadataToId;
-
-    struct TokenSwap {
-        // the participating DAOs
-        address[] daos;
-        // the tokens involved in the swap
-        address[] tokens;
-        // the token flow from the DAOs to the module
-        uint256[][] pathFrom;
-        // the token flow from the module to the DAO
-        uint256[][] pathTo;
-        // unix timestamp of the deadline
-        uint256 deadline;
-        // unix timestamp of the execution
-        uint256 executionDate;
-        // hash of the deal information.
-        bytes metadata;
-        // status of the deal
-        Status status;
-    }
+    mapping(bytes => uint32) public metadataToDealId;
 
     /**
      * @dev
@@ -58,17 +38,37 @@ contract TokenSwapModule is ModuleBaseWithFee {
      * vestingDuration_dao1, instantAmount_dao2, ...], [...]]
      */
 
+    struct TokenSwap {
+        // The participating DAOs
+        address[] daos;
+        // The tokens involved in the swap
+        address[] tokens;
+        // the token flow from the DAOs to the module
+        uint256[][] pathFrom;
+        // the token flow from the module to the DAO
+        uint256[][] pathTo;
+        // unix timestamp of the deadline
+        uint32 deadline;
+        // unix timestamp of the execution
+        uint32 executionDate;
+        // hash of the deal information.
+        bytes metadata;
+        // status of the deal
+        Status status;
+    }
+
     event TokenSwapCreated(
-        uint256 indexed id,
+        address indexed module,
+        uint32 indexed dealId,
         bytes indexed metadata,
         address[] daos,
         address[] tokens,
         uint256[][] pathFrom,
         uint256[][] pathTo,
-        uint256 deadline
+        uint32 deadline
     );
 
-    event TokenSwapExecuted(uint256 indexed id);
+    event TokenSwapExecuted(address indexed module, uint32 indexed dealId);
 
     constructor(address _baseContract)
         ModuleBaseWithFee(_baseContract, "TOKEN_SWAP_MODULE")
@@ -93,16 +93,16 @@ contract TokenSwapModule is ModuleBaseWithFee {
                                 [[instantAmount_dao1, vestedAmount_dao1, vestingStart_dao1,
                                 vestingEnd_dao1, instantAmount_dao2, ...], [...]]
       * @param _deadline    Time until which this action can be executed (unix timestamp)
-      * @return             The ID of the new action
+         * @return             The ID of the new action
     */
     function _createSwap(
-        address[] calldata _daos,
-        address[] calldata _tokens,
-        uint256[][] calldata _pathFrom,
-        uint256[][] calldata _pathTo,
-        bytes calldata _metadata,
-        uint256 _deadline
-    ) internal returns (uint256) {
+        address[] memory _daos,
+        address[] memory _tokens,
+        uint256[][] memory _pathFrom,
+        uint256[][] memory _pathTo,
+        bytes memory _metadata,
+        uint32 _deadline
+    ) internal returns (uint32) {
         if (tokenSwaps.length >= 1) {
             require(
                 _metadataDoesNotExist(_metadata),
@@ -131,10 +131,13 @@ contract TokenSwapModule is ModuleBaseWithFee {
         );
         tokenSwaps.push(ts);
 
-        metadataToId[_metadata] = tokenSwaps.length - 1;
+        uint32 dealId = uint32(tokenSwaps.length - 1);
+
+        metadataToDealId[_metadata] = dealId;
 
         emit TokenSwapCreated(
-            tokenSwaps.length - 1,
+            address(this),
+            dealId,
             _metadata,
             _daos,
             _tokens,
@@ -142,8 +145,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
             _pathTo,
             _deadline
         );
-
-        return tokenSwaps.length - 1;
+        return dealId;
     }
 
     /**
@@ -166,7 +168,6 @@ contract TokenSwapModule is ModuleBaseWithFee {
                                 [[instantAmount_dao1, vestedAmount_dao1, vestingStart_dao1,
                                 vestingEnd_dao1, instantAmount_dao2, ...], [...]]
       * @param _deadline    Time until which this action can be executed (unix timestamp)
-      * @return             The ID of the new action
     */
     function createSwap(
         address[] calldata _daos,
@@ -174,15 +175,14 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256[][] calldata _pathFrom,
         uint256[][] calldata _pathTo,
         bytes calldata _metadata,
-        uint256 _deadline
-    ) external returns (uint256) {
+        uint32 _deadline
+    ) external returns (uint32) {
         for (uint256 i = 0; i < _daos.length; i++) {
             if (!baseContract.hasDepositContract(_daos[i])) {
                 baseContract.createDepositContract(_daos[i]);
             }
         }
-
-        return
+        return (
             _createSwap(
                 _daos,
                 _tokens,
@@ -190,26 +190,27 @@ contract TokenSwapModule is ModuleBaseWithFee {
                 _pathTo,
                 _metadata,
                 _deadline
-            );
+            )
+        );
     }
 
     /**
       * @dev            Checks whether a token swap action can be executed
                         (which is the case if all DAOs have deposited)
-      * @param _id      The ID of the action (position in the array)
+      * @param _dealId  The dealId of the action (position in the array)
       * @return         A bool flag indiciating whether the action can be executed
     */
-    function checkExecutability(uint256 _id)
+    function checkExecutability(uint32 _dealId)
         public
         view
-        validId(_id)
+        validDealId(_dealId)
         returns (bool)
     {
-        TokenSwap memory ts = tokenSwaps[_id];
+        TokenSwap memory ts = tokenSwaps[_dealId];
         if (ts.status != Status.ACTIVE) {
             return false;
         }
-        if (ts.deadline < block.timestamp) {
+        if (ts.deadline < uint32(block.timestamp)) {
             return false;
         }
         for (uint256 i = 0; i < ts.tokens.length; i++) {
@@ -222,7 +223,9 @@ contract TokenSwapModule is ModuleBaseWithFee {
                     IDepositContract(
                         baseContract.getDepositContract(ts.daos[j])
                     ).getAvailableProcessBalance(
-                            keccak256(abi.encode(moduleIdentifierString, _id)),
+                            keccak256(
+                                abi.encode(moduleIdentifierString, _dealId)
+                            ),
                             ts.tokens[i]
                         ) < ts.pathFrom[i][j]
                 ) {
@@ -235,18 +238,22 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
     /**
      * @dev            Executes a token swap action
-     * @param _id      The ID of the action (position in the array)
+     * @param _dealId  The dealId of the action (position in the array)
      */
-    function executeSwap(uint256 _id) external validId(_id) activeStatus(_id) {
-        TokenSwap storage ts = tokenSwaps[_id];
+    function executeSwap(uint32 _dealId)
+        external
+        validDealId(_dealId)
+        activeStatus(_dealId)
+    {
+        TokenSwap storage ts = tokenSwaps[_dealId];
 
-        require(ts.deadline >= block.timestamp, "Module: swap expired");
-        require(checkExecutability(_id), "Module: swap not executable");
+        require(ts.deadline >= uint32(block.timestamp), "Module: swap expired");
+        require(checkExecutability(_dealId), "Module: swap not executable");
 
         // transfer the tokens from the deposit contract of the DAOs
         // into this module
         uint256[] memory amountsIn = _pullTokensIntoModule(
-            _id,
+            _dealId,
             ts.daos,
             ts.tokens,
             ts.pathFrom
@@ -254,7 +261,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
         // distribute the tokens from this module to the DAOs
         // and (if applicable) and their vesting contracts
-        uint256[] memory amountsOut = _distributeTokens(ts, _id);
+        uint256[] memory amountsOut = _distributeTokens(ts, _dealId);
 
         // verify whether the amounts being pulled and pushed match
         for (uint256 i = 0; i < ts.tokens.length; i++) {
@@ -262,8 +269,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
         }
 
         ts.status = Status.DONE;
-        ts.executionDate = block.timestamp;
-        emit TokenSwapExecuted(_id);
+        ts.executionDate = uint32(block.timestamp);
+        emit TokenSwapExecuted(address(this), _dealId);
     }
 
     /**
@@ -271,10 +278,10 @@ contract TokenSwapModule is ModuleBaseWithFee {
                             information to the DAOs or their vesting contracts
       * @param _ts          TokenSwap object containing all the information
                             of the action
-      * @param _id          The ID of the action (position in the array)
+      * @param _dealId      The dealId of the action (position in the array)
       * @return amountsOut  The two min values for the token amounts _ts
     */
-    function _distributeTokens(TokenSwap memory _ts, uint256 _id)
+    function _distributeTokens(TokenSwap memory _ts, uint32 _dealId)
         internal
         returns (uint256[] memory amountsOut)
     {
@@ -305,7 +312,9 @@ contract TokenSwapModule is ModuleBaseWithFee {
                     IDepositContract(
                         baseContract.getDepositContract(_ts.daos[k])
                     ).startVesting(
-                            keccak256(abi.encode(moduleIdentifierString, _id)),
+                            keccak256(
+                                abi.encode(moduleIdentifierString, _dealId)
+                            ),
                             _ts.tokens[i],
                             amount, // amount
                             _ts.pathTo[i][k * 4 + 2], // start
@@ -322,16 +331,16 @@ contract TokenSwapModule is ModuleBaseWithFee {
         validMetadata(_metadata)
         returns (TokenSwap memory swap)
     {
-        return tokenSwaps[metadataToId[_metadata]];
+        return tokenSwaps[metadataToDealId[_metadata]];
     }
 
-    function getTokenswapFromId(uint256 _id)
+    function getTokenswapFromDealId(uint32 _dealId)
         public
         view
-        validId(_id)
+        validDealId(_dealId)
         returns (TokenSwap memory swap)
     {
-        return tokenSwaps[_id];
+        return tokenSwaps[_dealId];
     }
 
     function _metadataDoesNotExist(bytes memory _metadata)
@@ -339,31 +348,31 @@ contract TokenSwapModule is ModuleBaseWithFee {
         view
         returns (bool)
     {
-        uint256 id = metadataToId[_metadata];
-        return (id == 0 &&
-            keccak256(tokenSwaps[id].metadata) != keccak256(_metadata) &&
+        uint256 dealId = metadataToDealId[_metadata];
+        return (dealId == 0 &&
+            keccak256(tokenSwaps[dealId].metadata) != keccak256(_metadata) &&
             _metadata.length > 0);
     }
 
     modifier validMetadata(bytes memory _metadata) {
-        uint256 id = metadataToId[_metadata];
+        uint256 dealId = metadataToDealId[_metadata];
         require(
-            id != 0 ||
-                keccak256(tokenSwaps[id].metadata) == keccak256(_metadata),
+            dealId != 0 ||
+                keccak256(tokenSwaps[dealId].metadata) == keccak256(_metadata),
             "Module: metadata does not exist"
         );
         _;
     }
 
-    modifier validId(uint256 _id) {
-        require(_id < tokenSwaps.length, "Module: id doesn't exist");
+    modifier validDealId(uint32 _dealId) {
+        require(_dealId < tokenSwaps.length, "Module: dealId doesn't exist");
         _;
     }
 
-    modifier activeStatus(uint256 _id) {
+    modifier activeStatus(uint32 _dealId) {
         require(
-            tokenSwaps[_id].status == Status.ACTIVE,
-            "Module: id not active"
+            tokenSwaps[_dealId].status == Status.ACTIVE,
+            "Module: dealId not active"
         );
         _;
     }
