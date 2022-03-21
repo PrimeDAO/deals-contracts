@@ -7,24 +7,34 @@ interface IDepositContract {
     function migrateBaseContract(address _newBaseContract) external;
 
     function deposit(
-        bytes32 _processID,
+        address _dealModule,
+        uint256 _dealId,
         address _token,
         uint256 _amount
     ) external payable;
 
     function multipleDeposits(
-        bytes32 _processID,
+        address _dealModule,
+        uint256 _dealId,
         address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external payable;
 
-    function registerDeposit(bytes32 _processID, address _token) external;
+    function registerDeposit(
+        address _dealModule,
+        uint256 _dealId,
+        address _token
+    ) external;
 
-    function registerDeposits(bytes32 _processID, address[] calldata _tokens)
-        external;
+    function registerDeposits(
+        address _dealModule,
+        uint256 _dealId,
+        address[] calldata _tokens
+    ) external;
 
     function withdraw(
-        bytes32 _processID,
+        address _dealModule,
+        uint256 _dealId,
         uint256 _depositID,
         address _sender
     )
@@ -36,13 +46,13 @@ interface IDepositContract {
         );
 
     function sendToModule(
-        bytes32 _processID,
+        uint256 _dealId,
         address _token,
         uint256 _amount
     ) external returns (bool);
 
     function startVesting(
-        bytes32 _actionId,
+        uint256 _dealId,
         address _token,
         uint256 _amount,
         uint256 _start,
@@ -53,7 +63,11 @@ interface IDepositContract {
 
     function verifyBalance(address _token) external view;
 
-    function getDeposit(bytes32 _processID, uint256 _depositID)
+    function getDeposit(
+        address _dealModule,
+        uint256 _dealId,
+        uint256 _depositID
+    )
         external
         view
         returns (
@@ -64,18 +78,20 @@ interface IDepositContract {
             uint256
         );
 
-    function getAvailableProcessBalance(bytes32 _processID, address _token)
-        external
-        view
-        returns (uint256);
+    function getAvailableDealBalance(
+        address _dealModule,
+        uint256 _dealId,
+        address _token
+    ) external view returns (uint256);
 
-    function getTotalDepositCount(bytes32 _processID)
+    function getTotalDepositCount(address _dealModule, uint256 _dealId)
         external
         view
         returns (uint256);
 
     function getWithdrawableAmountOfUser(
-        bytes32 _processID,
+        address _dealModule,
+        uint256 _dealId,
         address _user,
         address _token
     ) external view returns (uint256);
@@ -84,7 +100,7 @@ interface IDepositContract {
 
     function getVestedBalance(address _token) external view returns (uint256);
 
-    function getProcessID(string memory _module, uint256 _id)
+    function getProcessID(address _module, uint256 _id)
         external
         pure
         returns (bytes32);
