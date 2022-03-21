@@ -99,9 +99,4 @@ interface IDepositContract {
     function getBalance(address _token) external view returns (uint256);
 
     function getVestedBalance(address _token) external view returns (uint256);
-
-    function getProcessID(address _module, uint256 _id)
-        external
-        pure
-        returns (bytes32);
 }

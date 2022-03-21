@@ -581,14 +581,6 @@ contract DepositContract {
         return vestedBalances[_token];
     }
 
-    function getProcessID(address _module, uint256 _id)
-        public
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encode(_module, _id));
-    }
-
     function _transferToken(
         address _token,
         address _to,
