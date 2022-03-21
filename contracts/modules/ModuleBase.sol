@@ -75,11 +75,7 @@ contract ModuleBase {
                 if (_path[i][j] > 0) {
                     amountsIn[i] += _path[i][j];
                     IDepositContract(baseContract.getDepositContract(_daos[j]))
-                        .sendToModule(
-                            keccak256(abi.encode(moduleIdentifierString, _id)),
-                            _tokens[i],
-                            _path[i][j]
-                        );
+                        .sendToModule(_id, _tokens[i], _path[i][j]);
                 }
             }
         }
@@ -149,4 +145,6 @@ contract ModuleBase {
             "Module: transfer from failed"
         );
     }
+
+    function hasDealExpired(uint256 _id) external view virtual returns (bool) {}
 }

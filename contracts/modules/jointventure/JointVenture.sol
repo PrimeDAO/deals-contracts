@@ -205,8 +205,9 @@ contract JointVentureModule is ModuleBase {
                 if (
                     IDepositContract(
                         baseContract.getDepositContract(jv.daos[j])
-                    ).getAvailableProcessBalance(
-                            keccak256(abi.encode(moduleIdentifierString, _id)),
+                    ).getAvailableDealBalance(
+                            address(this),
+                            _id,
                             jv.tokens[i]
                         ) < jv.pathFrom[i][j]
                 ) {

@@ -93,7 +93,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
                                 [[instantAmount_dao1, vestedAmount_dao1, vestingStart_dao1,
                                 vestingEnd_dao1, instantAmount_dao2, ...], [...]]
       * @param _deadline    Time until which this action can be executed (unix timestamp)
-         * @return             The ID of the new action
+      * @return             The dealId of the new action
     */
     function _createSwap(
         address[] memory _daos,
@@ -219,16 +219,10 @@ contract TokenSwapModule is ModuleBaseWithFee {
                 // token, check whether the corresponding DAO
                 // has deposited the corresponding amount into their
                 // deposit contract
-                if (
-                    IDepositContract(
-                        baseContract.getDepositContract(ts.daos[j])
-                    ).getAvailableProcessBalance(
-                            keccak256(
-                                abi.encode(moduleIdentifierString, _dealId)
-                            ),
-                            ts.tokens[i]
-                        ) < ts.pathFrom[i][j]
-                ) {
+                uint256 bal = IDepositContract(
+                    baseContract.getDepositContract(ts.daos[j])
+                ).getAvailableDealBalance(address(this), _id, ts.tokens[i]);
+                if (bal < ts.pathFrom[i][j]) {
                     return false;
                 }
             }
@@ -312,9 +306,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
                     IDepositContract(
                         baseContract.getDepositContract(_ts.daos[k])
                     ).startVesting(
-                            keccak256(
-                                abi.encode(moduleIdentifierString, _dealId)
-                            ),
+                            _dealId,
                             _ts.tokens[i],
                             amount, // amount
                             _ts.pathTo[i][k * 4 + 2], // start
@@ -341,6 +333,12 @@ contract TokenSwapModule is ModuleBaseWithFee {
         returns (TokenSwap memory swap)
     {
         return tokenSwaps[_dealId];
+    }
+
+    function hasDealExpired(uint256 _id) external view override returns (bool) {
+        return
+            tokenSwaps[_id].status != Status.ACTIVE ||
+            tokenSwaps[_id].deadline < block.timestamp;
     }
 
     function _metadataDoesNotExist(bytes memory _metadata)

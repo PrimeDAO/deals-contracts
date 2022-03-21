@@ -211,8 +211,9 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
                 if (
                     IDepositContract(
                         baseContract.getDepositContract(la.daos[j])
-                    ).getAvailableProcessBalance(
-                            keccak256(abi.encode(moduleIdentifierString, _id)),
+                    ).getAvailableDealBalance(
+                            address(this),
+                            _id,
                             la.tokens[i]
                         ) < la.pathFrom[i][j]
                 ) {
@@ -310,7 +311,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
                 _approveDepositContract(_lpToken, _la.daos[k], payout);
                 IDepositContract(baseContract.getDepositContract(_la.daos[k]))
                     .startVesting(
-                        keccak256(abi.encode(moduleIdentifierString, _id)),
+                        _id,
                         _lpToken,
                         payout, // amount
                         _la.pathTo[k * 4 + 2], // start

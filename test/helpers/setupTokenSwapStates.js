@@ -199,6 +199,7 @@ const fundDepositContractsForSingelDeal = async (
   tokenInstances,
   createNewSwapParameters,
   depositContractSubset,
+  moduleAddress,
   swapID
 ) => {
   for (let i = 0; i < createNewSwapParameters[2].length; i++) {
@@ -217,6 +218,7 @@ const fundDepositContractsForSingelDeal = async (
       depositContractInstance,
       createNewSwapParameters[0][daoIndex],
       amount,
+      moduleAddress,
       swapID
     );
   }
@@ -227,24 +229,21 @@ const transferTokenToDepositContract = async (
   depositContractInstance,
   dao,
   amount,
+  moduleAddress,
   swapID
 ) => {
-  const processID = await depositContractInstance.getProcessID(
-    "TOKEN_SWAP_MODULE",
-    swapID
-  );
-
   await tokenInstance
     .connect(dao)
     .approve(depositContractInstance.address, amount);
   await depositContractInstance
     .connect(dao)
-    .deposit(processID, tokenInstance.address, amount);
+    .deposit(moduleAddress, swapID, tokenInstance.address, amount);
 };
 
 const fundDepositContractsForMultipleDeals = async (
   tokenInstances,
   depositContractInstances,
+  tokenSwapModuleInstance,
   allDaos,
   swapIDs,
   createSwapParametersArray
@@ -271,6 +270,7 @@ const fundDepositContractsForMultipleDeals = async (
       createSwapParametersArray[i],
       depositContractSubset,
       allDaosSubset,
+      tokenSwapModuleInstance.address,
       swapIDs[i]
     );
   }
@@ -286,14 +286,10 @@ const fundDepositContracts = async (
   tokenInstances,
   depositContractInstances,
   daos,
+  moduleAddress,
   swapID,
   createSwapParameters
 ) => {
-  const processID = await depositContractInstances[0].getProcessID(
-    "TOKEN_SWAP_MODULE",
-    swapID
-  );
-
   await tokenInstances[0]
     .connect(daos[0])
     .approve(
@@ -303,7 +299,8 @@ const fundDepositContracts = async (
   await depositContractInstances[0]
     .connect(daos[0])
     .deposit(
-      processID,
+      moduleAddress,
+      swapID,
       tokenInstances[0].address,
       createSwapParameters[2][0][0]
     );
@@ -317,7 +314,8 @@ const fundDepositContracts = async (
   await depositContractInstances[1]
     .connect(daos[1])
     .deposit(
-      processID,
+      moduleAddress,
+      swapID,
       tokenInstances[1].address,
       createSwapParameters[2][1][1]
     );
@@ -331,7 +329,8 @@ const fundDepositContracts = async (
   await depositContractInstances[2]
     .connect(daos[2])
     .deposit(
-      processID,
+      moduleAddress,
+      swapID,
       tokenInstances[2].address,
       createSwapParameters[2][2][2]
     );
@@ -345,7 +344,8 @@ const fundDepositContracts = async (
   await depositContractInstances[2]
     .connect(daos[2])
     .deposit(
-      processID,
+      moduleAddress,
+      swapID,
       tokenInstances[3].address,
       createSwapParameters[2][3][2]
     );
@@ -372,6 +372,7 @@ const setupExecuteSwapState = async (
     tokenInstances,
     depositContractInstances,
     daos,
+    tokenSwapModuleInstance.address,
     swapID,
     createSwapParameters
   );

@@ -23,10 +23,6 @@ contract BaseContract is Ownable {
     // Maaddress DAO => address deposit contract of the DAO
     mapping(address => address) public depositContract;
 
-    // the module identifier (bytes32) is e.g.
-    // keccak256(abi.encode(TOKEN_SWAP_MODULE))
-    mapping(bytes32 => address[]) public modules;
-
     // module address => true/false
     mapping(address => bool) public isModule;
 
@@ -61,12 +57,13 @@ contract BaseContract is Ownable {
         );
         // solhint-disable-next-line reason-string
         require(
+            !isModule[_moduleAddress],
+            "BASECONTRACT-MODULE-ALREADY-REGISTERED"
+        );
+        // solhint-disable-next-line reason-string
+        require(
             IModuleBase(_moduleAddress).baseContract() == address(this),
             "BASECONTRACT-MODULE-SETUP-INVALID"
-        );
-
-        modules[IModuleBase(_moduleAddress).moduleIdentifier()].push(
-            _moduleAddress
         );
 
         isModule[_moduleAddress] = true;
@@ -81,18 +78,6 @@ contract BaseContract is Ownable {
         );
 
         isModule[_moduleAddress] = false;
-    }
-
-    // Retrieves the address of the latest module by its identifier
-    function getLatestModule(string calldata _module)
-        external
-        view
-        returns (address)
-    {
-        return
-            modules[keccak256(abi.encode(_module))][
-                modules[keccak256(abi.encode(_module))].length - 1
-            ];
     }
 
     // Creates a deposit contract for a DAO
