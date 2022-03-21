@@ -5,11 +5,11 @@ const initializeParameters = (
   daos,
   tokens,
   pathFrom,
-  PathTo,
+  pathTo,
   metadata,
   deadline
 ) => {
-  return [daos, tokens, pathFrom, PathTo, metadata, deadline];
+  return [daos, tokens, pathFrom, pathTo, metadata, deadline];
 };
 
 const setupMultipleCreateSwapStates = async (
@@ -115,7 +115,6 @@ const getDepositContractsFromDAOArray = async (
     depositContractInstances.push(
       await baseContractInstance.depositContract(allDaos[i].address)
     );
-    i++;
   }
   return depositContractInstances;
 };
@@ -144,9 +143,7 @@ const getDepositContractInstancesForSingleDeal = async (
         depositContractInstancesSubset.push(createSwapParameters[0][i]);
         break;
       }
-      j++;
     }
-    i++;
   }
   return depositContractInstancesSubset;
 };
@@ -159,9 +156,7 @@ const getDAOSignersForSingleDeal = async (allDaos, daoAddresses) => {
         allDaosSubset.push(allDaos[j]);
         break;
       }
-      j++;
     }
-    i++;
   }
   return allDaosSubset;
 };
@@ -177,9 +172,7 @@ const getTokenInstancesForSingleDeal = (
         tokenInstancesSubset.push(tokenInstances[j]);
         break;
       }
-      j++;
     }
-    i++;
   }
   return tokenInstancesSubset;
 };
@@ -189,7 +182,6 @@ const getIndex = (tokenPath) => {
     if (tokenPath[i] != 0) {
       return { daoIndex: i, amount: tokenPath[i] };
     }
-  i++;
 };
 
 const getDAODepositContractFromDepositContractArray = async (
@@ -200,7 +192,6 @@ const getDAODepositContractFromDepositContractArray = async (
     if ((await depositContractInstancesSubset[i].dao()) == daoAddress) {
       return depositContractInstancesSubset[i];
     }
-    i++;
   }
 };
 
@@ -228,7 +219,6 @@ const fundDepositContractsForSingelDeal = async (
       amount,
       swapID
     );
-    i++;
   }
 };
 
@@ -283,13 +273,12 @@ const fundDepositContractsForMultipleDeals = async (
       allDaosSubset,
       swapIDs[i]
     );
-    i++;
   }
 };
 
 const callExecuteSwap = async (tokenSwapModuleInstance, swapIDs) => {
   for (let i = 0; i < swapIDs.length; i++) {
-    await tokenSwapModuleInstance.executeSwap(swapIDs[0]);
+    await tokenSwapModuleInstance.executeSwap(swapIDs[i]);
   }
 };
 
