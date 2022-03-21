@@ -28,7 +28,6 @@ require("./tasks/tokenSwapModuleManagement");
 
 module.exports = {
   paths: {
-    artifacts: "build/artifacts",
     cache: "build/cache",
     deploy: "deploy",
     sources: "contracts",

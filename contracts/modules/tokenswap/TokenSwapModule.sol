@@ -328,15 +328,6 @@ contract TokenSwapModule is ModuleBaseWithFee {
         return tokenSwaps[metadataToDealId[_metadata]];
     }
 
-    function getTokenswapFromDealId(uint32 _dealId)
-        public
-        view
-        validDealId(_dealId)
-        returns (TokenSwap memory swap)
-    {
-        return tokenSwaps[_dealId];
-    }
-
     function hasDealExpired(uint32 _dealId)
         external
         view

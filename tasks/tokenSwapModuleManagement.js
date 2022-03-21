@@ -77,7 +77,7 @@ task("createTokenSwap", "creates a Token Swap Deal")
       deadline,
     ];
 
-    await tokenSwapModuleInstance.connect(root).createSwap(...dealParameters);
+    await tokenSwapModuleInstance.createSwap(...dealParameters);
 
     console.log("Deal creation has been succesfull");
   });
