@@ -60,7 +60,7 @@ const METADATA2 = formatBytes32String("helloao");
 const METADATA3 = formatBytes32String("helloaodfs");
 const METADATAS = [METADATA1, METADATA2, METADATA3];
 
-describe("> Contract: DepositContract", () => {
+describe("> Contract: DaoDepositManager", () => {
   before(async () => {
     const signers = await ethers.getSigners();
     [root, prime, dao1, dao2, dao3, dao4, dao5, depositer1, depositer2] =
@@ -123,7 +123,7 @@ describe("> Contract: DepositContract", () => {
     );
     dealParametersArray = [deal1Parameters, deal2Parameters, deal3Parameters];
   });
-  describe("$ DepositContract solo", () => {
+  describe("$ DaoDepositManager solo", () => {
     describe("# When initializing with invalid parameters", () => {
       it("» should fail on invalid DAO address", async () => {
         await expect(
@@ -140,7 +140,7 @@ describe("> Contract: DepositContract", () => {
       });
     });
   });
-  // describe("$ DepositContract through TokenSwapModule (end-to-end)", () => {
+  // describe("$ DaoDepositManager through TokenSwapModule (end-to-end)", () => {
   //   describe("# single deposit ", async () => {
   //     beforeEach(async () => {
   //       depositContractInstances = await callCreateSwap(

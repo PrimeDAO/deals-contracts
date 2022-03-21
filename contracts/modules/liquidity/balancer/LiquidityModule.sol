@@ -29,9 +29,9 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         // (1% = 10000)
         uint256 maxDiff;
         // unix timestamp of the deadline
-        uint256 deadline;
+        uint32 deadline;
         // unix timestamp of the execution
-        uint256 executionDate;
+        uint32 executionDate;
         // status of the deal
         Status status;
     }
@@ -53,23 +53,23 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
     // vestingEnd_dao1, instantAmount_dao2, ...], [...]]
 
     event LiquidityActionCreated(
-        uint256 id,
+        uint32 dealId,
         address[] _daos,
         address[] _tokens,
         uint256[][] _pathFrom,
         uint256[] _pathTo,
         uint256 _maxDiff,
-        uint256 _deadline
+        uint32 _deadline
     );
 
-    event LiquidityActionCancelled(uint256 id);
+    event LiquidityActionCancelled(uint32 dealId);
 
-    event LiquidityActionDeadlineExtended(uint256 id, uint256 newDeadline);
+    event LiquidityActionDeadlineExtended(uint32 dealId, uint32 newDeadline);
 
-    event LiquidityActionExecuted(uint256 id);
+    event LiquidityActionExecuted(uint32 dealId);
 
-    constructor(address _baseContract, address _vault)
-        ModuleBaseWithFee(_baseContract, "BALANCER_LIQUIDITY_MODULE")
+    constructor(address _dealManager, address _vault)
+        ModuleBaseWithFee(_dealManager)
     {
         require(_vault != address(0), "Module: invalid vault address");
         vault = IBalancerV2(_vault);
@@ -100,8 +100,8 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         uint256[][] calldata _pathFrom,
         uint256[] calldata _pathTo,
         uint256 _maxDiff,
-        uint256 _deadline
-    ) public returns (uint256) {
+        uint32 _deadline
+    ) public returns (uint32) {
         require(_daos.length >= 2, "Module: at least 2 daos required");
 
         require(
@@ -129,8 +129,9 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
             Status.ACTIVE
         );
         liquidityActions.push(la);
+        uint32 dealId = uint32(liquidityActions.length - 1);
         emit LiquidityActionCreated(
-            liquidityActions.length - 1,
+            dealId,
             _daos,
             _tokens,
             _pathFrom,
@@ -138,7 +139,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
             _maxDiff,
             _deadline
         );
-        return liquidityActions.length - 1;
+        return dealId;
     }
 
     /**
@@ -167,11 +168,11 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         uint256[][] calldata _pathFrom,
         uint256[] calldata _pathTo,
         uint256 _maxDiff,
-        uint256 _deadline
-    ) external returns (uint256) {
+        uint32 _deadline
+    ) external returns (uint32) {
         for (uint256 i = 0; i < _daos.length; i++) {
-            if (!baseContract.hasDepositContract(_daos[i])) {
-                baseContract.createDepositContract(_daos[i]);
+            if (!dealManager.hasDaoDepositManager(_daos[i])) {
+                dealManager.createDaoDepositManager(_daos[i]);
             }
         }
 
@@ -189,31 +190,31 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
     /**
       * @dev            Checks whether a liquidity action can be executed
                         (which is the case if all DAOs have deposited)
-      * @param _id      The ID of the action (position in the array)
+      * @param _dealId      The ID of the action (position in the array)
       * @return         A bool flag indiciating whether the action can be executed
     */
-    function checkExecutability(uint256 _id)
+    function checkExecutability(uint32 _dealId)
         external
         view
-        validId(_id)
+        validId(_dealId)
         returns (bool)
     {
-        LiquidityAction memory la = liquidityActions[_id];
+        LiquidityAction memory la = liquidityActions[_dealId];
         if (la.status != Status.ACTIVE) {
             return false;
         }
 
-        if (la.deadline < block.timestamp) {
+        if (la.deadline < uint32(block.timestamp)) {
             return false;
         }
         for (uint256 i = 0; i < la.tokens.length; i++) {
             for (uint256 j = 0; j < la.pathFrom[i].length; j++) {
                 if (
-                    IDepositContract(
-                        baseContract.getDepositContract(la.daos[j])
+                    IDaoDepositManager(
+                        dealManager.getDaoDepositManager(la.daos[j])
                     ).getAvailableDealBalance(
                             address(this),
-                            _id,
+                            _dealId,
                             la.tokens[i]
                         ) < la.pathFrom[i][j]
                 ) {
@@ -226,20 +227,23 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
 
     /**
      * @dev            Executes a liquidity action
-     * @param _id      The ID of the action (position in the array)
+     * @param _dealId      The ID of the action (position in the array)
      */
-    function executeLiquidityAction(uint256 _id)
+    function executeLiquidityAction(uint32 _dealId)
         external
-        validId(_id)
-        activeStatus(_id)
+        validId(_dealId)
+        activeStatus(_dealId)
     {
-        LiquidityAction memory la = liquidityActions[_id];
+        LiquidityAction memory la = liquidityActions[_dealId];
 
-        require(la.deadline >= block.timestamp, "Module: action expired");
+        require(
+            la.deadline >= uint32(block.timestamp),
+            "Module: action expired"
+        );
 
         // Collect tokens into the module
         uint256[] memory tokenAmountsIn = _pullTokensIntoModule(
-            _id,
+            _dealId,
             la.daos,
             la.tokens,
             la.pathFrom
@@ -269,14 +273,14 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         // TODO: add logic for balancer v2
 
         la.status = Status.DONE;
-        la.executionDate = block.timestamp;
-        emit LiquidityActionExecuted(_id);
+        la.executionDate = uint32(block.timestamp);
+        emit LiquidityActionExecuted(_dealId);
     }
 
     /**
       * @dev                Distributes the LP tokens as well as any leftover tokens
                             back to the DAOs based on their LP token shares
-      * @param _id          The ID of the action (position in the array)
+      * @param _dealId          The ID of the action (position in the array)
       * @param _la          The LiquidityPool object containg the information
       * @param _lpToken     Address of the lp token
       * @param _amount      Amount of lp tokens
@@ -284,7 +288,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
                             in basis points (1% = 10000)
     */
     function _distributeLPTokens(
-        uint256 _id,
+        uint32 _dealId,
         LiquidityAction memory _la,
         address _lpToken,
         uint256 _amount
@@ -308,14 +312,15 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
                 amountsTo += payout;
                 tokensLeft -= payout;
                 payout = _payFeeAndReturnRemainder(_lpToken, payout);
-                _approveDepositContract(_lpToken, _la.daos[k], payout);
-                IDepositContract(baseContract.getDepositContract(_la.daos[k]))
-                    .startVesting(
-                        _id,
+                _approveDaoDepositManager(_lpToken, _la.daos[k], payout);
+                IDaoDepositManager(
+                    dealManager.getDaoDepositManager(_la.daos[k])
+                ).startVesting(
+                        _dealId,
                         _lpToken,
                         payout, // amount
-                        _la.pathTo[k * 4 + 2], // start
-                        _la.pathTo[k * 4 + 3] // end
+                        uint32(_la.pathTo[k * 4 + 2]), // start
+                        uint32(_la.pathTo[k * 4 + 3]) // end
                     );
             }
 
@@ -340,13 +345,13 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
     /**
       * @dev                    Distributes any leftover tokens back to the DAOs based on 
                                 their LP token shares
-      * @param _id              The ID of the action (position in the array)
+      * @param _dealId              The ID of the action (position in the array)
       * @param _daoShares       Array of the percentage shares of each DAO for LP tokens
                                   - In Basis Points (1% = 10000) 
       * @param _amounts         Array of the amounts left for each input token
     */
     function _distributeLeftoverTokens(
-        uint256 _id,
+        uint32 _dealId,
         uint256[] memory _daoShares,
         uint256[] memory _amounts
     ) internal {
@@ -366,8 +371,8 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
                         payout += left[j];
                     }
                     _transferToken(
-                        liquidityActions[_id].tokens[j],
-                        liquidityActions[_id].daos[i],
+                        liquidityActions[_dealId].tokens[j],
+                        liquidityActions[_dealId].daos[i],
                         payout
                     );
                 }
@@ -375,14 +380,17 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         }
     }
 
-    modifier validId(uint256 _id) {
-        require(_id <= liquidityActions.length, "Module: id doesn't exist");
+    modifier validId(uint32 _dealId) {
+        require(
+            _dealId <= uint32(liquidityActions.length),
+            "Module: id doesn't exist"
+        );
         _;
     }
 
-    modifier activeStatus(uint256 _id) {
+    modifier activeStatus(uint32 _dealId) {
         require(
-            liquidityActions[_id].status == Status.ACTIVE,
+            liquidityActions[_dealId].status == Status.ACTIVE,
             "Module: id not active"
         );
         _;

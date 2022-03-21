@@ -2,8 +2,8 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../interfaces/IDepositContract.sol";
-import "../interfaces/IBaseContract.sol";
+import "../interfaces/IDaoDepositManager.sol";
+import "../interfaces/IDealManager.sol";
 
 /**
  * @title PrimeDeals Module Base
@@ -11,15 +11,14 @@ import "../interfaces/IBaseContract.sol";
           basis for each module
  */
 contract ModuleBase {
-    // String of the unique module identifier
-    // e.g. TOKEN_SWAP_MODULE
-    string public moduleIdentifierString;
+    // Address of the DealManager implementation
+    IDealManager public dealManager;
 
-    // keccak256 of the identifier string
-    bytes32 public moduleIdentifier;
-
-    IBaseContract public baseContract;
-
+    // @notics      Status of a deal
+    // NULL         Uninitialized deal
+    // ACTIVE       Deal has been created and is ready to be funded
+    // CANCELLED    Deal has been canceld and is no longer valid
+    // DONE         Deal has been executed
     enum Status {
         NULL,
         ACTIVE,
@@ -27,23 +26,21 @@ contract ModuleBase {
         DONE
     }
 
-    constructor(address _baseContract, string memory _moduleIdentifier) {
+    /**
+     * @dev                            Constructor
+     * @param _dealManager             The address of DealManager implementation
+     */
+    constructor(address _dealManager) {
         require(
-            _baseContract != address(0),
+            _dealManager != address(0),
             "Module: invalid base contract address"
         );
-        baseContract = IBaseContract(_baseContract);
-        require(
-            bytes(_moduleIdentifier).length > 0,
-            "Module: module identifier invalid"
-        );
-        moduleIdentifierString = _moduleIdentifier;
-        moduleIdentifier = keccak256(abi.encode(moduleIdentifierString));
+        dealManager = IDealManager(_dealManager);
     }
 
     /**
-      * @dev                Sends tokens from a deposit contract to the module
-      * @param _id          ID of the action this is related to
+      * @dev                Sends tokens from a DAO deposit manager to the module
+      * @param _dealId      ID of the action this is related to
       * @param _daos        Array containing the DAOs that are involed in this action
       * @param _tokens      Array containing the tokens that are involed in this action
       * @param _path        Double nested array containing the amounts of tokens for each
@@ -51,7 +48,7 @@ contract ModuleBase {
       * @return amountsIn   Array containing the total amounts sent per token
     */
     function _pullTokensIntoModule(
-        uint256 _id,
+        uint32 _dealId,
         address[] memory _daos,
         address[] memory _tokens,
         uint256[][] memory _path
@@ -63,8 +60,9 @@ contract ModuleBase {
             for (uint256 j = 0; j < _path[i].length; j++) {
                 if (_path[i][j] > 0) {
                     amountsIn[i] += _path[i][j];
-                    IDepositContract(baseContract.getDepositContract(_daos[j]))
-                        .sendToModule(_id, _tokens[i], _path[i][j]);
+                    IDaoDepositManager(
+                        dealManager.getDaoDepositManager(_daos[j])
+                    ).sendToModule(_dealId, _tokens[i], _path[i][j]);
                 }
             }
         }
@@ -86,17 +84,17 @@ contract ModuleBase {
 
     /**
      * @dev            Calls the approval function of a token
-                       for the deposit contract of a DAO
+                       for the deposit manager of a DAO
      * @param _token   Address of the token
-     * @param _dao     DAO whose deposit contract is the target
+     * @param _dao     DAO whose deposit manager is the target
      * @param _amount  Amount to be approved
      */
-    function _approveDepositContract(
+    function _approveDaoDepositManager(
         address _token,
         address _dao,
         uint256 _amount
     ) internal {
-        _approveToken(_token, baseContract.getDepositContract(_dao), _amount);
+        _approveToken(_token, dealManager.getDaoDepositManager(_dao), _amount);
     }
 
     /**
@@ -135,5 +133,10 @@ contract ModuleBase {
         );
     }
 
-    function hasDealExpired(uint256 _id) external view virtual returns (bool) {}
+    function hasDealExpired(uint32 _dealId)
+        external
+        view
+        virtual
+        returns (bool)
+    {}
 }

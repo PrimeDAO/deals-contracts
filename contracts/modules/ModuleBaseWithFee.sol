@@ -11,23 +11,39 @@ import "./ModuleBase.sol";
 contract ModuleBaseWithFee is ModuleBase {
     // Wallet that is receiving the fees
     address public feeWallet;
+
     // Fee in basis points (1% = 10000)
-    uint256 public feeInBasisPoints;
+    uint32 public feeInBasisPoints;
 
-    constructor(address _baseContract, string memory _moduleIdentifier)
-        ModuleBase(_baseContract, _moduleIdentifier)
-    {}
+    /**
+     * @dev                        Constructor
+     * @param _dealManager         The address of Dealmanager implementation
+     */
+    constructor(address _dealManager) ModuleBase(_dealManager) {}
 
-    event FeeWalletChanged(address oldFeeWallet, address newFeeWallet);
+    /**
+     * @notice                  This event is emitted when the fee wallet address is updated
+     * @param oldFeeWallet      Address of the old fee wallet
+     * @param newFeeWallet      Address of the new fee wallet
+     */
+    event FeeWalletChanged(
+        address indexed oldFeeWallet,
+        address indexed newFeeWallet
+    );
 
-    event FeeChanged(uint256 oldFee, uint256 newFee);
+    /**
+     * @notice                  This event is emitted when the fee is updated
+     * @param oldFee            Old fee amount in basis points (1% = 1000)
+     * @param newFee            New fee in basis points (1% = 1000) that is updated
+     */
+    event FeeChanged(uint32 indexed oldFee, uint32 indexed newFee);
 
     /**
      * @dev                 Sets a new fee wallet
      * @param _feeWallet    Address of the new fee wallet
      */
     function setFeeWallet(address _feeWallet) external {
-        require(msg.sender == baseContract.owner(), "Fee: not authorized");
+        require(msg.sender == dealManager.owner(), "Fee: not authorized");
         emit FeeWalletChanged(feeWallet, _feeWallet);
         feeWallet = _feeWallet;
     }
@@ -36,8 +52,8 @@ contract ModuleBaseWithFee is ModuleBase {
      * @dev                         Sets a new fee
      * @param _feeInBasisPoints     Fee amount in basis points (1% = 10000)
      */
-    function setFee(uint256 _feeInBasisPoints) external {
-        require(msg.sender == baseContract.owner(), "Fee: not authorized");
+    function setFee(uint32 _feeInBasisPoints) external {
+        require(msg.sender == dealManager.owner(), "Fee: not authorized");
         require(_feeInBasisPoints <= 10000, "Fee: can't be more than 100%");
         emit FeeChanged(feeInBasisPoints, _feeInBasisPoints);
         feeInBasisPoints = _feeInBasisPoints;

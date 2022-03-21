@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "./ModuleBase.sol";
-import "../interfaces/IBaseContract.sol";
+import "../interfaces/IDealManager.sol";
 
 contract BlueprintModule is ModuleBase {
     Blueprint[] public blueprints;
@@ -28,8 +28,8 @@ contract BlueprintModule is ModuleBase {
 
     event ActionExecuted(uint256 id);
 
-    constructor(address _baseContract)
-        ModuleBase(_baseContract, "BLUEPRINT_MODULE")
+    constructor(address _dealmanager)
+        ModuleBase(_dealmanager)
     // solhint-disable-next-line no-empty-blocks
     {
 
@@ -70,8 +70,8 @@ contract BlueprintModule is ModuleBase {
     ) external returns (uint256) {
         uint256 newId = createAction(_daos, _value1, _value2, _value3);
         for (uint256 i = 0; i < _daos.length; i++) {
-            if (!baseContract.hasDepositContract(_daos[i])) {
-                baseContract.createDepositContract(_daos[i]);
+            if (!dealManager.hasDaoDepositManager(_daos[i])) {
+                dealManager.createDaoDepositManager(_daos[i]);
             }
         }
         return newId;

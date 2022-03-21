@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "../../interfaces/IGnosisSafe.sol";
-import "../../interfaces/IBaseContract.sol";
+import "../../interfaces/IDealManager.sol";
 import "../../interfaces/IWETH.sol";
 import "../ModuleBase.sol";
 
@@ -24,15 +24,15 @@ contract JointVentureModule is ModuleBase {
         address[] safeMembers;
         // the voting threshold of the
         // new safe
-        uint256 safeThreshold;
+        uint32 safeThreshold;
         // the tokens involved in the action
         address[] tokens;
         // the token flow from the DAOs to the module
         uint256[][] pathFrom;
         // unix timestamp of the deadline
-        uint256 deadline;
+        uint32 deadline;
         // unix timestamp of the execution
-        uint256 executionDate;
+        uint32 executionDate;
         // status of the deal
         Status status;
     }
@@ -44,24 +44,24 @@ contract JointVentureModule is ModuleBase {
     // token 1: dao 1 sends 123, dao 2 sends 0, dao 3 sends 123, etc.
 
     event JointVentureActionCreated(
-        uint256 id,
+        uint32 dealId,
         address[] _daos,
         address[] _safeMembers,
-        uint256 _safeThreshold,
+        uint32 _safeThreshold,
         address[] _tokens,
         uint256[][] _pathFrom,
-        uint256 _deadline
+        uint32 _deadline
     );
 
-    event JointVentureActionCancelled(uint256 id);
+    event JointVentureActionCancelled(uint32 dealId);
 
-    event JointVentureActionExecuted(uint256 id);
+    event JointVentureActionExecuted(uint32 dealId);
 
     constructor(
-        address _baseContract,
+        address _dealManager,
         address _proxyFactory,
         address _masterCopy
-    ) ModuleBase(_baseContract, "JOINT_VENTURE_MODULE") {
+    ) ModuleBase(_dealManager) {
         require(
             _proxyFactory != address(0),
             "Module: invalid proxy factory address"
@@ -87,16 +87,16 @@ contract JointVentureModule is ModuleBase {
                                   - Contains absolute numbers of tokens
      
       * @param _deadline        Time until which this action can be executed (unix timestamp)
-      * @return                 The ID of the new action
+      * @return                 The dealId of the new action
     */
     function createJointVentureAction(
         address[] calldata _daos,
         address[] calldata _safeMembers,
-        uint256 _safeThreshold,
+        uint32 _safeThreshold,
         address[] calldata _tokens,
         uint256[][] calldata _pathFrom,
-        uint256 _deadline
-    ) public returns (uint256) {
+        uint32 _deadline
+    ) public returns (uint32) {
         require(_daos.length >= 2, "Module: at least 2 daos required");
 
         require(
@@ -105,11 +105,12 @@ contract JointVentureModule is ModuleBase {
         );
 
         require(
-            _safeThreshold >= 1 && _safeThreshold <= _safeMembers.length,
+            _safeThreshold >= 1 &&
+                _safeThreshold <= uint32(_safeMembers.length),
             "Module: invalid safe threshold"
         );
 
-        uint256 id = jointVentures.length + 1;
+        uint32 dealId = uint32(jointVentures.length + 1);
         JointVenture memory jv = JointVenture(
             _daos,
             _safeMembers,
@@ -123,7 +124,7 @@ contract JointVentureModule is ModuleBase {
         jointVentures.push(jv);
 
         emit JointVentureActionCreated(
-            id,
+            dealId,
             _daos,
             _safeMembers,
             _safeThreshold,
@@ -132,7 +133,7 @@ contract JointVentureModule is ModuleBase {
             _deadline
         );
 
-        return id;
+        return dealId;
     }
 
     /**
@@ -149,19 +150,19 @@ contract JointVentureModule is ModuleBase {
                                   - Contains absolute numbers of tokens
      
       * @param _deadline        Time until which this action can be executed (unix timestamp)
-      * @return                 The ID of the new action
+      * @return                 The dealId of the new action
     */
     function createDepositContractsAndCreateJointVentureAction(
         address[] calldata _daos,
         address[] calldata _safeMembers,
-        uint256 _safeThreshold,
+        uint32 _safeThreshold,
         address[] calldata _tokens,
         uint256[][] calldata _pathFrom,
-        uint256 _deadline
-    ) external returns (uint256) {
+        uint32 _deadline
+    ) external returns (uint32) {
         for (uint256 i = 0; i < _daos.length; i++) {
-            if (!baseContract.hasDepositContract(_daos[i])) {
-                baseContract.createDepositContract(_daos[i]);
+            if (!dealManager.hasDaoDepositManager(_daos[i])) {
+                dealManager.createDaoDepositManager(_daos[i]);
             }
         }
         return
@@ -178,22 +179,22 @@ contract JointVentureModule is ModuleBase {
     /**
       * @dev            Checks whether a joint venture action can be executed
                         (which is the case if all DAOs have deposited)
-      * @param _id      The ID of the action (position in the array)
+      * @param _dealId  The ID of the action (position in the array)
       * @return         A bool flag indiciating whether the action can be executed
     */
-    function checkExecutability(uint256 _id)
+    function checkExecutability(uint32 _dealId)
         external
         view
-        validId(_id)
+        validId(_dealId)
         returns (bool)
     {
-        JointVenture storage jv = jointVentures[_id];
+        JointVenture storage jv = jointVentures[_dealId];
 
         if (jv.status != Status.ACTIVE) {
             return false;
         }
 
-        if (jv.deadline < block.timestamp) {
+        if (jv.deadline < uint32(block.timestamp)) {
             return false;
         }
         for (uint256 i = 0; i < jv.tokens.length; i++) {
@@ -203,11 +204,11 @@ contract JointVentureModule is ModuleBase {
                 // has deposited the corresponding amount into their
                 // deposit contract
                 if (
-                    IDepositContract(
-                        baseContract.getDepositContract(jv.daos[j])
+                    IDaoDepositManager(
+                        dealManager.getDaoDepositManager(jv.daos[j])
                     ).getAvailableDealBalance(
                             address(this),
-                            _id,
+                            _dealId,
                             jv.tokens[i]
                         ) < jv.pathFrom[i][j]
                 ) {
@@ -221,20 +222,20 @@ contract JointVentureModule is ModuleBase {
 
     /**
      * @dev            Executes a joint venture action
-     * @param _id      The ID of the action (position in the array)
+     * @param _dealId      The ID of the action (position in the array)
      */
-    function executeJointVentureAction(uint256 _id)
+    function executeJointVentureAction(uint32 _dealId)
         external
-        validId(_id)
-        activeStatus(_id)
+        validId(_dealId)
+        activeStatus(_dealId)
     {
-        JointVenture memory jv = jointVentures[_id];
+        JointVenture memory jv = jointVentures[_dealId];
 
         require(jv.deadline >= block.timestamp, "Module: action expired");
 
         // collect tokens into the module
         uint256[] memory tokenAmountsIn = _pullTokensIntoModule(
-            _id,
+            _dealId,
             jv.daos,
             jv.tokens,
             jv.pathFrom
@@ -247,8 +248,8 @@ contract JointVentureModule is ModuleBase {
         _sendFundsToSafe(safe, jv.tokens, tokenAmountsIn);
 
         jv.status = Status.DONE;
-        jv.executionDate = block.timestamp;
-        emit JointVentureActionExecuted(_id);
+        jv.executionDate = uint32(block.timestamp);
+        emit JointVentureActionExecuted(_dealId);
     }
 
     /**
@@ -257,7 +258,7 @@ contract JointVentureModule is ModuleBase {
      * @param _safeThreshold    Voting Threshold of the new safe
      * @return                  The address of the newly deployed safe
      */
-    function _deploySafe(address[] memory _safeMembers, uint256 _safeThreshold)
+    function _deploySafe(address[] memory _safeMembers, uint32 _safeThreshold)
         internal
         returns (address payable)
     {
@@ -294,24 +295,27 @@ contract JointVentureModule is ModuleBase {
         uint256[] memory _amounts
     ) internal {
         for (uint256 i = 0; i < _tokens.length; i++) {
-            if (_tokens[i] != baseContract.weth()) {
+            if (_tokens[i] != dealManager.weth()) {
                 _transferToken(_tokens[i], _safe, _amounts[i]);
             } else {
-                IWETH(baseContract.weth()).withdraw(_amounts[i]);
+                IWETH(dealManager.weth()).withdraw(_amounts[i]);
                 (bool sent, ) = _safe.call{value: _amounts[i]}("");
                 require(sent, "Module: failed to send ether to new safe");
             }
         }
     }
 
-    modifier validId(uint256 _id) {
-        require(_id <= jointVentures.length, "Module: id doesn't exist");
+    modifier validId(uint32 _dealId) {
+        require(
+            _dealId <= uint32(jointVentures.length),
+            "Module: id doesn't exist"
+        );
         _;
     }
 
-    modifier activeStatus(uint256 _id) {
+    modifier activeStatus(uint32 _dealId) {
         require(
-            jointVentures[_id].status == Status.ACTIVE,
+            jointVentures[_dealId].status == Status.ACTIVE,
             "Module: id not active"
         );
         _;

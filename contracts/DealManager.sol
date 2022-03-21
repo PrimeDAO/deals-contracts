@@ -4,32 +4,35 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/IDepositContract.sol";
+import "./interfaces/IDaoDepositManager.sol";
 import "./interfaces/IModuleBase.sol";
 
 /**
- * @title PrimeDeals Base Contract
- * @dev   Smart contract to serve as the base
-          of the PrimeDeals architecture
+ * @title PrimeDeals Deal Manager
+ * @dev   Smart contract to serve as the manager
+          for the PrimeDeals architecture
  */
-contract BaseContract is Ownable {
-    // address of the current implementation of the
+contract DealManager is Ownable {
+    // Address of the current implementation of the
     // deposit contract
-    address public depositContractImplementation;
+    address public daoDepositManagerImplementation;
 
-    // address of the eth wrapping contract
+    // Address of the ETH wrapping contract
     address public weth;
 
-    // address DAO => address deposit contract of the DAO
-    mapping(address => address) public depositContract;
+    // Address DAO => address dao deposit manager of the DAO
+    mapping(address => address) public daoDepositManager;
 
     // module address => true/false
     mapping(address => bool) public isModule;
 
-    event DepositContractCreated(address dao, address depositContract);
+    event DaoDepositManagerCreated(
+        address indexed dao,
+        address indexed daoDepositManager
+    );
 
     // Sets a new address for the deposit contract implementation
-    function setDepositContractImplementation(address _newImplementation)
+    function setDaoDepositManagerImplementation(address _newImplementation)
         external
         onlyOwner
     {
@@ -38,7 +41,7 @@ contract BaseContract is Ownable {
             _newImplementation != address(0),
             "BASECONTRACT-INVALID-IMPLEMENTATION-ADDRESS"
         );
-        depositContractImplementation = _newImplementation;
+        daoDepositManagerImplementation = _newImplementation;
     }
 
     // Sets a new address for the deposit contract implementation
@@ -62,7 +65,7 @@ contract BaseContract is Ownable {
         );
         // solhint-disable-next-line reason-string
         require(
-            IModuleBase(_moduleAddress).baseContract() == address(this),
+            IModuleBase(_moduleAddress).dealManager() == address(this),
             "BASECONTRACT-MODULE-SETUP-INVALID"
         );
 
@@ -81,32 +84,32 @@ contract BaseContract is Ownable {
     }
 
     // Creates a deposit contract for a DAO
-    function createDepositContract(address _dao) public {
+    function createDaoDepositManager(address _dao) public {
         require(_dao != address(0), "BASECONTRACT-INVALID-DAO-ADDRESS");
         // solhint-disable-next-line reason-string
         require(
-            depositContract[_dao] == address(0),
+            daoDepositManager[_dao] == address(0),
             "BASECONTRACT-DEPOSIT-CONTRACT-ALREADY-EXISTS"
         );
         // solhint-disable-next-line reason-string
         require(
-            depositContractImplementation != address(0),
+            daoDepositManagerImplementation != address(0),
             "BASECONTRACT-DEPOSIT-CONTRACT-IMPLEMENTATION-IS-NOT-SET"
         );
-        address newContract = Clones.clone(depositContractImplementation);
-        IDepositContract(newContract).initialize(_dao);
-        depositContract[_dao] = newContract;
-        emit DepositContractCreated(_dao, newContract);
+        address newContract = Clones.clone(daoDepositManagerImplementation);
+        IDaoDepositManager(newContract).initialize(_dao);
+        daoDepositManager[_dao] = newContract;
+        emit DaoDepositManagerCreated(_dao, newContract);
     }
 
     // Returns whether a DAO already has a deposit contract
-    function hasDepositContract(address _dao) public view returns (bool) {
-        return getDepositContract(_dao) != address(0) ? true : false;
+    function hasDaoDepositManager(address _dao) public view returns (bool) {
+        return getDaoDepositManager(_dao) != address(0) ? true : false;
     }
 
     // Returns the deposit contract of a DAO
-    function getDepositContract(address _dao) public view returns (address) {
-        return depositContract[_dao];
+    function getDaoDepositManager(address _dao) public view returns (address) {
+        return daoDepositManager[_dao];
     }
 
     function addressIsModule(address _address) public view returns (bool) {

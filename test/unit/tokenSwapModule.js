@@ -218,12 +218,12 @@ describe("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...createSwapParameters)
         ).to.emit(tokenSwapModuleInstance, "TokenSwapCreated");
 
-        expect(await baseContractInstance.depositContract(dao1.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao2.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao3.address)).to.not
-          .be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao1.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao2.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao3.address)).to
+          .not.be.empty;
       });
       it("» should succeed in creating 2 swaps", async () => {
         await expect(
@@ -240,14 +240,14 @@ describe("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...createSwapParameters)
         ).to.emit(tokenSwapModuleInstance, "TokenSwapCreated");
 
-        expect(await baseContractInstance.depositContract(dao1.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao2.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao3.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao4.address)).to.not
-          .be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao1.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao2.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao3.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao4.address)).to
+          .not.be.empty;
       });
       it("» should succeed in creating 3 swaps", async () => {
         const createSwapParameters1 = [
@@ -277,22 +277,28 @@ describe("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...createSwapParameters2)
         ).to.emit(tokenSwapModuleInstance, "TokenSwapCreated");
 
-        expect(await baseContractInstance.depositContract(dao1.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao2.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao3.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao4.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao5.address)).to.not
-          .be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao1.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao2.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao3.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao4.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao5.address)).to
+          .not.be.empty;
 
-        const swap1 = await tokenSwapModuleInstance.getTokenswapFromId(SWAP1);
+        const swap1 = await tokenSwapModuleInstance.getTokenswapFromDealId(
+          SWAP1
+        );
         expect(swap1.metadata).to.eql(METADATA1);
-        const swap2 = await tokenSwapModuleInstance.getTokenswapFromId(SWAP2);
+        const swap2 = await tokenSwapModuleInstance.getTokenswapFromDealId(
+          SWAP2
+        );
         expect(swap2.metadata).to.eql(METADATA2);
-        const swap3 = await tokenSwapModuleInstance.getTokenswapFromId(SWAP3);
+        const swap3 = await tokenSwapModuleInstance.getTokenswapFromDealId(
+          SWAP3
+        );
         expect(swap3.metadata).to.eql(METADATA3);
       });
     });
@@ -309,7 +315,7 @@ describe("> Contract: TokenSwapModule", () => {
       it("» should revert when using an invalid ID", async () => {
         await expect(
           tokenSwapModuleInstance.checkExecutability(INVALID_SWAP)
-        ).to.revertedWith("Module: id doesn't exist");
+        ).to.revertedWith("Module: dealId doesn't exist");
       });
     });
     describe("# return false", () => {
@@ -387,7 +393,7 @@ describe("> Contract: TokenSwapModule", () => {
       it("» should fail on invalid ID", async () => {
         await expect(
           tokenSwapModuleInstance.executeSwap(INVALID_SWAP)
-        ).to.revertedWith("Module: id doesn't exist");
+        ).to.revertedWith("Module: dealId doesn't exist");
       });
       it("» should fail on DepositContracts not funded", async () => {
         await expect(
@@ -425,7 +431,7 @@ describe("> Contract: TokenSwapModule", () => {
         await tokenSwapModuleInstance.executeSwap(SWAP1);
         await expect(
           tokenSwapModuleInstance.executeSwap(SWAP1)
-        ).to.revertedWith("Module: id not active");
+        ).to.revertedWith("Module: dealId not active");
       });
     });
     describe("# when able to execute", () => {
@@ -456,7 +462,7 @@ describe("> Contract: TokenSwapModule", () => {
         // Execute swap
         await expect(tokenSwapModuleInstance.executeSwap(SWAP1))
           .to.emit(tokenSwapModuleInstance, "TokenSwapExecuted")
-          .withArgs(SWAP1);
+          .withArgs(tokenSwapModuleInstance.address, SWAP1);
 
         // Balance after swap
 
@@ -657,7 +663,7 @@ describe("> Contract: TokenSwapModule", () => {
       });
     });
   });
-  describe("$ Function: getTokenswapFromId", () => {
+  describe("$ Function: getTokenswapFromDealId", () => {
     describe("# when not able to execute", () => {
       beforeEach(async () => {
         ({ tokenSwapModuleInstance, depositContractInstances } =
@@ -669,8 +675,8 @@ describe("> Contract: TokenSwapModule", () => {
       });
       it("» should fail with invalid id", async () => {
         await expect(
-          tokenSwapModuleInstance.getTokenswapFromId(INVALID_SWAP)
-        ).to.revertedWith("Module: id doesn't exist");
+          tokenSwapModuleInstance.getTokenswapFromDealId(INVALID_SWAP)
+        ).to.revertedWith("Module: dealId doesn't exist");
       });
     });
     describe("# when able to execute", () => {
@@ -688,7 +694,7 @@ describe("> Contract: TokenSwapModule", () => {
         ));
       });
       it("» should succeed with valid id1", async () => {
-        const tokenSwap1 = await tokenSwapModuleInstance.getTokenswapFromId(
+        const tokenSwap1 = await tokenSwapModuleInstance.getTokenswapFromDealId(
           SWAP1
         );
         expect(tokenSwap1.daos).to.eql(createSwapParametersArray[0][0]);
@@ -701,7 +707,7 @@ describe("> Contract: TokenSwapModule", () => {
         expect(tokenSwap1.status).to.equal(1);
       });
       it("» should succeed with valid id2", async () => {
-        const tokenSwap2 = await tokenSwapModuleInstance.getTokenswapFromId(
+        const tokenSwap2 = await tokenSwapModuleInstance.getTokenswapFromDealId(
           SWAP2
         );
         expect(tokenSwap2.daos).to.eql(createSwapParametersArray[1][0]);
@@ -714,7 +720,7 @@ describe("> Contract: TokenSwapModule", () => {
         expect(tokenSwap2.status).to.equal(1);
       });
       it("» should succeed with valid id3", async () => {
-        const tokenSwap3 = await tokenSwapModuleInstance.getTokenswapFromId(
+        const tokenSwap3 = await tokenSwapModuleInstance.getTokenswapFromDealId(
           SWAP3
         );
         expect(tokenSwap3.daos).to.eql(createSwapParametersArray[2][0]);
