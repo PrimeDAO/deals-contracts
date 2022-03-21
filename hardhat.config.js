@@ -2,7 +2,9 @@ require("dotenv").config({ path: "./.env" });
 require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-ethers");
 require("@openzeppelin/hardhat-upgrades");
-require("hardhat-gas-reporter");
+// require("hardhat-gas-reporter");
+require("@nomiclabs/hardhat-waffle");
+
 require("hardhat-contract-sizer");
 require("solidity-coverage");
 require("hardhat-deploy");

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "../ModuleBaseWithFee.sol";
+import "hardhat/console.sol";
 
 /**
  * @title PrimeDeals Token Swap Module
@@ -10,7 +11,6 @@ import "../ModuleBaseWithFee.sol";
  */
 contract TokenSwapModule is ModuleBaseWithFee {
     TokenSwap[] public tokenSwaps;
-
     mapping(bytes => uint256) public metadataToId;
 
     struct TokenSwap {
@@ -102,11 +102,13 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256[][] calldata _pathTo,
         bytes calldata _metadata,
         uint256 _deadline
-    ) public returns (uint256) {
-        require(
-            metadataToId[_metadata] == 0,
-            "Module: metadata already exists"
-        );
+    ) internal returns (uint256) {
+        if (tokenSwaps.length >= 1) {
+            require(
+                _metadataDoesNotExist(_metadata),
+                "Module: metadata already exists"
+            );
+        }
         require(_daos.length >= 2, "Module: at least 2 daos required");
         require(_tokens.length >= 1, "Module: at least 1 token required");
         require(
@@ -198,7 +200,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
       * @return         A bool flag indiciating whether the action can be executed
     */
     function checkExecutability(uint256 _id)
-        external
+        public
         view
         validId(_id)
         returns (bool)
@@ -236,9 +238,10 @@ contract TokenSwapModule is ModuleBaseWithFee {
      * @param _id      The ID of the action (position in the array)
      */
     function executeSwap(uint256 _id) external validId(_id) activeStatus(_id) {
-        TokenSwap memory ts = tokenSwaps[_id];
+        TokenSwap storage ts = tokenSwaps[_id];
 
         require(ts.deadline >= block.timestamp, "Module: swap expired");
+        require(checkExecutability(_id), "Module: swap not executable");
 
         // transfer the tokens from the deposit contract of the DAOs
         // into this module
@@ -313,16 +316,47 @@ contract TokenSwapModule is ModuleBaseWithFee {
         }
     }
 
-    function getTokenswap(bytes memory _metadata)
+    function getTokenswapFromMetadata(bytes memory _metadata)
         public
         view
+        validMetadata(_metadata)
         returns (TokenSwap memory swap)
     {
         return tokenSwaps[metadataToId[_metadata]];
     }
 
+    function getTokenswapFromId(uint256 _id)
+        public
+        view
+        validId(_id)
+        returns (TokenSwap memory swap)
+    {
+        return tokenSwaps[_id];
+    }
+
+    function _metadataDoesNotExist(bytes memory _metadata)
+        internal
+        view
+        returns (bool)
+    {
+        uint256 id = metadataToId[_metadata];
+        return (id == 0 &&
+            keccak256(tokenSwaps[id].metadata) != keccak256(_metadata) &&
+            _metadata.length > 0);
+    }
+
+    modifier validMetadata(bytes memory _metadata) {
+        uint256 id = metadataToId[_metadata];
+        require(
+            id != 0 ||
+                keccak256(tokenSwaps[id].metadata) == keccak256(_metadata),
+            "Module: metadata does not exist"
+        );
+        _;
+    }
+
     modifier validId(uint256 _id) {
-        require(_id <= tokenSwaps.length, "Module: id doesn't exist");
+        require(_id < tokenSwaps.length, "Module: id doesn't exist");
         _;
     }
 
