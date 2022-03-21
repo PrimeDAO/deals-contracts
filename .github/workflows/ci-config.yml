@@ -85,9 +85,7 @@ jobs:
       - name: Installs needed packages using npm
         run: npm i && npm install -g codecov
 
-        # Runs a single command using the runners shell
-      - name: Tests the project
-        run: npm run coverage
+      #   needs: test
 
       # Runs a single command using the runners shell
       - name: Tests the project
