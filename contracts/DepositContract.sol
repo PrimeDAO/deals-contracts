@@ -4,26 +4,29 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IBaseContract.sol";
 import "./interfaces/IWETH.sol";
+import "./interfaces/IModuleBase.sol";
 
 contract DepositContract {
     address public dao;
     IBaseContract public baseContract;
 
+    // token address => balance
     mapping(address => uint256) public tokenBalances;
-    mapping(address => mapping(bytes32 => uint256))
-        public availableModuleBalances;
+    // token address => deal module address => deal module id => balance
+    mapping(address => mapping(address => mapping(uint256 => uint256)))
+        public availableDealBalances;
+    // token address => balance
     mapping(address => uint256) public vestedBalances;
 
-    // Contains the module descriptor and the ID of the swap/action
-    // so we can identify deposits for each individual interaction
-    // e.g. keccak256(abi.encode("TOKEN_SWAP_MODULE", 42));
-    // for a deposit for a token swap with the id 42
-    mapping(bytes32 => Deposit[]) public deposits;
+    // deal module address => deal id => deposits array
+    mapping(address => mapping(uint256 => Deposit[])) public deposits;
 
     Vesting[] public vestings;
     address[] public vestedTokenAddresses;
+    // token address => amount
     mapping(address => uint256) public vestedTokenAmounts;
-    mapping(bytes32 => uint256) public tokensPerDeal;
+    // deal module address => deal id => token counter
+    mapping(address => mapping(uint256 => uint256)) public tokensPerDeal;
 
     struct Deposit {
         address sender;
@@ -34,7 +37,8 @@ contract DepositContract {
     }
 
     struct Vesting {
-        bytes32 actionId;
+        address dealModule;
+        uint256 dealId;
         address token;
         uint256 totalVested;
         uint256 totalClaimed;
@@ -44,7 +48,8 @@ contract DepositContract {
     }
 
     event Deposited(
-        bytes32 processID,
+        address dealModule,
+        uint256 dealID,
         uint256 depositID,
         address token,
         uint256 amount,
@@ -52,7 +57,8 @@ contract DepositContract {
     );
 
     event Withdrawn(
-        bytes32 processID,
+        address dealModule,
+        uint256 dealID,
         uint256 depositID,
         address to,
         address token,
@@ -60,7 +66,8 @@ contract DepositContract {
     );
 
     event VestingStarted(
-        bytes32 processID,
+        address dealModule,
+        uint256 dealID,
         address token,
         uint256 amount,
         uint256 vestingStart,
@@ -69,7 +76,8 @@ contract DepositContract {
     );
 
     event VestingClaimed(
-        bytes32 actionId,
+        address dealModule,
+        uint256 dealID,
         address token,
         uint256 claimed,
         address dao
@@ -90,7 +98,8 @@ contract DepositContract {
     }
 
     function deposit(
-        bytes32 _processID,
+        address _dealModule,
+        uint256 _dealId,
         address _token,
         uint256 _amount
     ) public payable {
@@ -108,16 +117,17 @@ contract DepositContract {
         }
 
         tokenBalances[_token] += _amount;
-        availableModuleBalances[_token][_processID] += _amount;
+        availableDealBalances[_token][_dealModule][_dealId] += _amount;
         verifyBalance(_token);
         // solhint-disable-next-line not-rely-on-time
-        deposits[_processID].push(
+        deposits[_dealModule][_dealId].push(
             Deposit(msg.sender, _token, _amount, 0, block.timestamp)
         );
 
         emit Deposited(
-            _processID,
-            deposits[_processID].length,
+            _dealModule,
+            _dealId,
+            deposits[_dealModule][_dealId].length - 1,
             _token,
             _amount,
             msg.sender
@@ -125,7 +135,8 @@ contract DepositContract {
     }
 
     function multipleDeposits(
-        bytes32 _processID,
+        address _dealModule,
+        uint256 _dealId,
         address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external payable {
@@ -135,11 +146,15 @@ contract DepositContract {
             "D2D-DEPOSIT-ARRAY-LENGTH-MISMATCH"
         );
         for (uint256 i = 0; i < _tokens.length; i++) {
-            deposit(_processID, _tokens[i], _amounts[i]);
+            deposit(_dealModule, _dealId, _tokens[i], _amounts[i]);
         }
     }
 
-    function registerDeposit(bytes32 _processID, address _token) public {
+    function registerDeposit(
+        address _dealModule,
+        uint256 _dealId,
+        address _token
+    ) public {
         uint256 currentBalance = 0;
         if (_token != address(0)) {
             currentBalance = IERC20(_token).balanceOf(address(this));
@@ -153,13 +168,14 @@ contract DepositContract {
             if (_token == address(0)) {
                 IWETH(_token).deposit{value: amount}();
             }
-            availableModuleBalances[_token][_processID] += amount;
-            deposits[_processID].push(
+            availableDealBalances[_token][_dealModule][_dealId] += amount;
+            deposits[_dealModule][_dealId].push(
                 Deposit(dao, _token, amount, 0, block.timestamp)
             );
             emit Deposited(
-                _processID,
-                deposits[_processID].length,
+                _dealModule,
+                _dealId,
+                deposits[_dealModule][_dealId].length - 1,
                 _token,
                 amount,
                 dao
@@ -168,15 +184,21 @@ contract DepositContract {
         verifyBalance(_token);
     }
 
-    function registerDeposits(bytes32 _processID, address[] calldata _tokens)
-        external
-    {
+    function registerDeposits(
+        address _dealModule,
+        uint256 _dealId,
+        address[] calldata _tokens
+    ) external {
         for (uint256 i = 0; i < _tokens.length; i++) {
-            registerDeposit(_processID, _tokens[i]);
+            registerDeposit(_dealModule, _dealId, _tokens[i]);
         }
     }
 
-    function withdraw(bytes32 _processID, uint256 _depositID)
+    function withdraw(
+        address _dealModule,
+        uint256 _dealId,
+        uint256 _depositID
+    )
         external
         returns (
             address,
@@ -185,19 +207,27 @@ contract DepositContract {
         )
     {
         require(
-            deposits[_processID].length >= _depositID,
+            deposits[_dealModule][_dealId].length > _depositID,
             "D2D-DEPOSIT-INVALID-DEPOSIT-ID"
         );
-        Deposit storage d = deposits[_processID][_depositID];
+        Deposit storage d = deposits[_dealModule][_dealId][_depositID];
+
         // Either the caller did the deposit or it's a dao deposit
-        // and the caller is the dao or a representative
-        require(d.sender == msg.sender, "D2D-WITHDRAW-NOT-AUTHORIZED");
+        // and the caller facilitates the withdraw for the dao
+        // (which is only possible after the deal expired)
+
+        require(
+            d.sender == msg.sender ||
+                (d.sender == dao &&
+                    IModuleBase(_dealModule).hasDealExpired(_dealId)),
+            "D2D-WITHDRAW-NOT-AUTHORIZED"
+        );
 
         uint256 freeAmount = d.amount - d.used;
         // Deposit can't be used by a module or withdrawn already
         require(freeAmount > 0, "D2D-DEPOSIT-NOT-WITHDRAWABLE");
         d.used = d.amount;
-        availableModuleBalances[d.token][_processID] -= freeAmount;
+        availableDealBalances[d.token][_dealModule][_dealId] -= freeAmount;
         tokenBalances[d.token] -= freeAmount;
 
         // If it's a token
@@ -214,25 +244,32 @@ contract DepositContract {
             require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
         }
 
-        emit Withdrawn(_processID, _depositID, d.sender, d.token, freeAmount);
+        emit Withdrawn(
+            _dealModule,
+            _dealId,
+            _depositID,
+            d.sender,
+            d.token,
+            freeAmount
+        );
         return (d.sender, d.token, freeAmount);
     }
 
     function sendToModule(
-        bytes32 _processID,
+        uint256 _dealId,
         address _token,
         uint256 _amount
     ) external onlyModule returns (bool) {
         uint256 amountLeft = _amount;
-        for (uint256 i = 0; i < deposits[_processID].length; i++) {
-            if (deposits[_processID][i].token == _token) {
-                uint256 freeAmount = deposits[_processID][i].amount -
-                    deposits[_processID][i].used;
+        for (uint256 i = 0; i < deposits[msg.sender][_dealId].length; i++) {
+            if (deposits[msg.sender][_dealId][i].token == _token) {
+                uint256 freeAmount = deposits[msg.sender][_dealId][i].amount -
+                    deposits[msg.sender][_dealId][i].used;
                 if (freeAmount > amountLeft) {
                     freeAmount = amountLeft;
                 }
                 amountLeft -= freeAmount;
-                deposits[_processID][i].used += freeAmount;
+                deposits[msg.sender][_dealId][i].used += freeAmount;
                 if (amountLeft == 0) {
                     if (_token == address(0)) {
                         IWETH(baseContract.weth()).withdraw(_amount);
@@ -242,7 +279,9 @@ contract DepositContract {
                         _transferToken(_token, msg.sender, _amount);
                         tokenBalances[_token] -= _amount;
                     }
-                    availableModuleBalances[_token][_processID] -= _amount;
+                    availableDealBalances[_token][msg.sender][
+                        _dealId
+                    ] -= _amount;
                     return true;
                 }
             }
@@ -251,7 +290,7 @@ contract DepositContract {
     }
 
     function startVesting(
-        bytes32 _actionId,
+        uint256 _dealId,
         address _token,
         uint256 _amount,
         uint256 _vestingCliff,
@@ -275,7 +314,8 @@ contract DepositContract {
 
         vestings.push(
             Vesting(
-                _actionId,
+                msg.sender,
+                _dealId,
                 _token,
                 _amount,
                 0,
@@ -295,10 +335,11 @@ contract DepositContract {
         // unlikely edge-case of multiple vestings of the
         // same token for one deal. This is necessary
         // for deal-based vesting claims to work.
-        tokensPerDeal[_actionId]++;
+        tokensPerDeal[msg.sender][_dealId]++;
 
         emit VestingStarted(
-            _actionId,
+            msg.sender,
+            _dealId,
             _token,
             _amount,
             block.timestamp,
@@ -333,16 +374,19 @@ contract DepositContract {
         return (tokens, amounts);
     }
 
-    function claimDealVestings(bytes32 _id)
+    function claimDealVestings(address _dealModule, uint256 _dealId)
         external
         returns (address[] memory tokens, uint256[] memory amounts)
     {
-        uint256 amountOfTokens = tokensPerDeal[_id];
+        uint256 amountOfTokens = tokensPerDeal[_dealModule][_dealId];
         tokens = new address[](amountOfTokens);
         amounts = new uint256[](amountOfTokens);
         uint256 counter = 0;
         for (uint256 i = 0; i < vestings.length; i++) {
-            if (vestings[i].actionId == _id) {
+            if (
+                vestings[i].dealModule == _dealModule &&
+                vestings[i].dealId == _dealId
+            ) {
                 (tokens[counter], amounts[counter]) = sendReleasableClaim(
                     vestings[i]
                 );
@@ -365,7 +409,7 @@ contract DepositContract {
             if (elapsedSeconds >= vesting.duration) {
                 amount = vesting.totalVested - vesting.totalClaimed;
                 vesting.totalClaimed = vesting.totalVested;
-                tokensPerDeal[vesting.actionId]--;
+                tokensPerDeal[vesting.dealModule][vesting.dealId]--;
             } else {
                 amount =
                     (vesting.totalVested * elapsedSeconds) /
@@ -410,7 +454,13 @@ contract DepositContract {
                 require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
             }
 
-            emit VestingClaimed(vesting.actionId, token, amount, dao);
+            emit VestingClaimed(
+                vesting.dealModule,
+                vesting.dealId,
+                token,
+                amount,
+                dao
+            );
         }
     }
 
@@ -426,7 +476,11 @@ contract DepositContract {
         );
     }
 
-    function getDeposit(bytes32 _processID, uint256 _depositID)
+    function getDeposit(
+        address _dealModule,
+        uint256 _dealId,
+        uint256 _depositID
+    )
         public
         view
         returns (
@@ -437,7 +491,7 @@ contract DepositContract {
             uint256
         )
     {
-        Deposit memory d = deposits[_processID][_depositID];
+        Deposit memory d = deposits[_dealModule][_dealId][_depositID];
         return (
             d.sender,
             d.token == baseContract.weth() ? address(0) : d.token,
@@ -448,7 +502,8 @@ contract DepositContract {
     }
 
     function getDepositRange(
-        bytes32 _processID,
+        address _dealModule,
+        uint256 _dealId,
         uint256 _fromDepositID,
         uint256 _toDepositID
     )
@@ -475,40 +530,41 @@ contract DepositContract {
                 amounts[i],
                 usedAmounts[i],
                 times[i]
-            ) = getDeposit(_processID, i);
+            ) = getDeposit(_dealModule, _dealId, i);
         }
         return (senders, tokens, amounts, usedAmounts, times);
     }
 
-    function getAvailableProcessBalance(bytes32 _processID, address _token)
-        external
-        view
-        returns (uint256)
-    {
-        return availableModuleBalances[_token][_processID];
+    function getAvailableDealBalance(
+        address _dealModule,
+        uint256 _dealId,
+        address _token
+    ) external view returns (uint256) {
+        return availableDealBalances[_token][_dealModule][_dealId];
     }
 
-    function getTotalDepositCount(bytes32 _processID)
+    function getTotalDepositCount(address _dealModule, uint256 _dealId)
         external
         view
         returns (uint256)
     {
-        return deposits[_processID].length;
+        return deposits[_dealModule][_dealId].length;
     }
 
     function getWithdrawableAmountOfUser(
-        bytes32 _processID,
+        address _dealModule,
+        uint256 _dealId,
         address _user,
         address _token
     ) external view returns (uint256) {
         uint256 freeAmount = 0;
-        for (uint256 i = 0; i < deposits[_processID].length; i++) {
+        for (uint256 i = 0; i < deposits[_dealModule][_dealId].length; i++) {
             if (
-                deposits[_processID][i].sender == _user &&
-                deposits[_processID][i].token == _token
+                deposits[_dealModule][_dealId][i].sender == _user &&
+                deposits[_dealModule][_dealId][i].token == _token
             ) {
-                freeAmount += (deposits[_processID][i].amount -
-                    deposits[_processID][i].used);
+                freeAmount += (deposits[_dealModule][_dealId][i].amount -
+                    deposits[_dealModule][_dealId][i].used);
             }
         }
         return freeAmount;
@@ -523,14 +579,6 @@ contract DepositContract {
 
     function getVestedBalance(address _token) external view returns (uint256) {
         return vestedBalances[_token];
-    }
-
-    function getProcessID(string memory _module, uint256 _id)
-        external
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encode(_module, _id));
     }
 
     function _transferToken(

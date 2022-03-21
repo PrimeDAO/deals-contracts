@@ -218,14 +218,10 @@ contract TokenSwapModule is ModuleBaseWithFee {
                 // token, check whether the corresponding DAO
                 // has deposited the corresponding amount into their
                 // deposit contract
-                if (
-                    IDepositContract(
-                        baseContract.getDepositContract(ts.daos[j])
-                    ).getAvailableProcessBalance(
-                            keccak256(abi.encode(moduleIdentifierString, _id)),
-                            ts.tokens[i]
-                        ) < ts.pathFrom[i][j]
-                ) {
+                uint256 bal = IDepositContract(
+                    baseContract.getDepositContract(ts.daos[j])
+                ).getAvailableDealBalance(address(this), _id, ts.tokens[i]);
+                if (bal < ts.pathFrom[i][j]) {
                     return false;
                 }
             }
@@ -305,7 +301,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
                     IDepositContract(
                         baseContract.getDepositContract(_ts.daos[k])
                     ).startVesting(
-                            keccak256(abi.encode(moduleIdentifierString, _id)),
+                            _id,
                             _ts.tokens[i],
                             amount, // amount
                             _ts.pathTo[i][k * 4 + 2], // start
@@ -332,6 +328,12 @@ contract TokenSwapModule is ModuleBaseWithFee {
         returns (TokenSwap memory swap)
     {
         return tokenSwaps[_id];
+    }
+
+    function hasDealExpired(uint256 _id) external view override returns (bool) {
+        return
+            tokenSwaps[_id].status != Status.ACTIVE ||
+            tokenSwaps[_id].deadline < block.timestamp;
     }
 
     function _metadataDoesNotExist(bytes memory _metadata)

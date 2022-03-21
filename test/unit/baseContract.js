@@ -97,10 +97,7 @@ describe("> Contract: BaseContract", () => {
         baseContractInstance.registerModule(tokenswapModuleInstance2.address)
       ).to.be.revertedWith("BASECONTRACT-MODULE-SETUP-INVALID");
     });
-    it("» should succeed on rigister module", async () => {
-      await baseContractInstance.registerModule(
-        tokenSwapModuleInstance.address
-      );
+    it("» should have succeeded on registering the module", async () => {
       expect(
         await baseContractInstance.addressIsModule(
           tokenSwapModuleInstance.address
@@ -109,11 +106,6 @@ describe("> Contract: BaseContract", () => {
     });
   });
   describe("$ When deactivation a Module", () => {
-    beforeEach(async () => {
-      await baseContractInstance.registerModule(
-        tokenSwapModuleInstance.address
-      );
-    });
     it("» should fail on executed not by the owner", async () => {
       await expect(
         baseContractInstance

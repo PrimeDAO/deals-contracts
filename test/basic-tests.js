@@ -85,13 +85,30 @@ contract("Whole rundown", async (accounts) => {
       "0x0000000000000000000000000000000000000000"
     );
 
+    tokenSwapInstance = await tokenSwapModule.new(
+      baseContractInstance.address,
+      {
+        from: admin,
+      }
+    );
+
+    await baseContractInstance.registerModule(tokenSwapInstance.address, {
+      from: admin,
+    });
+
+    assert.equal(
+      await baseContractInstance.addressIsModule(tokenSwapInstance.address),
+      true
+    );
+
     let depositAddrDao1 = await baseContractInstance.depositContract(daos[0]);
 
     let depositContractDAO1 = await depositContract.at(depositAddrDao1);
 
     await expectRevert(
       depositContractDAO1.deposit(
-        web3.utils.asciiToHex("id1"),
+        "0x0000000000000000000000000000000000000000",
+        0,
         testToken1.address,
         web3.utils.toWei("1", "ether"),
         { from: admin }
@@ -107,14 +124,16 @@ contract("Whole rundown", async (accounts) => {
 
     assert.equal(
       await depositContractDAO1.getTotalDepositCount(
-        web3.utils.asciiToHex("id1")
+        tokenSwapInstance.address,
+        0
       ),
       "0"
     );
 
     assert.equal(
       await depositContractDAO1.getWithdrawableAmountOfUser(
-        web3.utils.asciiToHex("id1"),
+        tokenSwapInstance.address,
+        0,
         admin,
         testToken1.address
       ),
@@ -122,7 +141,8 @@ contract("Whole rundown", async (accounts) => {
     );
 
     await depositContractDAO1.deposit(
-      web3.utils.asciiToHex("id1"),
+      tokenSwapInstance.address,
+      0,
       testToken1.address,
       web3.utils.toWei("1", "ether"),
       { from: admin }
@@ -130,14 +150,16 @@ contract("Whole rundown", async (accounts) => {
 
     assert.equal(
       await depositContractDAO1.getTotalDepositCount(
-        web3.utils.asciiToHex("id1")
+        tokenSwapInstance.address,
+        0
       ),
       "1"
     );
 
     assert.equal(
       await depositContractDAO1.getWithdrawableAmountOfUser(
-        web3.utils.asciiToHex("id1"),
+        tokenSwapInstance.address,
+        0,
         admin,
         testToken1.address
       ),
@@ -145,26 +167,29 @@ contract("Whole rundown", async (accounts) => {
     );
 
     assert.equal(
-      await depositContractDAO1.getAvailableProcessBalance(
-        web3.utils.asciiToHex("id1"),
+      await depositContractDAO1.getAvailableDealBalance(
+        tokenSwapInstance.address,
+        0,
         testToken1.address
       ),
       web3.utils.toWei("1", "ether")
     );
 
     await expectRevert(
-      depositContractDAO1.withdraw(web3.utils.asciiToHex("id1"), [0], {
+      depositContractDAO1.withdraw(tokenSwapInstance.address, 0, [0], {
         from: outsider,
       }),
       "D2D-WITHDRAW-NOT-AUTHORIZED"
     );
-    await depositContractDAO1.withdraw(web3.utils.asciiToHex("id1"), [0], {
+
+    await depositContractDAO1.withdraw(tokenSwapInstance.address, 0, [0], {
       from: admin,
     });
 
     assert.equal(
-      await depositContractDAO1.getAvailableProcessBalance(
-        web3.utils.asciiToHex("id1"),
+      await depositContractDAO1.getAvailableDealBalance(
+        tokenSwapInstance.address,
+        0,
         testToken1.address
       ),
       web3.utils.toWei("0", "ether")
@@ -200,21 +225,7 @@ contract("Whole rundown", async (accounts) => {
     await testToken4.transfer(daos[2], web3.utils.toWei("10", "ether"), {
       from: admin,
     });
-    tokenSwapInstance = await tokenSwapModule.new(
-      baseContractInstance.address,
-      {
-        from: admin,
-      }
-    );
 
-    await baseContractInstance.registerModule(tokenSwapInstance.address, {
-      from: admin,
-    });
-
-    assert.equal(
-      await baseContractInstance.getLatestModule("TOKEN_SWAP_MODULE"),
-      tokenSwapInstance.address
-    );
     currBlockNum = await web3.eth.getBlockNumber();
     currBlock = await web3.eth.getBlock(currBlockNum);
     currTime = currBlock.timestamp;
@@ -332,13 +343,9 @@ contract("Whole rundown", async (accounts) => {
       web3.utils.toWei("10", "ether")
     );
 
-    let processID = await depositContractDAO1.getProcessID(
-      "TOKEN_SWAP_MODULE",
-      0
-    );
-
     await depositContractDAO1.deposit(
-      processID,
+      tokenSwapInstance.address,
+      0,
       testToken1.address,
       web3.utils.toWei("7", "ether"),
       { from: daos[0] }
@@ -355,7 +362,8 @@ contract("Whole rundown", async (accounts) => {
     );
 
     await depositContractDAO2.deposit(
-      processID,
+      tokenSwapInstance.address,
+      0,
       testToken2.address,
       web3.utils.toWei("6", "ether"),
       { from: daos[1] }
@@ -367,14 +375,16 @@ contract("Whole rundown", async (accounts) => {
     );
 
     await depositContractDAO3.deposit(
-      processID,
+      tokenSwapInstance.address,
+      0,
       testToken3.address,
       web3.utils.toWei("6", "ether"),
       { from: daos[2] }
     );
 
     await depositContractDAO3.deposit(
-      processID,
+      tokenSwapInstance.address,
+      0,
       testToken4.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[2] }
@@ -423,7 +433,8 @@ contract("Whole rundown", async (accounts) => {
 
     assert.equal(
       await depositContractDAO1.getWithdrawableAmountOfUser(
-        processID,
+        tokenSwapInstance.address,
+        0,
         daos[0],
         testToken1.address
       ),
@@ -436,10 +447,10 @@ contract("Whole rundown", async (accounts) => {
     );
 
     await expectRevert(
-      depositContractDAO1.withdraw(processID, 0, {
+      depositContractDAO1.withdraw(tokenSwapInstance.address, 0, 0, {
         from: admin,
       }),
-      "D2D-WITHDRAW-NOT-AUTHORIZED"
+      "D2D-DEPOSIT-NOT-WITHDRAWABLE"
     );
 
     assert.equal(
@@ -501,8 +512,8 @@ contract("Whole rundown", async (accounts) => {
       from: admin,
     });
     assert.equal(
-      await baseContractInstance.getLatestModule("TOKEN_SWAP_MODULE"),
-      tokenSwapInstance.address
+      await baseContractInstance.addressIsModule(tokenSwapInstance.address),
+      true
     );
 
     // transfer tokens to DAOs
@@ -685,17 +696,6 @@ contract("Whole rundown", async (accounts) => {
     );
     assert.equal(await tokenSwapInstance.checkExecutability(SWAP2), false);
 
-    // Get Process IDs
-    let processIDSwap1 = await depositContractDAO1Instance.getProcessID(
-      "TOKEN_SWAP_MODULE",
-      0
-    );
-
-    let processIDSwap2 = await depositContractDAO1Instance.getProcessID(
-      "TOKEN_SWAP_MODULE",
-      1
-    );
-
     // Approve and depost tokens for Swap 1
     await testToken1.approve(
       depositContractDAO1Instance.address,
@@ -703,7 +703,8 @@ contract("Whole rundown", async (accounts) => {
       { from: daos[0] }
     );
     await depositContractDAO1Instance.deposit(
-      processIDSwap1,
+      tokenSwapInstance.address,
+      0,
       testToken1.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[0] }
@@ -715,7 +716,8 @@ contract("Whole rundown", async (accounts) => {
       { from: daos[1] }
     );
     await depositContractDAO2Instance.deposit(
-      processIDSwap1,
+      tokenSwapInstance.address,
+      0,
       testToken2.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[1] }
@@ -727,7 +729,8 @@ contract("Whole rundown", async (accounts) => {
       { from: daos[2] }
     );
     await depositContractDAO3Instance.deposit(
-      processIDSwap1,
+      tokenSwapInstance.address,
+      0,
       testToken3.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[2] }
@@ -744,7 +747,8 @@ contract("Whole rundown", async (accounts) => {
       { from: daos[0] }
     );
     await depositContractDAO1Instance.deposit(
-      processIDSwap2,
+      tokenSwapInstance.address,
+      1,
       testToken4.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[0] }
@@ -756,7 +760,8 @@ contract("Whole rundown", async (accounts) => {
       { from: daos[1] }
     );
     await depositContractDAO2Instance.deposit(
-      processIDSwap2,
+      tokenSwapInstance.address,
+      1,
       testToken5.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[1] }
@@ -768,7 +773,8 @@ contract("Whole rundown", async (accounts) => {
       { from: daos[2] }
     );
     await depositContractDAO3Instance.deposit(
-      processIDSwap2,
+      tokenSwapInstance.address,
+      1,
       testToken6.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[2] }
@@ -891,15 +897,27 @@ contract("Whole rundown", async (accounts) => {
     );
 
     // Claim vesting for Swap 1
-    await depositContractDAO1Instance.claimDealVestings(processIDSwap1, {
-      from: admin,
-    });
-    await depositContractDAO2Instance.claimDealVestings(processIDSwap1, {
-      from: admin,
-    });
-    await depositContractDAO3Instance.claimDealVestings(processIDSwap1, {
-      from: admin,
-    });
+    await depositContractDAO1Instance.claimDealVestings(
+      tokenSwapInstance.address,
+      0,
+      {
+        from: admin,
+      }
+    );
+    await depositContractDAO2Instance.claimDealVestings(
+      tokenSwapInstance.address,
+      0,
+      {
+        from: admin,
+      }
+    );
+    await depositContractDAO3Instance.claimDealVestings(
+      tokenSwapInstance.address,
+      0,
+      {
+        from: admin,
+      }
+    );
 
     // Test balances after Swap 1
     assert.equal(
@@ -964,15 +982,27 @@ contract("Whole rundown", async (accounts) => {
     );
 
     // Claim vesting for Swap 2
-    await depositContractDAO1Instance.claimDealVestings(processIDSwap2, {
-      from: admin,
-    });
-    await depositContractDAO2Instance.claimDealVestings(processIDSwap2, {
-      from: admin,
-    });
-    await depositContractDAO3Instance.claimDealVestings(processIDSwap2, {
-      from: admin,
-    });
+    await depositContractDAO1Instance.claimDealVestings(
+      tokenSwapInstance.address,
+      1,
+      {
+        from: admin,
+      }
+    );
+    await depositContractDAO2Instance.claimDealVestings(
+      tokenSwapInstance.address,
+      1,
+      {
+        from: admin,
+      }
+    );
+    await depositContractDAO3Instance.claimDealVestings(
+      tokenSwapInstance.address,
+      1,
+      {
+        from: admin,
+      }
+    );
 
     // Test balances after Swap 2
     assert.equal(
