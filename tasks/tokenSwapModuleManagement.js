@@ -3,6 +3,7 @@ const { task } = require("hardhat/config");
 const {
   registrations,
 } = require("../test/test-input/test-network-config.json");
+const { time } = require("@openzeppelin/test-helpers");
 
 const constructParameters = (deal) => {
   let tokens = [];
@@ -57,6 +58,7 @@ task("createTokenSwap", "creates a Token Swap Deal")
     );
 
     //Create parameters for deal creation
+    const DAY = 60 * 60 * 12;
     const deal = registrations[registration];
     const daoAddresses = [
       deal.primaryDAO.treasure_address,
@@ -64,7 +66,9 @@ task("createTokenSwap", "creates a Token Swap Deal")
     ];
     const { tokens, pathTo, pathFrom } = constructParameters(deal);
     const metadata = formatBytes32String(deal.metadata);
-    const deadline = 201600;
+    const deadline = BigNumber.from(
+      (await time.latest()).toNumber() + DAY * 30
+    );
 
     const dealParameters = [
       daoAddresses,
