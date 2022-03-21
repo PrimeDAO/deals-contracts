@@ -14,12 +14,12 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
 
   const depositContractInstance = await ethers.getContract("DaoDepositManager");
 
-  await deploy("Dealmanager", {
+  await deploy("DealManager", {
     from: root,
     log: true,
   });
 
-  const baseContractInstance = await ethers.getContract("Dealmanager");
+  const baseContractInstance = await ethers.getContract("DealManager");
 
   await baseContractInstance.setDaoDepositManagerImplementation(
     depositContractInstance.address
@@ -29,4 +29,4 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["Dealmanager"];
+module.exports.tags = ["DealManager"];

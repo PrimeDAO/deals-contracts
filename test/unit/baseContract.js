@@ -14,7 +14,7 @@ let depositContractInstance,
   tokenSwapModuleInstance,
   depositContractFactoryInstance;
 
-describe("> Contract: Dealmanager", () => {
+describe("> Contract: DealManager", () => {
   before(async () => {
     const signers = await ethers.getSigners();
     [root, baseContractMock, dao1, dao2, dao3, depositer1, depositer2] =
@@ -143,7 +143,7 @@ describe("> Contract: Dealmanager", () => {
     });
     it("» should fail on Deposit contract implementation not set", async () => {
       const BaseContractFactory = await ethers.getContractFactory(
-        "Dealmanager"
+        "DealManager"
       );
       const localBaseContractInstance = await BaseContractFactory.deploy();
       await expect(

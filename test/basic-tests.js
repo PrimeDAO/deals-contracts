@@ -3,7 +3,7 @@ const timeMachine = require("ganache-time-traveler");
 const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 
-const dealManager = artifacts.require("Dealmanager");
+const dealManager = artifacts.require("DealManager");
 const daoDepositManager = artifacts.require("DaoDepositManager");
 const tokenSwapModule = artifacts.require("TokenSwapModule");
 const testERC20 = artifacts.require("TestToken");

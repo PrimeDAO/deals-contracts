@@ -6,9 +6,9 @@ const setupFixture = deployments.createFixture(
     const { deploy } = deployments;
     const { root, prime } = await ethers.getNamedSigners();
 
-    // Set up Dealmanager contract
-    await deploy("Dealmanager", {
-      contract: "Dealmanager",
+    // Set up DealManager contract
+    await deploy("DealManager", {
+      contract: "DealManager",
       from: root.address,
       log: true,
     });
@@ -29,7 +29,7 @@ const setupFixture = deployments.createFixture(
     const depositContractInstance = await ethers.getContract(
       "DaoDepositManager"
     );
-    const baseContractInstance = await ethers.getContract("Dealmanager");
+    const baseContractInstance = await ethers.getContract("DealManager");
     const wethInstance = await ethers.getContract("WETH");
 
     await baseContractInstance.setWETHAddress(wethInstance.address);
@@ -49,12 +49,12 @@ const setupFixture = deployments.createFixture(
     await tokenSwapModuleInstance.setFeeWallet(prime.address);
     await tokenSwapModuleInstance.setFee(30);
 
-    // Register TokenSwapModule in Dealmanager
+    // Register TokenSwapModule in DealManager
     await baseContractInstance.registerModule(tokenSwapModuleInstance.address);
 
     // Return contract instances
     const contractInstances = {
-      baseContractInstance: await ethers.getContract("Dealmanager"),
+      baseContractInstance: await ethers.getContract("DealManager"),
       tokenInstances: await tokens.getErc20TokenInstances(4, root),
       tokenSwapModuleInstance: tokenSwapModuleInstance,
       depositContractInstance: depositContractInstance,

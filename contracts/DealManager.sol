@@ -12,7 +12,7 @@ import "./interfaces/IModuleBase.sol";
  * @dev   Smart contract to serve as the manager
           for the PrimeDeals architecture
  */
-contract Dealmanager is Ownable {
+contract DealManager is Ownable {
     // Address of the current implementation of the
     // deposit contract
     address public daoDepositManagerImplementation;
@@ -20,7 +20,7 @@ contract Dealmanager is Ownable {
     // Address of the ETH wrapping contract
     address public weth;
 
-    // Asdress DAO => address dao deposit manager of the DAO
+    // Address DAO => address dao deposit manager of the DAO
     mapping(address => address) public daoDepositManager;
 
     // module address => true/false

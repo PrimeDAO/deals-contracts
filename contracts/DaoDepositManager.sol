@@ -95,8 +95,8 @@ contract DaoDepositManager {
     }
 
     /**
-     * @dev                     Sets a new address for the Dealmanager implementation
-     * @param _newDaoDepositManager  The address of the new Dealmanager
+     * @dev                     Sets a new address for the DealManager implementation
+     * @param _newDaoDepositManager  The address of the new DealManager
      */
     function setDealManagerImplementation(address _newDaoDepositManager)
         external

@@ -17,7 +17,7 @@ contract ModuleBaseWithFee is ModuleBase {
 
     /**
      * @dev                         Constructor
-     * @param _dealmanager         The address of Dealmanager implementation
+     * @param _dealmanager         The address of DealManager implementation
      */
     constructor(address _dealmanager) ModuleBase(_dealmanager) {}
 
