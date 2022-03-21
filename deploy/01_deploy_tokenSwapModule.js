@@ -5,13 +5,13 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
 
-  const baseContractInstance = await ethers.getContract("DealManager");
+  const dealMangerInstance = await ethers.getContract("DealManager");
   const baseFee = 30;
   const feeWallet = multisig[network.name];
 
   await deploy("TokenSwapModule", {
     from: root,
-    args: [baseContractInstance.address],
+    args: [dealMangerInstance.address],
     log: true,
   });
 
