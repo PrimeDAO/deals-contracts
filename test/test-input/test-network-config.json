@@ -1,0 +1,43 @@
+{
+  "registrations": {
+    "1": {
+      "metadata": "deal1",
+      "primaryDAO": {
+        "tokens": [
+          {
+            "address": "0xc7AD46e0b8a400Bb3C915120d284AafbA8fc4735",
+            "amount": "3",
+            "instantTransferAmount": "2",
+            "vestedTransferAmount": "1",
+            "vestedFor": 5184000,
+            "cliffOf": 1728000
+          },
+          {
+            "address": "0x01BE23585060835E02B77ef475b0Cc51aA1e0709",
+            "amount": "4",
+            "instantTransferAmount": "3",
+            "vestedTransferAmount": "1",
+            "vestedFor": 5184000,
+            "cliffOf": 1728000
+          }
+        ],
+        "treasure_address": "0xB0dE228f409e6d52DD66079391Dc2bA0B397D7cA"
+      },
+      "partnerDAO": {
+        "tokens": [
+          {
+            "address": "0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b",
+            "amount": "2",
+            "instantTransferAmount": "1.5",
+            "vestedTransferAmount": "0.5",
+            "vestedFor": 1209600,
+            "cliffOf": 259200
+          }
+        ],
+        "treasury_address": "0xD4717ee259f8736af189F968Dadc6939c1568200"
+      }
+    }
+  },
+  "2": {},
+  "3": {}
+}

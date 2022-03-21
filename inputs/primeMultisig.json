@@ -1,0 +1,6 @@
+{
+  "multisig": {
+    "mainnet": "0x52F50f557704938Df066EC4Db7426D66538E7796",
+    "rinkeby": "0x2E46E481d57477A0663a7Ec61E7eDc65F4cb7F5C"
+  }
+}

@@ -10,6 +10,7 @@ require("solidity-coverage");
 require("hardhat-deploy");
 require("hardhat-deploy-ethers");
 require("@nomiclabs/hardhat-etherscan");
+require("@nomiclabs/hardhat-web3");
 
 const { INFURA_KEY, MNEMONIC, ETHERSCAN_API_KEY, PK } = process.env;
 const DEFAULT_MNEMONIC = "hello darkness my old friend";
@@ -22,6 +23,8 @@ if (PK) {
     mnemonic: MNEMONIC || DEFAULT_MNEMONIC,
   };
 }
+
+require("./tasks/tokenSwapModuleManagement");
 
 module.exports = {
   paths: {
