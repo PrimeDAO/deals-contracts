@@ -55,8 +55,8 @@ interface IDaoDepositManager {
         uint32 _dealId,
         address _token,
         uint256 _amount,
-        uint256 _start,
-        uint256 _end
+        uint256 _vestingCliff,
+        uint256 _vestingDuration
     ) external;
 
     function claimVestings() external;

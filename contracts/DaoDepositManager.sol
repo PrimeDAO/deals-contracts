@@ -29,16 +29,16 @@ contract DaoDepositManager {
     mapping(address => mapping(uint256 => uint256)) public tokensPerDeal;
 
     struct Deposit {
-        address sender;
+        address depositor;
         address token;
         uint256 amount;
         uint256 used;
-        uint256 time;
+        uint256 depositedAt;
     }
 
     struct Vesting {
         address dealModule;
-        uint256 dealId;
+        uint32 dealId;
         address token;
         uint256 totalVested;
         uint256 totalClaimed;
@@ -48,39 +48,39 @@ contract DaoDepositManager {
     }
 
     event Deposited(
-        address dealModule,
-        uint256 dealID,
-        uint256 depositID,
+        address indexed dealModule,
+        uint32 indexed dealId,
+        address indexed depositor,
+        uint256 depositId,
         address token,
-        uint256 amount,
-        address sender
+        uint256 amount
     );
 
     event Withdrawn(
-        address dealModule,
-        uint32 dealId,
+        address indexed dealModule,
+        uint32 indexed dealId,
+        address indexed depositor,
         uint32 depositId,
-        address to,
         address token,
         uint256 amount
     );
 
     event VestingStarted(
-        address dealModule,
-        uint256 dealID,
-        address token,
-        uint256 amount,
-        uint256 vestingStart,
+        address indexed dealModule,
+        uint32 indexed dealId,
+        uint256 indexed vestingStart,
         uint256 vestingCliff,
-        uint256 vestingDuration
+        uint256 vestingDuration,
+        address token,
+        uint256 amount
     );
 
     event VestingClaimed(
-        address dealModule,
-        uint256 dealID,
+        address indexed dealModule,
+        uint32 indexed dealId,
+        address indexed dao,
         address token,
-        uint256 claimed,
-        address dao
+        uint256 claimed
     );
 
     /**
@@ -143,10 +143,10 @@ contract DaoDepositManager {
         emit Deposited(
             _module,
             _dealId,
+            msg.sender,
             deposits[_module][_dealId].length - 1,
             _token,
-            _amount,
-            msg.sender
+            _amount
         );
     }
 
@@ -191,10 +191,10 @@ contract DaoDepositManager {
             emit Deposited(
                 _module,
                 _dealId,
+                dao,
                 deposits[_module][_dealId].length - 1,
                 _token,
-                amount,
-                dao
+                amount
             );
         }
         verifyBalance(_token);
@@ -233,8 +233,8 @@ contract DaoDepositManager {
         // (which is only possible after the deal expired)
 
         require(
-            d.sender == msg.sender ||
-                (d.sender == dao &&
+            d.depositor == msg.sender ||
+                (d.depositor == dao &&
                     IModuleBase(_module).hasDealExpired(_dealId)),
             "D2D-WITHDRAW-NOT-AUTHORIZED"
         );
@@ -248,7 +248,7 @@ contract DaoDepositManager {
 
         // If it's a token
         if (d.token != dealManager.weth()) {
-            _transferToken(d.token, d.sender, freeAmount);
+            _transferToken(d.token, d.depositor, freeAmount);
             // Else if it's Ether
         } else {
             IWETH(dealManager.weth()).withdraw(freeAmount);
@@ -256,19 +256,19 @@ contract DaoDepositManager {
                 address(this).balance >= freeAmount,
                 "D2D-DEPOSIT-INVALID-AMOUNT"
             );
-            (bool sent, ) = d.sender.call{value: freeAmount}("");
+            (bool sent, ) = d.depositor.call{value: freeAmount}("");
             require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
         }
 
         emit Withdrawn(
             _module,
             _dealId,
+            d.depositor,
             _depositId,
-            d.sender,
             d.token,
             freeAmount
         );
-        return (d.sender, d.token, freeAmount);
+        return (d.depositor, d.token, freeAmount);
     }
 
     function sendToModule(
@@ -356,11 +356,11 @@ contract DaoDepositManager {
         emit VestingStarted(
             msg.sender,
             _dealId,
-            _token,
-            _amount,
             block.timestamp,
             _vestingCliff,
-            _vestingDuration
+            _vestingDuration,
+            _token,
+            _amount
         );
     }
 
@@ -473,9 +473,9 @@ contract DaoDepositManager {
             emit VestingClaimed(
                 vesting.dealModule,
                 vesting.dealId,
+                dao,
                 token,
-                amount,
-                dao
+                amount
             );
         }
     }
@@ -509,11 +509,11 @@ contract DaoDepositManager {
     {
         Deposit memory d = deposits[_module][_dealId][_depositId];
         return (
-            d.sender,
+            d.depositor,
             d.token == dealManager.weth() ? address(0) : d.token,
             d.amount,
             d.used,
-            d.time
+            d.depositedAt
         );
     }
 
@@ -576,7 +576,7 @@ contract DaoDepositManager {
         uint256 freeAmount = 0;
         for (uint256 i = 0; i < deposits[_module][_dealId].length; i++) {
             if (
-                deposits[_module][_dealId][i].sender == _user &&
+                deposits[_module][_dealId][i].depositor == _user &&
                 deposits[_module][_dealId][i].token == _token
             ) {
                 freeAmount += (deposits[_module][_dealId][i].amount -

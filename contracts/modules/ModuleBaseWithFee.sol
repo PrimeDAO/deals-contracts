@@ -18,11 +18,8 @@ contract ModuleBaseWithFee is ModuleBase {
     /**
      * @dev                         Constructor
      * @param _dealmanager         The address of Dealmanager implementation
-     * @param _moduleIdentifier     does not matter
      */
-    constructor(address _dealmanager, string memory _moduleIdentifier)
-        ModuleBase(_dealmanager, _moduleIdentifier)
-    {}
+    constructor(address _dealmanager) ModuleBase(_dealmanager) {}
 
     /**
      * @notice                  This event is emitted when the fee wallet address is updated

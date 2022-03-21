@@ -26,7 +26,10 @@ contract Dealmanager is Ownable {
     // module address => true/false
     mapping(address => bool) public isModule;
 
-    event DaoDepositManagerCreated(address dao, address daoDepositManager);
+    event DaoDepositManagerCreated(
+        address indexed dao,
+        address indexed daoDepositManager
+    );
 
     // Sets a new address for the deposit contract implementation
     function setDaoDepositManagerImplementation(address _newImplementation)

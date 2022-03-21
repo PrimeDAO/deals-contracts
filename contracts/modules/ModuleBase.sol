@@ -11,13 +11,6 @@ import "../interfaces/IDealManager.sol";
           basis for each module
  */
 contract ModuleBase {
-    // String of the unique module identifier
-    // e.g. TOKEN_SWAP_MODULE
-    string public moduleIdentifierString;
-
-    // keccak256 of the identifier string
-    bytes32 public moduleIdentifier;
-
     // Address of the DealManager implementation
     IDealManager public dealManager;
 
@@ -34,22 +27,15 @@ contract ModuleBase {
     }
 
     /**
-     * @dev                             Constructor
+     * @dev                            Constructor
      * @param _dealmanager             The address of Dealmanager implementation
-     * @param _moduleIdentifier         does not matter
      */
-    constructor(address _dealmanager, string memory _moduleIdentifier) {
+    constructor(address _dealmanager) {
         require(
             _dealmanager != address(0),
             "Module: invalid base contract address"
         );
         dealManager = IDealManager(_dealmanager);
-        require(
-            bytes(_moduleIdentifier).length > 0,
-            "Module: module identifier invalid"
-        );
-        moduleIdentifierString = _moduleIdentifier;
-        moduleIdentifier = keccak256(abi.encode(moduleIdentifierString));
     }
 
     /**

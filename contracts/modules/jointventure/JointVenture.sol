@@ -61,7 +61,7 @@ contract JointVentureModule is ModuleBase {
         address _dealmanager,
         address _proxyFactory,
         address _masterCopy
-    ) ModuleBase(_dealmanager, "JOINT_VENTURE_MODULE") {
+    ) ModuleBase(_dealmanager) {
         require(
             _proxyFactory != address(0),
             "Module: invalid proxy factory address"
