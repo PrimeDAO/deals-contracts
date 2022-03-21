@@ -28,14 +28,14 @@ contract ModuleBase {
 
     /**
      * @dev                            Constructor
-     * @param _dealmanager             The address of DealManager implementation
+     * @param _dealManager             The address of DealManager implementation
      */
-    constructor(address _dealmanager) {
+    constructor(address _dealManager) {
         require(
-            _dealmanager != address(0),
+            _dealManager != address(0),
             "Module: invalid base contract address"
         );
-        dealManager = IDealManager(_dealmanager);
+        dealManager = IDealManager(_dealManager);
     }
 
     /**

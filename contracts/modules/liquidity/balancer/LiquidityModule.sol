@@ -68,8 +68,8 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
 
     event LiquidityActionExecuted(uint32 dealId);
 
-    constructor(address _dealmanager, address _vault)
-        ModuleBaseWithFee(_dealmanager)
+    constructor(address _dealManager, address _vault)
+        ModuleBaseWithFee(_dealManager)
     {
         require(_vault != address(0), "Module: invalid vault address");
         vault = IBalancerV2(_vault);

@@ -16,10 +16,10 @@ contract ModuleBaseWithFee is ModuleBase {
     uint32 public feeInBasisPoints;
 
     /**
-     * @dev                         Constructor
-     * @param _dealmanager         The address of DealManager implementation
+     * @dev                        Constructor
+     * @param _dealManager         The address of Dealmanager implementation
      */
-    constructor(address _dealmanager) ModuleBase(_dealmanager) {}
+    constructor(address _dealManager) ModuleBase(_dealManager) {}
 
     /**
      * @notice                  This event is emitted when the fee wallet address is updated

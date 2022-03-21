@@ -70,8 +70,8 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
 
     event LiquidityActionExecuted(uint32 dealId);
 
-    constructor(address _dealmanager, address _router)
-        ModuleBaseWithFee(_dealmanager)
+    constructor(address _dealManager, address _router)
+        ModuleBaseWithFee(_dealManager)
     {
         require(_router != address(0), "Module: invalid router address");
         router = IUniswapV2Router02(_router);
