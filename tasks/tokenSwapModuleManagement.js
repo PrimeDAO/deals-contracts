@@ -1,10 +1,9 @@
-const { parseEther, formatBytes32String } = require("ethers/lib/utils");
 const { task } = require("hardhat/config");
+const { parseEther, formatBytes32String } = require("ethers/lib/utils");
 const {
   registrations,
 } = require("../test/test-input/test-network-config.json");
-const { time } = require("@openzeppelin/test-helpers");
-const { BigNumber } = require("@ethersproject/bignumber");
+const { BigNumber } = require("ethers");
 
 const constructParameters = (deal) => {
   let tokens = [];
@@ -67,9 +66,7 @@ task("createTokenSwap", "creates a Token Swap Deal")
     ];
     const { tokens, pathTo, pathFrom } = constructParameters(deal);
     const metadata = formatBytes32String(deal.metadata);
-    const deadline = BigNumber.from(
-      (await time.latest()).toNumber() + DAY * 30
-    );
+    const deadline = BigNumber.from(Math.floor(Date.now() / 1000) + DAY * 30);
 
     const dealParameters = [
       daoAddresses,
