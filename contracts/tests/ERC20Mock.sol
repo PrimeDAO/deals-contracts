@@ -9,8 +9,8 @@ contract ERC20Mock is ERC20 {
     constructor(string memory _name, string memory _symbol)
         ERC20(_name, _symbol)
     {
-        require(totalSupply() == 0, "XGT-ALREADY-INITIALIZED");
+        require(totalSupply() == 0, "ERC20-ALREADY-INITIALIZED");
         _mint(msg.sender, MAX_SUPPLY);
-        require(totalSupply() == MAX_SUPPLY, "XGT-INVALID-SUPPLY");
+        require(totalSupply() == MAX_SUPPLY, "ERC20-INVALID-SUPPLY");
     }
 }
