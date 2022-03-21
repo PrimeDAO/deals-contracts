@@ -24,7 +24,7 @@ contract JointVentureModule is ModuleBase {
         address[] safeMembers;
         // the voting threshold of the
         // new safe
-        uint256 safeThreshold;
+        uint32 safeThreshold;
         // the tokens involved in the action
         address[] tokens;
         // the token flow from the DAOs to the module
@@ -47,7 +47,7 @@ contract JointVentureModule is ModuleBase {
         uint32 dealId,
         address[] _daos,
         address[] _safeMembers,
-        uint256 _safeThreshold,
+        uint32 _safeThreshold,
         address[] _tokens,
         uint256[][] _pathFrom,
         uint32 _deadline
@@ -58,10 +58,10 @@ contract JointVentureModule is ModuleBase {
     event JointVentureActionExecuted(uint32 dealId);
 
     constructor(
-        address _dealmanager,
+        address _dealManager,
         address _proxyFactory,
         address _masterCopy
-    ) ModuleBase(_dealmanager) {
+    ) ModuleBase(_dealManager) {
         require(
             _proxyFactory != address(0),
             "Module: invalid proxy factory address"
@@ -92,7 +92,7 @@ contract JointVentureModule is ModuleBase {
     function createJointVentureAction(
         address[] calldata _daos,
         address[] calldata _safeMembers,
-        uint256 _safeThreshold,
+        uint32 _safeThreshold,
         address[] calldata _tokens,
         uint256[][] calldata _pathFrom,
         uint32 _deadline
@@ -105,7 +105,8 @@ contract JointVentureModule is ModuleBase {
         );
 
         require(
-            _safeThreshold >= 1 && _safeThreshold <= _safeMembers.length,
+            _safeThreshold >= 1 &&
+                _safeThreshold <= uint32(_safeMembers.length),
             "Module: invalid safe threshold"
         );
 
@@ -154,7 +155,7 @@ contract JointVentureModule is ModuleBase {
     function createDepositContractsAndCreateJointVentureAction(
         address[] calldata _daos,
         address[] calldata _safeMembers,
-        uint256 _safeThreshold,
+        uint32 _safeThreshold,
         address[] calldata _tokens,
         uint256[][] calldata _pathFrom,
         uint32 _deadline
@@ -257,7 +258,7 @@ contract JointVentureModule is ModuleBase {
      * @param _safeThreshold    Voting Threshold of the new safe
      * @return                  The address of the newly deployed safe
      */
-    function _deploySafe(address[] memory _safeMembers, uint256 _safeThreshold)
+    function _deploySafe(address[] memory _safeMembers, uint32 _safeThreshold)
         internal
         returns (address payable)
     {
