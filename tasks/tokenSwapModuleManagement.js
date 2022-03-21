@@ -4,6 +4,7 @@ const {
   registrations,
 } = require("../test/test-input/test-network-config.json");
 const { time } = require("@openzeppelin/test-helpers");
+const { BigNumber } = require("@ethersproject/bignumber");
 
 const constructParameters = (deal) => {
   let tokens = [];
