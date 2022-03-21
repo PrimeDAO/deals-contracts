@@ -288,17 +288,11 @@ describe("> Contract: TokenSwapModule", () => {
         expect(await baseContractInstance.daoDepositManager(dao5.address)).to
           .not.be.empty;
 
-        const swap1 = await tokenSwapModuleInstance.getTokenswapFromDealId(
-          SWAP1
-        );
+        const swap1 = await tokenSwapModuleInstance.tokenSwaps(SWAP1);
         expect(swap1.metadata).to.eql(METADATA1);
-        const swap2 = await tokenSwapModuleInstance.getTokenswapFromDealId(
-          SWAP2
-        );
+        const swap2 = await tokenSwapModuleInstance.tokenSwaps(SWAP2);
         expect(swap2.metadata).to.eql(METADATA2);
-        const swap3 = await tokenSwapModuleInstance.getTokenswapFromDealId(
-          SWAP3
-        );
+        const swap3 = await tokenSwapModuleInstance.tokenSwaps(SWAP3);
         expect(swap3.metadata).to.eql(METADATA3);
       });
     });
@@ -652,77 +646,6 @@ describe("> Contract: TokenSwapModule", () => {
       it("» should succeed with valid metadata3", async () => {
         const tokenSwap3 =
           await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA3);
-        expect(tokenSwap3.daos).to.eql(createSwapParametersArray[2][0]);
-        expect(tokenSwap3.tokens).to.eql(createSwapParametersArray[2][1]);
-        expect(tokenSwap3.executionDate).to.equal(0);
-        expect(tokenSwap3.metadata).to.equal(createSwapParametersArray[2][4]);
-        expect(BigNumber.from(tokenSwap3.deadline)).to.eql(
-          createSwapParametersArray[2][5]
-        );
-        expect(tokenSwap3.status).to.equal(1);
-      });
-    });
-  });
-  describe("$ Function: getTokenswapFromDealId", () => {
-    describe("# when not able to execute", () => {
-      beforeEach(async () => {
-        ({ tokenSwapModuleInstance, depositContractInstances } =
-          await setupCreateSwapState(
-            contractInstances,
-            daosDeal1,
-            createSwapParameters
-          ));
-      });
-      it("» should fail with invalid id", async () => {
-        await expect(
-          tokenSwapModuleInstance.getTokenswapFromDealId(INVALID_SWAP)
-        ).to.revertedWith("Module: dealId doesn't exist");
-      });
-    });
-    describe("# when able to execute", () => {
-      beforeEach(async () => {
-        ({
-          tokenSwapModuleInstance,
-          depositContractInstances,
-          createSwapParametersArray,
-        } = await setupMultipleCreateSwapStates(
-          contractInstances,
-          allDaos,
-          METADATAS,
-          tokenAddresses,
-          createSwapParameters
-        ));
-      });
-      it("» should succeed with valid id1", async () => {
-        const tokenSwap1 = await tokenSwapModuleInstance.getTokenswapFromDealId(
-          SWAP1
-        );
-        expect(tokenSwap1.daos).to.eql(createSwapParametersArray[0][0]);
-        expect(tokenSwap1.tokens).to.eql(createSwapParametersArray[0][1]);
-        expect(tokenSwap1.executionDate).to.equal(0);
-        expect(tokenSwap1.metadata).to.equal(createSwapParametersArray[0][4]);
-        expect(BigNumber.from(tokenSwap1.deadline)).to.eql(
-          createSwapParametersArray[0][5]
-        );
-        expect(tokenSwap1.status).to.equal(1);
-      });
-      it("» should succeed with valid id2", async () => {
-        const tokenSwap2 = await tokenSwapModuleInstance.getTokenswapFromDealId(
-          SWAP2
-        );
-        expect(tokenSwap2.daos).to.eql(createSwapParametersArray[1][0]);
-        expect(tokenSwap2.tokens).to.eql(createSwapParametersArray[1][1]);
-        expect(tokenSwap2.executionDate).to.equal(0);
-        expect(tokenSwap2.metadata).to.equal(createSwapParametersArray[1][4]);
-        expect(BigNumber.from(tokenSwap2.deadline)).to.eql(
-          createSwapParametersArray[1][5]
-        );
-        expect(tokenSwap2.status).to.equal(1);
-      });
-      it("» should succeed with valid id3", async () => {
-        const tokenSwap3 = await tokenSwapModuleInstance.getTokenswapFromDealId(
-          SWAP3
-        );
         expect(tokenSwap3.daos).to.eql(createSwapParametersArray[2][0]);
         expect(tokenSwap3.tokens).to.eql(createSwapParametersArray[2][1]);
         expect(tokenSwap3.executionDate).to.equal(0);
