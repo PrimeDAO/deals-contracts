@@ -70,8 +70,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
     event TokenSwapExecuted(address indexed module, uint32 indexed dealId);
 
-    constructor(address _baseContract)
-        ModuleBaseWithFee(_baseContract, "TOKEN_SWAP_MODULE")
+    constructor(address _dealmanager)
+        ModuleBaseWithFee(_dealmanager, "TOKEN_SWAP_MODULE")
     {}
 
     /**
@@ -150,7 +150,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
     /**
       * @dev                Create a new token swap action and automatically
-                            creates Deposit Contracts for each DAO that does not have one
+                            creates Dao Deposit Manager for each DAO that does not have one
       * @param _daos        Array containing the DAOs that are involed in this action
       * @param _tokens      Array containing the tokens that are involed in this action
       * @param _pathFrom    Two-dimensional array containing the tokens flowing from the
@@ -178,8 +178,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint32 _deadline
     ) external returns (uint32) {
         for (uint256 i = 0; i < _daos.length; i++) {
-            if (!baseContract.hasDepositContract(_daos[i])) {
-                baseContract.createDepositContract(_daos[i]);
+            if (!dealManager.hasDaoDepositManager(_daos[i])) {
+                dealManager.createDaoDepositManager(_daos[i]);
             }
         }
         return (
@@ -219,9 +219,9 @@ contract TokenSwapModule is ModuleBaseWithFee {
                 // token, check whether the corresponding DAO
                 // has deposited the corresponding amount into their
                 // deposit contract
-                uint256 bal = IDepositContract(
-                    baseContract.getDepositContract(ts.daos[j])
-                ).getAvailableDealBalance(address(this), _id, ts.tokens[i]);
+                uint256 bal = IDaoDepositManager(
+                    dealManager.getDaoDepositManager(ts.daos[j])
+                ).getAvailableDealBalance(address(this), _dealId, ts.tokens[i]);
                 if (bal < ts.pathFrom[i][j]) {
                     return false;
                 }
@@ -244,7 +244,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         require(ts.deadline >= uint32(block.timestamp), "Module: swap expired");
         require(checkExecutability(_dealId), "Module: swap not executable");
 
-        // transfer the tokens from the deposit contract of the DAOs
+        // transfer the tokens from the deposit manager of the DAOs
         // into this module
         uint256[] memory amountsIn = _pullTokensIntoModule(
             _dealId,
@@ -302,9 +302,13 @@ contract TokenSwapModule is ModuleBaseWithFee {
                         _ts.tokens[i],
                         _ts.pathTo[i][k * 4 + 1]
                     );
-                    _approveDepositContract(_ts.tokens[i], _ts.daos[k], amount);
-                    IDepositContract(
-                        baseContract.getDepositContract(_ts.daos[k])
+                    _approveDaoDepositManager(
+                        _ts.tokens[i],
+                        _ts.daos[k],
+                        amount
+                    );
+                    IDaoDepositManager(
+                        dealManager.getDaoDepositManager(_ts.daos[k])
                     ).startVesting(
                             _dealId,
                             _ts.tokens[i],
@@ -335,10 +339,15 @@ contract TokenSwapModule is ModuleBaseWithFee {
         return tokenSwaps[_dealId];
     }
 
-    function hasDealExpired(uint256 _id) external view override returns (bool) {
+    function hasDealExpired(uint32 _dealId)
+        external
+        view
+        override
+        returns (bool)
+    {
         return
-            tokenSwaps[_id].status != Status.ACTIVE ||
-            tokenSwaps[_id].deadline < block.timestamp;
+            tokenSwaps[_dealId].status != Status.ACTIVE ||
+            tokenSwaps[_dealId].deadline < uint32(block.timestamp);
     }
 
     function _metadataDoesNotExist(bytes memory _metadata)

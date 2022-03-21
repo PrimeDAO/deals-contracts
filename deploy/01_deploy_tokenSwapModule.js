@@ -5,7 +5,7 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
 
-  const baseContractInstance = await ethers.getContract("BaseContract");
+  const baseContractInstance = await ethers.getContract("Dealmanager");
   const baseFee = 30;
   const feeWallet = multisig[network.name];
 

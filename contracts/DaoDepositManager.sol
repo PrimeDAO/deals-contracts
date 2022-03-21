@@ -2,18 +2,18 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./interfaces/IBaseContract.sol";
+import "./interfaces/IDealManager.sol";
 import "./interfaces/IWETH.sol";
 import "./interfaces/IModuleBase.sol";
 
-contract DepositContract {
+contract DaoDepositManager {
     address public dao;
-    IBaseContract public baseContract;
+    IDealManager public dealManager;
 
     // token address => balance
     mapping(address => uint256) public tokenBalances;
     // token address => deal module address => deal module id => balance
-    mapping(address => mapping(address => mapping(uint256 => uint256)))
+    mapping(address => mapping(address => mapping(uint32 => uint256)))
         public availableDealBalances;
     // token address => balance
     mapping(address => uint256) public vestedBalances;
@@ -58,8 +58,8 @@ contract DepositContract {
 
     event Withdrawn(
         address dealModule,
-        uint256 dealID,
-        uint256 depositID,
+        uint32 dealId,
+        uint32 depositId,
         address to,
         address token,
         uint256 amount
@@ -91,30 +91,31 @@ contract DepositContract {
         require(dao == address(0), "D2D-DEPOSIT-ALREADY-INITIALIZED");
         require(_dao != address(0), "D2D-DEPOSIT-INVALID-DAO-ADDRESS");
         dao = _dao;
-        baseContract = IBaseContract(msg.sender);
+        dealManager = IDealManager(msg.sender);
     }
 
     /**
-     * @dev                     Sets a new address for the BaseContract implementation
-     * @param _newBaseContract  The address of the new BaseContract
+     * @dev                     Sets a new address for the Dealmanager implementation
+     * @param _newDaoDepositManager  The address of the new Dealmanager
      */
-    function setBaseContractImplementation(address _newBaseContract)
+    function setDealManagerImplementation(address _newDaoDepositManager)
         external
-        onlyBaseContract
+        onlyDealManager
     {
-        baseContract = IBaseContract(_newBaseContract);
+        dealManager = IDealManager(_newDaoDepositManager);
     }
 
     /**
      * @dev                     Transfers the token amount to the DaoDepositManager and
      *                          stores the parameters in a Deposit structure
-     * @param _processID        The address of the new BaseContract
+     * @param _module           The address of the module for which is being deposited
+     * @param _dealId           The dealId to which this deposit is part of
      * @param _token            The address of the token that is deposited
      * @param _amount           The amount that is deposited
      */
     function deposit(
-        address _dealModule,
-        uint256 _dealId,
+        address _module,
+        uint32 _dealId,
         address _token,
         uint256 _amount
     ) public payable {
@@ -127,22 +128,22 @@ contract DepositContract {
             _transferTokenFrom(_token, msg.sender, address(this), _amount);
         } else {
             _amount = msg.value;
-            _token = baseContract.weth();
+            _token = dealManager.weth();
             IWETH(_token).deposit{value: _amount}();
         }
 
         tokenBalances[_token] += _amount;
-        availableDealBalances[_token][_dealModule][_dealId] += _amount;
+        availableDealBalances[_token][_module][_dealId] += _amount;
         verifyBalance(_token);
         // solhint-disable-next-line not-rely-on-time
-        deposits[_dealModule][_dealId].push(
+        deposits[_module][_dealId].push(
             Deposit(msg.sender, _token, _amount, 0, block.timestamp)
         );
 
         emit Deposited(
-            _dealModule,
+            _module,
             _dealId,
-            deposits[_dealModule][_dealId].length - 1,
+            deposits[_module][_dealId].length - 1,
             _token,
             _amount,
             msg.sender
@@ -150,8 +151,8 @@ contract DepositContract {
     }
 
     function multipleDeposits(
-        address _dealModule,
-        uint256 _dealId,
+        address _module,
+        uint32 _dealId,
         address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external payable {
@@ -161,20 +162,20 @@ contract DepositContract {
             "D2D-DEPOSIT-ARRAY-LENGTH-MISMATCH"
         );
         for (uint256 i = 0; i < _tokens.length; i++) {
-            deposit(_dealModule, _dealId, _tokens[i], _amounts[i]);
+            deposit(_module, _dealId, _tokens[i], _amounts[i]);
         }
     }
 
     function registerDeposit(
-        address _dealModule,
-        uint256 _dealId,
+        address _module,
+        uint32 _dealId,
         address _token
     ) public {
         uint256 currentBalance = 0;
         if (_token != address(0)) {
             currentBalance = IERC20(_token).balanceOf(address(this));
         } else {
-            _token = baseContract.weth();
+            _token = dealManager.weth();
             currentBalance = address(this).balance;
         }
         if (currentBalance > tokenBalances[_token]) {
@@ -183,14 +184,14 @@ contract DepositContract {
             if (_token == address(0)) {
                 IWETH(_token).deposit{value: amount}();
             }
-            availableDealBalances[_token][_dealModule][_dealId] += amount;
-            deposits[_dealModule][_dealId].push(
+            availableDealBalances[_token][_module][_dealId] += amount;
+            deposits[_module][_dealId].push(
                 Deposit(dao, _token, amount, 0, block.timestamp)
             );
             emit Deposited(
-                _dealModule,
+                _module,
                 _dealId,
-                deposits[_dealModule][_dealId].length - 1,
+                deposits[_module][_dealId].length - 1,
                 _token,
                 amount,
                 dao
@@ -200,19 +201,19 @@ contract DepositContract {
     }
 
     function registerDeposits(
-        address _dealModule,
-        uint256 _dealId,
+        address _module,
+        uint32 _dealId,
         address[] calldata _tokens
     ) external {
         for (uint256 i = 0; i < _tokens.length; i++) {
-            registerDeposit(_dealModule, _dealId, _tokens[i]);
+            registerDeposit(_module, _dealId, _tokens[i]);
         }
     }
 
     function withdraw(
-        address _dealModule,
-        uint256 _dealId,
-        uint256 _depositID
+        address _module,
+        uint32 _dealId,
+        uint32 _depositId
     )
         external
         returns (
@@ -222,10 +223,10 @@ contract DepositContract {
         )
     {
         require(
-            deposits[_dealModule][_dealId].length > _depositID,
+            deposits[_module][_dealId].length > _depositId,
             "D2D-DEPOSIT-INVALID-DEPOSIT-ID"
         );
-        Deposit storage d = deposits[_dealModule][_dealId][_depositID];
+        Deposit storage d = deposits[_module][_dealId][_depositId];
 
         // Either the caller did the deposit or it's a dao deposit
         // and the caller facilitates the withdraw for the dao
@@ -234,7 +235,7 @@ contract DepositContract {
         require(
             d.sender == msg.sender ||
                 (d.sender == dao &&
-                    IModuleBase(_dealModule).hasDealExpired(_dealId)),
+                    IModuleBase(_module).hasDealExpired(_dealId)),
             "D2D-WITHDRAW-NOT-AUTHORIZED"
         );
 
@@ -242,15 +243,15 @@ contract DepositContract {
         // Deposit can't be used by a module or withdrawn already
         require(freeAmount > 0, "D2D-DEPOSIT-NOT-WITHDRAWABLE");
         d.used = d.amount;
-        availableDealBalances[d.token][_dealModule][_dealId] -= freeAmount;
+        availableDealBalances[d.token][_module][_dealId] -= freeAmount;
         tokenBalances[d.token] -= freeAmount;
 
         // If it's a token
-        if (d.token != baseContract.weth()) {
+        if (d.token != dealManager.weth()) {
             _transferToken(d.token, d.sender, freeAmount);
             // Else if it's Ether
         } else {
-            IWETH(baseContract.weth()).withdraw(freeAmount);
+            IWETH(dealManager.weth()).withdraw(freeAmount);
             require(
                 address(this).balance >= freeAmount,
                 "D2D-DEPOSIT-INVALID-AMOUNT"
@@ -260,9 +261,9 @@ contract DepositContract {
         }
 
         emit Withdrawn(
-            _dealModule,
+            _module,
             _dealId,
-            _depositID,
+            _depositId,
             d.sender,
             d.token,
             freeAmount
@@ -271,7 +272,7 @@ contract DepositContract {
     }
 
     function sendToModule(
-        uint256 _dealId,
+        uint32 _dealId,
         address _token,
         uint256 _amount
     ) external onlyModule returns (bool) {
@@ -287,7 +288,7 @@ contract DepositContract {
                 deposits[msg.sender][_dealId][i].used += freeAmount;
                 if (amountLeft == 0) {
                     if (_token == address(0)) {
-                        IWETH(baseContract.weth()).withdraw(_amount);
+                        IWETH(dealManager.weth()).withdraw(_amount);
                         (bool sent, ) = msg.sender.call{value: _amount}("");
                         require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
                     } else {
@@ -305,7 +306,7 @@ contract DepositContract {
     }
 
     function startVesting(
-        uint256 _dealId,
+        uint32 _dealId,
         address _token,
         uint256 _amount,
         uint256 _vestingCliff,
@@ -389,17 +390,17 @@ contract DepositContract {
         return (tokens, amounts);
     }
 
-    function claimDealVestings(address _dealModule, uint256 _dealId)
+    function claimDealVestings(address _module, uint32 _dealId)
         external
         returns (address[] memory tokens, uint256[] memory amounts)
     {
-        uint256 amountOfTokens = tokensPerDeal[_dealModule][_dealId];
+        uint256 amountOfTokens = tokensPerDeal[_module][_dealId];
         tokens = new address[](amountOfTokens);
         amounts = new uint256[](amountOfTokens);
         uint256 counter = 0;
         for (uint256 i = 0; i < vestings.length; i++) {
             if (
-                vestings[i].dealModule == _dealModule &&
+                vestings[i].dealModule == _module &&
                 vestings[i].dealId == _dealId
             ) {
                 (tokens[counter], amounts[counter]) = sendReleasableClaim(
@@ -461,10 +462,10 @@ contract DepositContract {
                 "D2D-VESTING-CLAIM-AMOUNT-MISMATCH"
             );
             vestedBalances[token] -= amount;
-            if (token != baseContract.weth()) {
+            if (token != dealManager.weth()) {
                 _transferToken(token, dao, amount);
             } else {
-                IWETH(baseContract.weth()).withdraw(amount);
+                IWETH(dealManager.weth()).withdraw(amount);
                 (bool sent, ) = dao.call{value: amount}("");
                 require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
             }
@@ -481,7 +482,7 @@ contract DepositContract {
 
     function verifyBalance(address _token) public view {
         if (_token == address(0)) {
-            _token = baseContract.weth();
+            _token = dealManager.weth();
         }
 
         uint256 balance = IERC20(_token).balanceOf(address(this));
@@ -492,9 +493,9 @@ contract DepositContract {
     }
 
     function getDeposit(
-        address _dealModule,
-        uint256 _dealId,
-        uint256 _depositID
+        address _module,
+        uint32 _dealId,
+        uint32 _depositId
     )
         public
         view
@@ -506,10 +507,10 @@ contract DepositContract {
             uint256
         )
     {
-        Deposit memory d = deposits[_dealModule][_dealId][_depositID];
+        Deposit memory d = deposits[_module][_dealId][_depositId];
         return (
             d.sender,
-            d.token == baseContract.weth() ? address(0) : d.token,
+            d.token == dealManager.weth() ? address(0) : d.token,
             d.amount,
             d.used,
             d.time
@@ -517,10 +518,10 @@ contract DepositContract {
     }
 
     function getDepositRange(
-        address _dealModule,
-        uint256 _dealId,
-        uint256 _fromDepositID,
-        uint256 _toDepositID
+        address _module,
+        uint32 _dealId,
+        uint32 _fromDepositId,
+        uint32 _toDepositId
     )
         external
         view
@@ -532,54 +533,54 @@ contract DepositContract {
             uint256[] memory times
         )
     {
-        uint256 range = 2 + _toDepositID - _fromDepositID; // inclusive range
+        uint32 range = 2 + _toDepositId - _fromDepositId; // inclusive range
         senders = new address[](range);
         tokens = new address[](range);
         amounts = new uint256[](range);
         usedAmounts = new uint256[](range);
         times = new uint256[](range);
-        for (uint256 i = _toDepositID; i <= _fromDepositID; i++) {
+        for (uint32 i = _toDepositId; i <= _fromDepositId; i++) {
             (
                 senders[i],
                 tokens[i],
                 amounts[i],
                 usedAmounts[i],
                 times[i]
-            ) = getDeposit(_dealModule, _dealId, i);
+            ) = getDeposit(_module, _dealId, i);
         }
         return (senders, tokens, amounts, usedAmounts, times);
     }
 
     function getAvailableDealBalance(
-        address _dealModule,
-        uint256 _dealId,
+        address _module,
+        uint32 _dealId,
         address _token
     ) external view returns (uint256) {
-        return availableDealBalances[_token][_dealModule][_dealId];
+        return availableDealBalances[_token][_module][_dealId];
     }
 
-    function getTotalDepositCount(address _dealModule, uint256 _dealId)
+    function getTotalDepositCount(address _module, uint32 _dealId)
         external
         view
         returns (uint256)
     {
-        return deposits[_dealModule][_dealId].length;
+        return deposits[_module][_dealId].length;
     }
 
     function getWithdrawableAmountOfUser(
-        address _dealModule,
-        uint256 _dealId,
+        address _module,
+        uint32 _dealId,
         address _user,
         address _token
     ) external view returns (uint256) {
         uint256 freeAmount = 0;
-        for (uint256 i = 0; i < deposits[_dealModule][_dealId].length; i++) {
+        for (uint256 i = 0; i < deposits[_module][_dealId].length; i++) {
             if (
-                deposits[_dealModule][_dealId][i].sender == _user &&
-                deposits[_dealModule][_dealId][i].token == _token
+                deposits[_module][_dealId][i].sender == _user &&
+                deposits[_module][_dealId][i].token == _token
             ) {
-                freeAmount += (deposits[_dealModule][_dealId][i].amount -
-                    deposits[_dealModule][_dealId][i].used);
+                freeAmount += (deposits[_module][_dealId][i].amount -
+                    deposits[_module][_dealId][i].used);
             }
         }
         return freeAmount;
@@ -619,17 +620,17 @@ contract DepositContract {
         );
     }
 
-    modifier onlyBaseContract() {
+    modifier onlyDealManager() {
         // solhint-disable-next-line reason-string
         require(
-            msg.sender == address(baseContract),
+            msg.sender == address(dealManager),
             "D2D-DEPOSIT-ONLY-BASE-CONTRACT-CAN-ACCESS"
         );
         _;
     }
 
     modifier onlyModule() {
-        require(baseContract.addressIsModule(msg.sender), "D2D-NOT-MODULE");
+        require(dealManager.addressIsModule(msg.sender), "D2D-NOT-MODULE");
         _;
     }
 }

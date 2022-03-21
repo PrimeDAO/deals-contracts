@@ -2,8 +2,8 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../interfaces/IDepositContract.sol";
-import "../interfaces/IBaseContract.sol";
+import "../interfaces/IDaoDepositManager.sol";
+import "../interfaces/IDealManager.sol";
 
 /**
  * @title PrimeDeals Module Base
@@ -19,7 +19,7 @@ contract ModuleBase {
     bytes32 public moduleIdentifier;
 
     // Address of the DealManager implementation
-    IBaseContract public baseContract;
+    IDealManager public dealManager;
 
     // @notics      Status of a deal
     // NULL         Uninitialized deal
@@ -35,15 +35,15 @@ contract ModuleBase {
 
     /**
      * @dev                             Constructor
-     * @param _baseContract             The address of BaseContract implementation
+     * @param _dealmanager             The address of Dealmanager implementation
      * @param _moduleIdentifier         does not matter
      */
-    constructor(address _baseContract, string memory _moduleIdentifier) {
+    constructor(address _dealmanager, string memory _moduleIdentifier) {
         require(
-            _baseContract != address(0),
+            _dealmanager != address(0),
             "Module: invalid base contract address"
         );
-        baseContract = IBaseContract(_baseContract);
+        dealManager = IDealManager(_dealmanager);
         require(
             bytes(_moduleIdentifier).length > 0,
             "Module: module identifier invalid"
@@ -53,8 +53,8 @@ contract ModuleBase {
     }
 
     /**
-      * @dev                Sends tokens from a deposit contract to the module
-      * @param _id          ID of the action this is related to
+      * @dev                Sends tokens from a DAO deposit manager to the module
+      * @param _dealId      ID of the action this is related to
       * @param _daos        Array containing the DAOs that are involed in this action
       * @param _tokens      Array containing the tokens that are involed in this action
       * @param _path        Double nested array containing the amounts of tokens for each
@@ -62,7 +62,7 @@ contract ModuleBase {
       * @return amountsIn   Array containing the total amounts sent per token
     */
     function _pullTokensIntoModule(
-        uint256 _id,
+        uint32 _dealId,
         address[] memory _daos,
         address[] memory _tokens,
         uint256[][] memory _path
@@ -74,8 +74,9 @@ contract ModuleBase {
             for (uint256 j = 0; j < _path[i].length; j++) {
                 if (_path[i][j] > 0) {
                     amountsIn[i] += _path[i][j];
-                    IDepositContract(baseContract.getDepositContract(_daos[j]))
-                        .sendToModule(_id, _tokens[i], _path[i][j]);
+                    IDaoDepositManager(
+                        dealManager.getDaoDepositManager(_daos[j])
+                    ).sendToModule(_dealId, _tokens[i], _path[i][j]);
                 }
             }
         }
@@ -97,17 +98,17 @@ contract ModuleBase {
 
     /**
      * @dev            Calls the approval function of a token
-                       for the deposit contract of a DAO
+                       for the deposit manager of a DAO
      * @param _token   Address of the token
-     * @param _dao     DAO whose deposit contract is the target
+     * @param _dao     DAO whose deposit manager is the target
      * @param _amount  Amount to be approved
      */
-    function _approveDepositContract(
+    function _approveDaoDepositManager(
         address _token,
         address _dao,
         uint256 _amount
     ) internal {
-        _approveToken(_token, baseContract.getDepositContract(_dao), _amount);
+        _approveToken(_token, dealManager.getDaoDepositManager(_dao), _amount);
     }
 
     /**
@@ -146,5 +147,10 @@ contract ModuleBase {
         );
     }
 
-    function hasDealExpired(uint256 _id) external view virtual returns (bool) {}
+    function hasDealExpired(uint32 _dealId)
+        external
+        view
+        virtual
+        returns (bool)
+    {}
 }

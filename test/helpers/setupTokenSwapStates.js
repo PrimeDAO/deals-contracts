@@ -71,23 +71,23 @@ const setupMultipleCreateSwapStates = async (
 
   const depositContractInstanceDAO1 =
     await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(allDaos[0].address)
+      await baseContractInstance.daoDepositManager(allDaos[0].address)
     );
   const depositContractInstanceDAO2 =
     await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(allDaos[1].address)
+      await baseContractInstance.daoDepositManager(allDaos[1].address)
     );
   const depositContractInstanceDAO3 =
     await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(allDaos[2].address)
+      await baseContractInstance.daoDepositManager(allDaos[2].address)
     );
   const depositContractInstanceDAO4 =
     await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(allDaos[3].address)
+      await baseContractInstance.daoDepositManager(allDaos[3].address)
     );
   const depositContractInstanceDAO5 =
     await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(allDaos[4].address)
+      await baseContractInstance.daoDepositManager(allDaos[4].address)
     );
 
   const depositContractInstances = [
@@ -113,7 +113,7 @@ const getDepositContractsFromDAOArray = async (
 
   for (let i = 0; i < allDaos.length; i++) {
     depositContractInstances.push(
-      await baseContractInstance.depositContract(allDaos[i].address)
+      await baseContractInstance.daoDepositManager(allDaos[i].address)
     );
   }
   return depositContractInstances;
@@ -398,15 +398,15 @@ const setupCreateSwapState = async (
 
   const depositContractInstanceDAO1 =
     await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(daos[0].address)
+      await baseContractInstance.daoDepositManager(daos[0].address)
     );
   const depositContractInstanceDAO2 =
     await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(daos[1].address)
+      await baseContractInstance.daoDepositManager(daos[1].address)
     );
   const depositContractInstanceDAO3 =
     await depositContractFactoryInstance.attach(
-      await baseContractInstance.depositContract(daos[2].address)
+      await baseContractInstance.daoDepositManager(daos[2].address)
     );
 
   const depositContractInstances = [

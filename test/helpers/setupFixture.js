@@ -6,15 +6,15 @@ const setupFixture = deployments.createFixture(
     const { deploy } = deployments;
     const { root, prime } = await ethers.getNamedSigners();
 
-    // Set up BaseContract contract
-    await deploy("BaseContract", {
-      contract: "BaseContract",
+    // Set up Dealmanager contract
+    await deploy("Dealmanager", {
+      contract: "Dealmanager",
       from: root.address,
       log: true,
     });
 
-    await deploy("DepositContract", {
-      contract: "DepositContract",
+    await deploy("DaoDepositManager", {
+      contract: "DaoDepositManager",
       from: root.address,
       log: true,
     });
@@ -26,12 +26,14 @@ const setupFixture = deployments.createFixture(
       logs: true,
     });
 
-    const depositContractInstance = await ethers.getContract("DepositContract");
-    const baseContractInstance = await ethers.getContract("BaseContract");
+    const depositContractInstance = await ethers.getContract(
+      "DaoDepositManager"
+    );
+    const baseContractInstance = await ethers.getContract("Dealmanager");
     const wethInstance = await ethers.getContract("WETH");
 
     await baseContractInstance.setWETHAddress(wethInstance.address);
-    await baseContractInstance.setDepositContractImplementation(
+    await baseContractInstance.setDaoDepositManagerImplementation(
       depositContractInstance.address
     );
 
@@ -47,17 +49,17 @@ const setupFixture = deployments.createFixture(
     await tokenSwapModuleInstance.setFeeWallet(prime.address);
     await tokenSwapModuleInstance.setFee(30);
 
-    // Register TokenSwapModule in BaseContract
+    // Register TokenSwapModule in Dealmanager
     await baseContractInstance.registerModule(tokenSwapModuleInstance.address);
 
     // Return contract instances
     const contractInstances = {
-      baseContractInstance: await ethers.getContract("BaseContract"),
+      baseContractInstance: await ethers.getContract("Dealmanager"),
       tokenInstances: await tokens.getErc20TokenInstances(4, root),
       tokenSwapModuleInstance: tokenSwapModuleInstance,
       depositContractInstance: depositContractInstance,
       depositContractFactoryInstance: await ethers.getContractFactory(
-        "DepositContract"
+        "DaoDepositManager"
       ),
       wethInstance: wethInstance,
     };

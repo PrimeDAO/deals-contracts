@@ -58,7 +58,7 @@ const METADATA2 = formatBytes32String("helloao");
 const METADATA3 = formatBytes32String("helloaodfs");
 const METADATAS = [METADATA1, METADATA2, METADATA3];
 
-describe.only("> Contract: TokenSwapModule", () => {
+describe("> Contract: TokenSwapModule", () => {
   before(async () => {
     const signers = await ethers.getSigners();
     [root, prime, dao1, dao2, dao3, dao4, dao5] = signers;
@@ -218,12 +218,12 @@ describe.only("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...createSwapParameters)
         ).to.emit(tokenSwapModuleInstance, "TokenSwapCreated");
 
-        expect(await baseContractInstance.depositContract(dao1.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao2.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao3.address)).to.not
-          .be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao1.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao2.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao3.address)).to
+          .not.be.empty;
       });
       it("» should succeed in creating 2 swaps", async () => {
         await expect(
@@ -240,14 +240,14 @@ describe.only("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...createSwapParameters)
         ).to.emit(tokenSwapModuleInstance, "TokenSwapCreated");
 
-        expect(await baseContractInstance.depositContract(dao1.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao2.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao3.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao4.address)).to.not
-          .be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao1.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao2.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao3.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao4.address)).to
+          .not.be.empty;
       });
       it("» should succeed in creating 3 swaps", async () => {
         const createSwapParameters1 = [
@@ -277,16 +277,16 @@ describe.only("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...createSwapParameters2)
         ).to.emit(tokenSwapModuleInstance, "TokenSwapCreated");
 
-        expect(await baseContractInstance.depositContract(dao1.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao2.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao3.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao4.address)).to.not
-          .be.empty;
-        expect(await baseContractInstance.depositContract(dao5.address)).to.not
-          .be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao1.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao2.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao3.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao4.address)).to
+          .not.be.empty;
+        expect(await baseContractInstance.daoDepositManager(dao5.address)).to
+          .not.be.empty;
 
         const swap1 = await tokenSwapModuleInstance.getTokenswapFromDealId(
           SWAP1

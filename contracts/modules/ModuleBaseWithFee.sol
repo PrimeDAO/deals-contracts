@@ -17,11 +17,11 @@ contract ModuleBaseWithFee is ModuleBase {
 
     /**
      * @dev                         Constructor
-     * @param _baseContract         The address of BaseContract implementation
+     * @param _dealmanager         The address of Dealmanager implementation
      * @param _moduleIdentifier     does not matter
      */
-    constructor(address _baseContract, string memory _moduleIdentifier)
-        ModuleBase(_baseContract, _moduleIdentifier)
+    constructor(address _dealmanager, string memory _moduleIdentifier)
+        ModuleBase(_dealmanager, _moduleIdentifier)
     {}
 
     /**
@@ -46,7 +46,7 @@ contract ModuleBaseWithFee is ModuleBase {
      * @param _feeWallet    Address of the new fee wallet
      */
     function setFeeWallet(address _feeWallet) external {
-        require(msg.sender == baseContract.owner(), "Fee: not authorized");
+        require(msg.sender == dealManager.owner(), "Fee: not authorized");
         emit FeeWalletChanged(feeWallet, _feeWallet);
         feeWallet = _feeWallet;
     }
@@ -56,7 +56,7 @@ contract ModuleBaseWithFee is ModuleBase {
      * @param _feeInBasisPoints     Fee amount in basis points (1% = 10000)
      */
     function setFee(uint32 _feeInBasisPoints) external {
-        require(msg.sender == baseContract.owner(), "Fee: not authorized");
+        require(msg.sender == dealManager.owner(), "Fee: not authorized");
         require(_feeInBasisPoints <= 10000, "Fee: can't be more than 100%");
         emit FeeChanged(feeInBasisPoints, _feeInBasisPoints);
         feeInBasisPoints = _feeInBasisPoints;
