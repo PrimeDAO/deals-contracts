@@ -276,17 +276,18 @@ contract DaoDepositManager {
         uint32 _dealId,
         address _token,
         uint256 _amount
-    ) external onlyModule returns (bool) {
+    ) external onlyModule {
         uint256 amountLeft = _amount;
         for (uint256 i = 0; i < deposits[msg.sender][_dealId].length; i++) {
-            if (deposits[msg.sender][_dealId][i].token == _token) {
-                uint256 freeAmount = deposits[msg.sender][_dealId][i].amount -
-                    deposits[msg.sender][_dealId][i].used;
+            Deposit storage d = deposits[msg.sender][_dealId][i];
+            if (d.token == _token) {
+                uint256 freeAmount = d.amount - d.used;
                 if (freeAmount > amountLeft) {
                     freeAmount = amountLeft;
                 }
                 amountLeft -= freeAmount;
-                deposits[msg.sender][_dealId][i].used += freeAmount;
+                d.used += freeAmount;
+
                 if (amountLeft == 0) {
                     if (_token == address(0)) {
                         IWETH(dealManager.weth()).withdraw(_amount);
@@ -299,11 +300,13 @@ contract DaoDepositManager {
                     availableDealBalances[_token][msg.sender][
                         _dealId
                     ] -= _amount;
-                    return true;
+                    // break out of the loop, since we sent the tokens
+                    // we now jump to the require statement at the end
+                    break;
                 }
             }
         }
-        return false;
+        require(amountLeft == 0, "D2D-DEPOSIT-NOT-ENOUGH-SENT-TO-MODULE");
     }
 
     function startVesting(
