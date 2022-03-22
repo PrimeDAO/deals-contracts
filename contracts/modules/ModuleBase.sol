@@ -55,14 +55,15 @@ contract ModuleBase {
     ) internal returns (uint256[] memory amountsIn) {
         amountsIn = new uint256[](_tokens.length);
 
-        for (uint256 i = 0; i < _tokens.length; i++) {
+        for (uint256 i; i < _tokens.length; ++i) {
             require(_path[i].length == _daos.length, "Module: length mismatch");
-            for (uint256 j = 0; j < _path[i].length; j++) {
-                if (_path[i][j] > 0) {
-                    amountsIn[i] += _path[i][j];
+            for (uint256 j; j < _path[i].length; ++j) {
+                uint256 path = _path[i][j];
+                if (path > 0) {
+                    amountsIn[i] += path;
                     IDaoDepositManager(
                         dealManager.getDaoDepositManager(_daos[j])
-                    ).sendToModule(_dealId, _tokens[i], _path[i][j]);
+                    ).sendToModule(_dealId, _tokens[i], path);
                 }
             }
         }

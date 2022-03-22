@@ -170,7 +170,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         uint256 _maxDiff,
         uint32 _deadline
     ) external returns (uint32) {
-        for (uint256 i = 0; i < _daos.length; i++) {
+        for (uint256 i; i < _daos.length; ++i) {
             if (!dealManager.hasDaoDepositManager(_daos[i])) {
                 dealManager.createDaoDepositManager(_daos[i]);
             }
@@ -207,8 +207,9 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         if (la.deadline < uint32(block.timestamp)) {
             return false;
         }
-        for (uint256 i = 0; i < la.tokens.length; i++) {
-            for (uint256 j = 0; j < la.pathFrom[i].length; j++) {
+
+        for (uint256 i; i < la.tokens.length; ++i) {
+            for (uint256 j; j < la.pathFrom[i].length; ++j) {
                 if (
                     IDaoDepositManager(
                         dealManager.getDaoDepositManager(la.daos[j])
@@ -254,7 +255,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         _approveToken(la.tokens[1], address(vault), tokenAmountsIn[1]);
 
         IAsset[] memory assets = new IAsset[](la.tokens.length);
-        for (uint256 i = 0; i < la.tokens.length; i++) {
+        for (uint256 i; i < la.tokens.length; ++i) {
             assets[i] = IAsset(la.tokens[i]);
         }
 
@@ -293,12 +294,12 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         address _lpToken,
         uint256 _amount
     ) internal returns (uint256[] memory _daoShares) {
-        uint256 amountsTo = 0;
+        uint256 amountsTo;
         uint256 tokensLeft = _amount;
         _daoShares = new uint256[](_la.daos.length);
 
-        for (uint256 k = 0; k < _la.pathTo.length / 4; k++) {
-            uint256 share = 0;
+        for (uint256 k; k < _la.pathTo.length / 4; ++k) {
+            uint256 share;
             // every 4 values, the values for a new dao start
             // value 0 = instant amount
             // value 1 = vested amount
@@ -360,8 +361,8 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
             "Module: array length mismatch"
         );
         uint256[] memory left = _amounts;
-        for (uint256 i = 0; i < _daoShares.length; i++) {
-            for (uint256 j = 0; j < _amounts.length; j++) {
+        for (uint256 i; i < _daoShares.length; ++i) {
+            for (uint256 j; j < _amounts.length; ++j) {
                 if (_amounts[j] > 0) {
                     uint256 payout = (_amounts[j] * _daoShares[i]) / 10000;
                     left[j] -= payout;

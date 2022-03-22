@@ -163,7 +163,7 @@ contract DaoDepositManager {
             _tokens.length == _amounts.length,
             "D2D-DEPOSIT-ARRAY-LENGTH-MISMATCH"
         );
-        for (uint256 i = 0; i < _tokens.length; i++) {
+        for (uint256 i; i < _tokens.length; ++i) {
             deposit(_module, _dealId, _tokens[i], _amounts[i]);
         }
     }
@@ -173,7 +173,7 @@ contract DaoDepositManager {
         uint32 _dealId,
         address _token
     ) public {
-        uint256 currentBalance = 0;
+        uint256 currentBalance;
         if (_token != address(0)) {
             currentBalance = IERC20(_token).balanceOf(address(this));
         } else {
@@ -209,7 +209,7 @@ contract DaoDepositManager {
         uint32 _dealId,
         address[] calldata _tokens
     ) external {
-        for (uint256 i = 0; i < _tokens.length; i++) {
+        for (uint256 i; i < _tokens.length; ++i) {
             registerDeposit(_module, _dealId, _tokens[i]);
         }
     }
@@ -281,7 +281,7 @@ contract DaoDepositManager {
         uint256 _amount
     ) external onlyModule {
         uint256 amountLeft = _amount;
-        for (uint256 i = 0; i < deposits[msg.sender][_dealId].length; i++) {
+        for (uint256 i; i < deposits[msg.sender][_dealId].length; ++i) {
             Deposit storage d = deposits[msg.sender][_dealId][i];
             if (d.token == _token) {
                 uint256 freeAmount = d.amount - d.used;
@@ -321,7 +321,7 @@ contract DaoDepositManager {
     ) external onlyModule {
         // solhint-disable-next-line reason-string
         require(
-            _token != address(0),
+            _token != address(0), // TODO WHAT THE FUCK?????????
             "D2D-DEPOSIT-VESTING-INVALID-TOKEN-ADDRESS"
         );
         // solhint-disable-next-line reason-string
@@ -358,7 +358,7 @@ contract DaoDepositManager {
         // unlikely edge-case of multiple vestings of the
         // same token for one deal. This is necessary
         // for deal-based vesting claims to work.
-        tokensPerDeal[msg.sender][_dealId]++;
+        ++tokensPerDeal[msg.sender][_dealId];
 
         emit VestingStarted(
             msg.sender,
@@ -382,13 +382,13 @@ contract DaoDepositManager {
         // Copy storage array to memory, since the "original"
         // array might change during sendReleasableClaim() if
         // the amount of a token reaches zero
-        for (uint256 i = 0; i < vestingCount; i++) {
+        for (uint256 i; i < vestingCount; ++i) {
             tokens[i] = vestedTokenAddresses[i];
         }
 
-        for (uint256 i = 0; i < vestings.length; i++) {
+        for (uint256 i; i < vestings.length; ++i) {
             (address token, uint256 amount) = sendReleasableClaim(vestings[i]);
-            for (uint256 j = 0; j < vestingCount; j++) {
+            for (uint256 j; j < vestingCount; ++j) {
                 if (token == tokens[j]) {
                     amounts[j] += amount;
                 }
@@ -404,16 +404,12 @@ contract DaoDepositManager {
         uint256 amountOfTokens = tokensPerDeal[_module][_dealId];
         tokens = new address[](amountOfTokens);
         amounts = new uint256[](amountOfTokens);
-        uint256 counter = 0;
-        for (uint256 i = 0; i < vestings.length; i++) {
-            if (
-                vestings[i].dealModule == _module &&
-                vestings[i].dealId == _dealId
-            ) {
-                (tokens[counter], amounts[counter]) = sendReleasableClaim(
-                    vestings[i]
-                );
-                counter++;
+        uint256 counter;
+        for (uint256 i; i < vestings.length; ++i) {
+            Vesting storage v = vestings[i];
+            if (v.dealModule == _module && v.dealId == _dealId) {
+                (tokens[counter], amounts[counter]) = sendReleasableClaim(v);
+                ++counter;
             }
         }
     }
@@ -449,7 +445,7 @@ contract DaoDepositManager {
             // we remove it from the array
             if (vestedTokenAmounts[token] == 0) {
                 uint256 arrLen = vestedTokenAddresses.length;
-                for (uint256 i = 0; i < arrLen; i++) {
+                for (uint256 i; i < arrLen; ++i) {
                     if (vestedTokenAddresses[i] == token) {
                         // if it's not the last element
                         // move the last to the current slot
@@ -541,7 +537,7 @@ contract DaoDepositManager {
         amounts = new uint256[](range);
         usedAmounts = new uint256[](range);
         times = new uint256[](range);
-        for (uint32 i = _toDepositId; i <= _fromDepositId; i++) {
+        for (uint32 i = _toDepositId; i <= _fromDepositId; ++i) {
             (
                 senders[i],
                 tokens[i],
@@ -575,8 +571,8 @@ contract DaoDepositManager {
         address _user,
         address _token
     ) external view returns (uint256) {
-        uint256 freeAmount = 0;
-        for (uint256 i = 0; i < deposits[_module][_dealId].length; i++) {
+        uint256 freeAmount;
+        for (uint256 i; i < deposits[_module][_dealId].length; ++i) {
             if (
                 deposits[_module][_dealId][i].depositor == _user &&
                 deposits[_module][_dealId][i].token == _token

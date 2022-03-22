@@ -108,7 +108,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
             );
         }
         require(_daos.length >= 2, "Module: at least 2 daos required");
-        require(_tokens.length >= 1, "Module: at least 1 token required");
+        require(_tokens.length != 0, "Module: at least 1 token required");
         require(
             _tokens.length == _pathFrom.length &&
                 _pathFrom.length == _pathTo.length &&
@@ -175,7 +175,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         bytes calldata _metadata,
         uint32 _deadline
     ) external returns (uint32) {
-        for (uint256 i = 0; i < _daos.length; i++) {
+        for (uint256 i; i < _daos.length; ++i) {
             if (!dealManager.hasDaoDepositManager(_daos[i])) {
                 dealManager.createDaoDepositManager(_daos[i]);
             }
@@ -211,8 +211,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
         if (ts.deadline < uint32(block.timestamp)) {
             return false;
         }
-        for (uint256 i = 0; i < ts.tokens.length; i++) {
-            for (uint256 j = 0; j < ts.pathFrom[i].length; j++) {
+        for (uint256 i; i < ts.tokens.length; ++i) {
+            for (uint256 j; j < ts.pathFrom[i].length; ++j) {
                 // for each token and each pathFrom entry for this
                 // token, check whether the corresponding DAO
                 // has deposited the corresponding amount into their
@@ -256,7 +256,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256[] memory amountsOut = _distributeTokens(ts, _dealId);
 
         // verify whether the amounts being pulled and pushed match
-        for (uint256 i = 0; i < ts.tokens.length; i++) {
+        for (uint256 i; i < ts.tokens.length; ++i) {
             require(amountsIn[i] == amountsOut[i], "Module: amount mismatch");
         }
 
@@ -279,8 +279,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
     {
         amountsOut = new uint256[](_ts.tokens.length);
         // Distribute tokens from the module
-        for (uint256 i = 0; i < _ts.tokens.length; i++) {
-            for (uint256 k = 0; k < _ts.pathTo[i].length / 4; k++) {
+        for (uint256 i; i < _ts.tokens.length; ++i) {
+            for (uint256 k; k < _ts.pathTo[i].length / 4; ++k) {
                 // every 4 values, the values for a new dao start
                 // value 0 = instant amount
                 // value 1 = vested amount
@@ -347,7 +347,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256 dealId = metadataToDealId[_metadata];
         return (dealId == 0 &&
             keccak256(tokenSwaps[dealId].metadata) != keccak256(_metadata) &&
-            _metadata.length > 0);
+            _metadata.length != 0);
     }
 
     modifier validMetadata(bytes memory _metadata) {

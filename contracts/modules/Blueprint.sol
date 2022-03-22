@@ -69,7 +69,7 @@ contract BlueprintModule is ModuleBase {
         string calldata _value3
     ) external returns (uint256) {
         uint256 newId = createAction(_daos, _value1, _value2, _value3);
-        for (uint256 i = 0; i < _daos.length; i++) {
+        for (uint256 i; i < _daos.length; ++i) {
             if (!dealManager.hasDaoDepositManager(_daos[i])) {
                 dealManager.createDaoDepositManager(_daos[i]);
             }

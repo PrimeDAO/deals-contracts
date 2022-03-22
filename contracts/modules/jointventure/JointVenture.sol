@@ -100,12 +100,12 @@ contract JointVentureModule is ModuleBase {
         require(_daos.length >= 2, "Module: at least 2 daos required");
 
         require(
-            _safeMembers.length >= 1 && _tokens.length >= 1,
+            _safeMembers.length != 0 && _tokens.length != 0,
             "Module: invalid inputs"
         );
 
         require(
-            _safeThreshold >= 1 &&
+            _safeThreshold != 0 &&
                 _safeThreshold <= uint32(_safeMembers.length),
             "Module: invalid safe threshold"
         );
@@ -160,7 +160,7 @@ contract JointVentureModule is ModuleBase {
         uint256[][] calldata _pathFrom,
         uint32 _deadline
     ) external returns (uint32) {
-        for (uint256 i = 0; i < _daos.length; i++) {
+        for (uint256 i; i < _daos.length; ++i) {
             if (!dealManager.hasDaoDepositManager(_daos[i])) {
                 dealManager.createDaoDepositManager(_daos[i]);
             }
@@ -197,8 +197,8 @@ contract JointVentureModule is ModuleBase {
         if (jv.deadline < uint32(block.timestamp)) {
             return false;
         }
-        for (uint256 i = 0; i < jv.tokens.length; i++) {
-            for (uint256 j = 0; j < jv.pathFrom[i].length; j++) {
+        for (uint256 i; i < jv.tokens.length; ++i) {
+            for (uint256 j; j < jv.pathFrom[i].length; ++j) {
                 // for each token and each pathFrom entry for this
                 // token, check whether the corresponding DAO
                 // has deposited the corresponding amount into their
@@ -294,7 +294,7 @@ contract JointVentureModule is ModuleBase {
         address[] memory _tokens,
         uint256[] memory _amounts
     ) internal {
-        for (uint256 i = 0; i < _tokens.length; i++) {
+        for (uint256 i; i < _tokens.length; ++i) {
             if (_tokens[i] != address(0)) {
                 _transferToken(_tokens[i], _safe, _amounts[i]);
             } else {
