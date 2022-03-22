@@ -122,7 +122,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         for (uint256 i; i < pathFromLen; ++i) {
             require(
                 _pathFrom[i].length == daosLen &&
-                    _pathTo[i].length / 4 == daosLen,
+                    _pathTo[i].length >> 2 == daosLen,
                 "Module: invalid inner array lengths"
             );
         }
@@ -298,14 +298,14 @@ contract TokenSwapModule is ModuleBaseWithFee {
         for (uint256 i; i < _ts.tokens.length; ++i) {
             uint256[] memory pt = _ts.pathTo[i];
             address token = _ts.tokens[i];
-            for (uint256 k; k < pt.length / 4; ++k) {
+            for (uint256 k; k < pt.length >> 2; ++k) {
                 // every 4 values, the values for a new dao start
                 // value 0 = instant amount
                 // value 1 = vested amount
                 // value 2 = vesting cliff
                 // value 3 = vesting duration
-                uint256 instant = pt[k * 4];
-                uint256 vested = pt[k * 4 + 1];
+                uint256 instant = pt[k << 2];
+                uint256 vested = pt[(k << 2) + 1];
 
                 if (instant > 0) {
                     amountsOut[i] += instant;
@@ -322,8 +322,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
                             _dealId,
                             token,
                             amount, // amount
-                            uint32(pt[k * 4 + 2]), // start
-                            uint32(pt[k * 4 + 3]) // end
+                            uint32(pt[(k << 2) + 2]), // start
+                            uint32(pt[(k << 2) + 3]) // end
                         );
                 }
             }

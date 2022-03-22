@@ -117,7 +117,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         require(
             _pathFrom.length == _pathTo.length &&
                 _pathFrom[0].length == _daos.length &&
-                _pathTo.length / 4 == _daos.length,
+                _pathTo.length >> 2 == _daos.length,
             "Module: invalid array lengths"
         );
 
@@ -396,7 +396,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         uint256 amountsTo;
         uint256 tokensLeft = _amount;
 
-        for (uint256 k; k < _la.pathTo.length / 4; ++k) {
+        for (uint256 k; k < _la.pathTo.length >> 4; ++k) {
             uint256 share;
             // every 4 values, the values for a new dao start
             // value 0 = instant amount
@@ -405,9 +405,9 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
             // value 3 = vesting end
 
             // sending the vested amount first
-            if (_la.pathTo[k * 4 + 1] > 0) {
-                share += _la.pathTo[k * 4 + 1];
-                uint256 payout = (_amount * _la.pathTo[k * 4 + 1]) / 10000;
+            if (_la.pathTo[(k << 2) + 1] > 0) {
+                share += _la.pathTo[(k << 2) + 1];
+                uint256 payout = (_amount * _la.pathTo[(k << 2) + 1]) / 10000;
                 amountsTo += payout;
                 tokensLeft -= payout;
                 payout = _payFeeAndReturnRemainder(_lpToken, payout);
@@ -418,15 +418,15 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
                         _dealId,
                         _lpToken,
                         payout, // amount
-                        uint32(_la.pathTo[k * 4 + 2]), // start
-                        uint32(_la.pathTo[k * 4 + 3]) // end
+                        uint32(_la.pathTo[(k << 2) + 2]), // start
+                        uint32(_la.pathTo[(k << 2) + 3]) // end
                     );
             }
 
             // sending the instant amount
-            if (_la.pathTo[k * 4] > 0) {
-                share += _la.pathTo[k * 4];
-                uint256 payout = (_amount * _la.pathTo[k * 4]) / 10000;
+            if (_la.pathTo[(k << 2)] > 0) {
+                share += _la.pathTo[(k << 2)];
+                uint256 payout = (_amount * _la.pathTo[(k << 2)]) / 10000;
                 amountsTo += payout;
                 tokensLeft -= payout;
                 // If we are at the last one, make sure that
