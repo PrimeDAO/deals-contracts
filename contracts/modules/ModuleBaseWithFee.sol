@@ -12,7 +12,7 @@ contract ModuleBaseWithFee is ModuleBase {
     // Wallet that is receiving the fees
     address public feeWallet;
 
-    // Fee in basis points (1% = 10000)
+    // Fee in basis points (100% = 10000)
     uint32 public feeInBasisPoints;
 
     /**
@@ -33,8 +33,8 @@ contract ModuleBaseWithFee is ModuleBase {
 
     /**
      * @notice                  This event is emitted when the fee is updated
-     * @param oldFee            Old fee amount in basis points (1% = 1000)
-     * @param newFee            New fee in basis points (1% = 1000) that is updated
+     * @param oldFee            Old fee amount in basis points (1% = 100)
+     * @param newFee            New fee in basis points (1% = 100) that is updated
      */
     event FeeChanged(uint32 indexed oldFee, uint32 indexed newFee);
 
@@ -50,7 +50,7 @@ contract ModuleBaseWithFee is ModuleBase {
 
     /**
      * @dev                         Sets a new fee
-     * @param _feeInBasisPoints     Fee amount in basis points (1% = 10000)
+     * @param _feeInBasisPoints     Fee amount in basis points (1% = 100)
      */
     function setFee(uint32 _feeInBasisPoints) external {
         require(msg.sender == dealManager.owner(), "Fee: not authorized");

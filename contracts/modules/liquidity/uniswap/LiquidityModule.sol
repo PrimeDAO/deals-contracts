@@ -28,7 +28,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         // the maximum difference between the
         // token ratio from pathFrom and the
         // actual ratio on-chain in basis points
-        // (1% = 10000)
+        // (1% = 100)
         uint256 maxDiff;
         // unix timestamp of the deadline
         uint32 deadline;
@@ -49,7 +49,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
     // from the module, includes vesting.
     // since we do not know the amount of the LP tokens in any case
     // we use percentage values here in basis points, so
-    // 100% = 1000000
+    // 1% = 100
     // token -> dao -> tuple(4)
     // [[instantAmount_dao1, vestedAmount_dao1, vestingStart_dao1,
     // vestingEnd_dao1, instantAmount_dao2, ...], [...]]
@@ -89,11 +89,11 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
                               - Contains absolute numbers of tokens
       * @param _pathTo      Array containing the resulting LP tokens flowing to the DAOs
                               - Contains percentage numbers of tokens
-                              - In Basis Points (1% = 10000) 
+                              - In Basis Points (1% = 100) 
       * @param _maxDiff     The maximum difference between the ratio resulting from the 
                             pathFrom and the actual balance of the pool (if it already 
                             exists)
-                              - In Basis Points (1% = 10000) 
+                              - In Basis Points (1% = 100) 
       * @param _deadline    Time until which this action can be executed (unix timestamp)
       * @return             The ID of the new action
     */
@@ -159,11 +159,11 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
                               - Contains absolute numbers of tokens
       * @param _pathTo      Array containing the resulting LP tokens flowing to the DAOs
                               - Contains percentage numbers of tokens
-                              - In Basis Points (1% = 10000) 
+                              - In Basis Points (1% = 100) 
       * @param _maxDiff     The maximum difference between the ratio resulting from the 
                             pathFrom and the actual balance of the pool (if it already 
                             exists)
-                              - In Basis Points (1% = 10000) 
+                              - In Basis Points (1% = 100) 
       * @param _deadline    Time until which this action can be executed (unix timestamp)
       * @return             The ID of the new action
     */
@@ -351,8 +351,8 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
 
         // ratioDiff = ((big*1000000)/small)-1000000
         // max ratio is defined in percent is
-        // basis points, so 1% = 10000 and
-        // 100% = 1000000
+        // basis points, so 1% = 100 and
+        // 100% = 10000
 
         if (desiredRatio >= ratio) {
             require(
@@ -445,7 +445,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
                                 their LP token shares
       * @param _dealId              The ID of the action (position in the array)
       * @param _daoShares       Array of the percentage shares of each DAO for LP tokens
-                                  - In Basis Points (1% = 10000) 
+                                  - In Basis Points (1% = 100) 
       * @param _amounts         Array of the amounts left for each input token
     */
     function _distributeLeftoverTokens(
