@@ -37,7 +37,7 @@ let root,
   allDaos;
 let tokenAddresses;
 let createSwapParameters, createSwapParametersArray;
-let baseContractInstance, tokenSwapModuleInstance, tokenInstances;
+let dealManagerInstance, tokenSwapModuleInstance, tokenInstances;
 let deadline;
 
 const MONTH = 60 * 60 * 24 * 31;
@@ -70,7 +70,7 @@ describe("> Contract: TokenSwapModule", () => {
 
   beforeEach(async () => {
     contractInstances = await setupFixture();
-    ({ baseContractInstance, tokenSwapModuleInstance, tokenInstances } =
+    ({ dealManagerInstance, tokenSwapModuleInstance, tokenInstances } =
       contractInstances);
 
     tokenAddresses = tokenInstances.map((token) => token.address);
@@ -218,12 +218,12 @@ describe("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...createSwapParameters)
         ).to.emit(tokenSwapModuleInstance, "TokenSwapCreated");
 
-        expect(await baseContractInstance.daoDepositManager(dao1.address)).to
-          .not.be.empty;
-        expect(await baseContractInstance.daoDepositManager(dao2.address)).to
-          .not.be.empty;
-        expect(await baseContractInstance.daoDepositManager(dao3.address)).to
-          .not.be.empty;
+        expect(await dealManagerInstance.daoDepositManager(dao1.address)).to.not
+          .be.empty;
+        expect(await dealManagerInstance.daoDepositManager(dao2.address)).to.not
+          .be.empty;
+        expect(await dealManagerInstance.daoDepositManager(dao3.address)).to.not
+          .be.empty;
       });
       it("» should succeed in creating 2 swaps", async () => {
         await expect(
@@ -240,14 +240,14 @@ describe("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...createSwapParameters)
         ).to.emit(tokenSwapModuleInstance, "TokenSwapCreated");
 
-        expect(await baseContractInstance.daoDepositManager(dao1.address)).to
-          .not.be.empty;
-        expect(await baseContractInstance.daoDepositManager(dao2.address)).to
-          .not.be.empty;
-        expect(await baseContractInstance.daoDepositManager(dao3.address)).to
-          .not.be.empty;
-        expect(await baseContractInstance.daoDepositManager(dao4.address)).to
-          .not.be.empty;
+        expect(await dealManagerInstance.daoDepositManager(dao1.address)).to.not
+          .be.empty;
+        expect(await dealManagerInstance.daoDepositManager(dao2.address)).to.not
+          .be.empty;
+        expect(await dealManagerInstance.daoDepositManager(dao3.address)).to.not
+          .be.empty;
+        expect(await dealManagerInstance.daoDepositManager(dao4.address)).to.not
+          .be.empty;
       });
       it("» should succeed in creating 3 swaps", async () => {
         const createSwapParameters1 = [
@@ -277,16 +277,16 @@ describe("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...createSwapParameters2)
         ).to.emit(tokenSwapModuleInstance, "TokenSwapCreated");
 
-        expect(await baseContractInstance.daoDepositManager(dao1.address)).to
-          .not.be.empty;
-        expect(await baseContractInstance.daoDepositManager(dao2.address)).to
-          .not.be.empty;
-        expect(await baseContractInstance.daoDepositManager(dao3.address)).to
-          .not.be.empty;
-        expect(await baseContractInstance.daoDepositManager(dao4.address)).to
-          .not.be.empty;
-        expect(await baseContractInstance.daoDepositManager(dao5.address)).to
-          .not.be.empty;
+        expect(await dealManagerInstance.daoDepositManager(dao1.address)).to.not
+          .be.empty;
+        expect(await dealManagerInstance.daoDepositManager(dao2.address)).to.not
+          .be.empty;
+        expect(await dealManagerInstance.daoDepositManager(dao3.address)).to.not
+          .be.empty;
+        expect(await dealManagerInstance.daoDepositManager(dao4.address)).to.not
+          .be.empty;
+        expect(await dealManagerInstance.daoDepositManager(dao5.address)).to.not
+          .be.empty;
 
         const swap1 = await tokenSwapModuleInstance.tokenSwaps(SWAP1);
         expect(swap1.metadata).to.eql(METADATA1);

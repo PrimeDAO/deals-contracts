@@ -36,9 +36,9 @@ let root,
   depositer2;
 let tokenAddresses;
 let deal1Parameters, deal2Parameters, deal3Parameters;
-let depositContractInstance,
-  depositContractInstances,
-  baseContractInstance,
+let daoDepositManagerInstance,
+  daoDepositManagerInstances,
+  dealManagerInstance,
   tokenSwapModuleInstance;
 let tokenInstances, wethInstance;
 let deadline;
@@ -74,9 +74,9 @@ describe("> Contract: DaoDepositManager", () => {
   beforeEach(async () => {
     contractInstances = await setupFixture();
     ({
-      baseContractInstance,
+      dealManagerInstance,
       tokenInstances,
-      depositContractInstance,
+      daoDepositManagerInstance,
       tokenSwapModuleInstance,
     } = contractInstances);
     deadline = BigNumber.from((await time.latest()).toNumber() + DAY * 7);
@@ -127,15 +127,15 @@ describe("> Contract: DaoDepositManager", () => {
     describe("# When initializing with invalid parameters", () => {
       it("» should fail on invalid DAO address", async () => {
         await expect(
-          depositContractInstance.initialize(ZERO_ADDRESS)
+          daoDepositManagerInstance.initialize(ZERO_ADDRESS)
         ).to.be.revertedWith("D2D-DEPOSIT-INVALID-DAO-ADDRESS");
       });
     });
     describe("# When initializing again", () => {
       it("» should fail on initializing twice", async () => {
-        await depositContractInstance.initialize(dao1.address);
+        await daoDepositManagerInstance.initialize(dao1.address);
         await expect(
-          depositContractInstance.initialize(dao1.address)
+          daoDepositManagerInstance.initialize(dao1.address)
         ).to.be.revertedWith("D2D-DEPOSIT-ALREADY-INITIALIZED");
       });
     });
@@ -143,8 +143,8 @@ describe("> Contract: DaoDepositManager", () => {
   // describe("$ DaoDepositManager through TokenSwapModule (end-to-end)", () => {
   //   describe("# single deposit ", async () => {
   //     beforeEach(async () => {
-  //       depositContractInstances = await callCreateSwap(
-  //         baseContractInstance,
+  //       daoDepositManagerInstances = await callCreateSwap(
+  //         dealManagerInstance,
   //         tokenSwapModuleInstance,
   //         deal1Parameters
   //       );
@@ -156,8 +156,8 @@ describe("> Contract: DaoDepositManager", () => {
   //   });
   //   describe("# multiple deposits ", async () => {
   //     beforeEach(async () => {
-  //       depositContractInstances = await callCreateSwap(
-  //         baseContractInstance,
+  //       daoDepositManagerInstances = await callCreateSwap(
+  //         dealManagerInstance,
   //         tokenSwapModuleInstance,
   //         deal1Parameters
   //       );
