@@ -120,12 +120,14 @@ contract DaoDepositManager {
         uint256 _amount
     ) public payable {
         require(
-            (_token != address(0) && _amount > 0) ||
-                (_token == address(0) && msg.value > 0),
+            (
+                _amount > 0 && _token != address(0)
+                    ? msg.value == 0
+                    : msg.value > 0
+            ),
             "D2D-DEPOSIT-INVALID-TOKEN-AMOUNT"
         );
         if (_token != address(0)) {
-            require(msg.value == 0, "D2D-DEPOSIT-TOKEN-DEPOSIT-CANT-HAVE-ETH");
             _transferTokenFrom(_token, msg.sender, address(this), _amount);
         } else {
             _amount = msg.value;
