@@ -119,7 +119,7 @@ contract BlueprintModule is ModuleBase {
     }
 
     modifier validId(uint256 _id) {
-        require(_id <= blueprints.length, "Module: id doesn't exist");
+        require(_id < blueprints.length, "Module: id doesn't exist");
         _;
     }
 

@@ -480,7 +480,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
 
     modifier validId(uint32 _dealId) {
         require(
-            _dealId <= uint32(liquidityActions.length),
+            _dealId < uint32(liquidityActions.length),
             "Module: id doesn't exist"
         );
         _;
