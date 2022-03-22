@@ -291,12 +291,12 @@ contract DaoDepositManager {
                 if (amountLeft == 0) {
                     if (_token != address(0)) {
                         _transferToken(_token, msg.sender, _amount);
-                        tokenBalances[_token] -= _amount;
                     } else {
                         IWETH(dealManager.weth()).withdraw(_amount);
                         (bool sent, ) = msg.sender.call{value: _amount}("");
                         require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
                     }
+                    tokenBalances[_token] -= _amount;
                     availableDealBalances[_token][msg.sender][
                         _dealId
                     ] -= _amount;
