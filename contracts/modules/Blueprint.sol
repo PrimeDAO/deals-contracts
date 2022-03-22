@@ -78,7 +78,7 @@ contract BlueprintModule is ModuleBase {
     }
 
     function checkExecutability(uint256 _id)
-        external
+        public
         view
         validId(_id)
         returns (bool)
@@ -99,9 +99,7 @@ contract BlueprintModule is ModuleBase {
         Blueprint memory blueprint = blueprints[_id];
 
         require(
-            blueprint.value1 > 0 &&
-                blueprint.value2 != address(0) &&
-                bytes(blueprint.value3).length > 0,
+            checkExecutability(_id),
             "Module: execution conditions not met"
         );
 
