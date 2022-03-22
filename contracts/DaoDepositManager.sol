@@ -177,7 +177,9 @@ contract DaoDepositManager {
         if (_token != address(0)) {
             currentBalance = IERC20(_token).balanceOf(address(this));
         } else {
-            currentBalance = address(this).balance;
+            currentBalance =
+                address(this).balance +
+                IERC20(dealManager.weth()).balanceOf(address(this));
         }
         uint256 total = tokenBalances[_token] + vestedBalances[_token];
         if (currentBalance > total) {
