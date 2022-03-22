@@ -109,13 +109,24 @@ contract TokenSwapModule is ModuleBaseWithFee {
         }
         require(_daos.length >= 2, "Module: at least 2 daos required");
         require(_tokens.length != 0, "Module: at least 1 token required");
+
+        // Check outer arrays
+        uint256 pathFromLen = _pathFrom.length;
         require(
-            _tokens.length == _pathFrom.length &&
-                _pathFrom.length == _pathTo.length &&
-                _pathFrom[0].length == _daos.length &&
-                _pathTo[0].length / 4 == _daos.length,
-            "Module: invalid array lengths"
+            _tokens.length == pathFromLen && pathFromLen == _pathTo.length,
+            "Module: invalid outer array lengths"
         );
+
+        // Check inner arrays
+        uint256 daosLen = _daos.length;
+        for (uint256 i; i < pathFromLen; ++i) {
+            require(
+                _pathFrom[i].length == daosLen &&
+                    _pathTo[i].length / 4 == daosLen,
+                "Module: invalid inner array lengths"
+            );
+        }
+
         require(_deadline > block.timestamp, "Module: invalid deadline");
 
         TokenSwap memory ts = TokenSwap(
