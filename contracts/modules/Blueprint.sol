@@ -88,14 +88,6 @@ contract BlueprintModule is ModuleBase {
             return false;
         }
 
-        if (
-            blueprint.value1 > 0 &&
-            blueprint.value2 != address(0) &&
-            bytes(blueprint.value3).length > 0
-        ) {
-            return true;
-        }
-
         return true;
     }
 
