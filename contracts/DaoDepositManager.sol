@@ -129,7 +129,6 @@ contract DaoDepositManager {
             _transferTokenFrom(_token, msg.sender, address(this), _amount);
         } else {
             _amount = msg.value;
-            _token = dealManager.weth();
             IWETH(_token).deposit{value: _amount}();
         }
 
@@ -176,7 +175,6 @@ contract DaoDepositManager {
         if (_token != address(0)) {
             currentBalance = IERC20(_token).balanceOf(address(this));
         } else {
-            _token = dealManager.weth();
             currentBalance = address(this).balance;
         }
         if (currentBalance > tokenBalances[_token]) {
@@ -248,7 +246,7 @@ contract DaoDepositManager {
         tokenBalances[d.token] -= freeAmount;
 
         // If it's a token
-        if (d.token != dealManager.weth()) {
+        if (d.token != address(0)) {
             _transferToken(d.token, d.depositor, freeAmount);
             // Else if it's Ether
         } else {
@@ -289,13 +287,13 @@ contract DaoDepositManager {
                 d.used += freeAmount;
 
                 if (amountLeft == 0) {
-                    if (_token == address(0)) {
+                    if (_token != address(0)) {
+                        _transferToken(_token, msg.sender, _amount);
+                        tokenBalances[_token] -= _amount;
+                    } else {
                         IWETH(dealManager.weth()).withdraw(_amount);
                         (bool sent, ) = msg.sender.call{value: _amount}("");
                         require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
-                    } else {
-                        _transferToken(_token, msg.sender, _amount);
-                        tokenBalances[_token] -= _amount;
                     }
                     availableDealBalances[_token][msg.sender][
                         _dealId
@@ -467,7 +465,7 @@ contract DaoDepositManager {
                 "D2D-VESTING-CLAIM-AMOUNT-MISMATCH"
             );
             vestedBalances[token] -= amount;
-            if (token != dealManager.weth()) {
+            if (token != address(0)) {
                 _transferToken(token, dao, amount);
             } else {
                 IWETH(dealManager.weth()).withdraw(amount);
@@ -513,13 +511,7 @@ contract DaoDepositManager {
         )
     {
         Deposit memory d = deposits[_module][_dealId][_depositId];
-        return (
-            d.depositor,
-            d.token == dealManager.weth() ? address(0) : d.token,
-            d.amount,
-            d.used,
-            d.depositedAt
-        );
+        return (d.depositor, d.token, d.amount, d.used, d.depositedAt);
     }
 
     function getDepositRange(

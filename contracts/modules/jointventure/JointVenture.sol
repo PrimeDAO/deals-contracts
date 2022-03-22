@@ -295,7 +295,7 @@ contract JointVentureModule is ModuleBase {
         uint256[] memory _amounts
     ) internal {
         for (uint256 i = 0; i < _tokens.length; i++) {
-            if (_tokens[i] != dealManager.weth()) {
+            if (_tokens[i] != address(0)) {
                 _transferToken(_tokens[i], _safe, _amounts[i]);
             } else {
                 IWETH(dealManager.weth()).withdraw(_amounts[i]);
