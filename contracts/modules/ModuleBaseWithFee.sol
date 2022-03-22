@@ -41,6 +41,8 @@ contract ModuleBaseWithFee is ModuleBase {
     /**
      * @dev                 Sets a new fee wallet
      * @param _feeWallet    Address of the new fee wallet
+     * @notice              The fee system will be inactive if the feeWallet
+     *                      is set to a zero-address
      */
     function setFeeWallet(address _feeWallet) external {
         require(msg.sender == dealManager.owner(), "Fee: not authorized");
