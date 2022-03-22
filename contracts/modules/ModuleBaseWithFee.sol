@@ -46,7 +46,9 @@ contract ModuleBaseWithFee is ModuleBase {
      */
     function setFeeWallet(address _feeWallet) external {
         require(msg.sender == dealManager.owner(), "Fee: not authorized");
-        emit FeeWalletChanged(feeWallet, _feeWallet);
+        if (feeWallet != _feeWallet) {
+            emit FeeWalletChanged(feeWallet, _feeWallet);
+        }
         feeWallet = _feeWallet;
     }
 
@@ -57,7 +59,9 @@ contract ModuleBaseWithFee is ModuleBase {
     function setFee(uint32 _feeInBasisPoints) external {
         require(msg.sender == dealManager.owner(), "Fee: not authorized");
         require(_feeInBasisPoints <= 2000, "Fee: can't be more than 20%");
-        emit FeeChanged(feeInBasisPoints, _feeInBasisPoints);
+        if (feeInBasisPoints != _feeInBasisPoints) {
+            emit FeeChanged(feeInBasisPoints, _feeInBasisPoints);
+        }
         feeInBasisPoints = _feeInBasisPoints;
     }
 
