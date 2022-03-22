@@ -56,14 +56,18 @@ contract ModuleBase {
         amountsIn = new uint256[](_tokens.length);
         require(_path.length == _tokens.length, "Module: length mismatch");
         for (uint256 i; i < _tokens.length; ++i) {
-            require(_path[i].length == _daos.length, "Module: length mismatch");
-            for (uint256 j; j < _path[i].length; ++j) {
-                uint256 path = _path[i][j];
-                if (path > 0) {
-                    amountsIn[i] += path;
+            uint256[] memory tokenPath = _path[i];
+            require(
+                tokenPath.length == _daos.length,
+                "Module: length mismatch"
+            );
+            for (uint256 j; j < tokenPath.length; ++j) {
+                uint256 daoAmount = tokenPath[j];
+                if (daoAmount > 0) {
+                    amountsIn[i] += daoAmount;
                     IDaoDepositManager(
                         dealManager.getDaoDepositManager(_daos[j])
-                    ).sendToModule(_dealId, _tokens[i], path);
+                    ).sendToModule(_dealId, _tokens[i], daoAmount);
                 }
             }
         }
