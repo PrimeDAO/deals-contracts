@@ -125,6 +125,7 @@ contract DaoDepositManager {
             "D2D-DEPOSIT-INVALID-TOKEN-AMOUNT"
         );
         if (_token != address(0)) {
+            require(msg.value == 0, "D2D-DEPOSIT-TOKEN-DEPOSIT-CANT-HAVE-ETH");
             _transferTokenFrom(_token, msg.sender, address(this), _amount);
         } else {
             _amount = msg.value;
