@@ -121,6 +121,8 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
             "Module: invalid array lengths"
         );
 
+        require(_deadline > block.timestamp, "Module: invalid deadline");
+
         LiquidityAction memory la = LiquidityAction(
             _daos,
             _tokens,

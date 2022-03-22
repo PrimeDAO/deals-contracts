@@ -116,6 +116,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
                 _pathTo[0].length / 4 == _daos.length,
             "Module: invalid array lengths"
         );
+        require(_deadline > block.timestamp, "Module: invalid deadline");
 
         TokenSwap memory ts = TokenSwap(
             _daos,
