@@ -70,7 +70,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
     event TokenSwapExecuted(address indexed module, uint32 indexed dealId);
 
-    constructor(address _dealmanager) ModuleBaseWithFee(_dealmanager) {}
+    constructor(address _dealManager) ModuleBaseWithFee(_dealManager) {}
 
     /**
       * @dev                Create a new token swap action

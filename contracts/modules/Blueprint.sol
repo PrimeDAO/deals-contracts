@@ -28,8 +28,8 @@ contract BlueprintModule is ModuleBase {
 
     event ActionExecuted(uint256 id);
 
-    constructor(address _dealmanager)
-        ModuleBase(_dealmanager)
+    constructor(address _dealManager)
+        ModuleBase(_dealManager)
     // solhint-disable-next-line no-empty-blocks
     {
 
