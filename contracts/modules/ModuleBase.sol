@@ -109,10 +109,11 @@ contract ModuleBase {
         address _to,
         uint256 _amount
     ) internal {
-        require(
-            IERC20(_token).transfer(_to, _amount),
-            "Module: transfer failed"
-        );
+        try IERC20(_token).transfer(_to, _amount) returns (bool success) {
+            require(success, "Module: transfer was not successful");
+        } catch {
+            revert("Module: transfer failed");
+        }
     }
 
     /**
@@ -128,10 +129,13 @@ contract ModuleBase {
         address _to,
         uint256 _amount
     ) internal {
-        require(
-            IERC20(_token).transferFrom(_from, _to, _amount),
-            "Module: transfer from failed"
-        );
+        try IERC20(_token).transferFrom(_from, _to, _amount) returns (
+            bool success
+        ) {
+            require(success, "Module: transferFrom was not successful");
+        } catch {
+            revert("Module: transferFrom failed");
+        }
     }
 
     function hasDealExpired(uint32 _dealId)
