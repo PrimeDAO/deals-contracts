@@ -188,8 +188,9 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint32 _deadline
     ) external returns (uint32) {
         for (uint256 i; i < _daos.length; ++i) {
-            if (!dealManager.hasDaoDepositManager(_daos[i])) {
-                dealManager.createDaoDepositManager(_daos[i]);
+            address dao = _daos[i];
+            if (!dealManager.hasDaoDepositManager(dao)) {
+                dealManager.createDaoDepositManager(dao);
             }
         }
         return (
@@ -223,16 +224,19 @@ contract TokenSwapModule is ModuleBaseWithFee {
         if (ts.deadline < uint32(block.timestamp)) {
             return false;
         }
-        for (uint256 i; i < ts.tokens.length; ++i) {
-            for (uint256 j; j < ts.pathFrom[i].length; ++j) {
+
+        address[] memory t = ts.tokens;
+        for (uint256 i; i < t.length; ++i) {
+            uint256[] memory p = ts.pathFrom[i];
+            for (uint256 j; j < p.length; ++j) {
                 // for each token and each pathFrom entry for this
                 // token, check whether the corresponding DAO
                 // has deposited the corresponding amount into their
                 // deposit contract
                 uint256 bal = IDaoDepositManager(
                     dealManager.getDaoDepositManager(ts.daos[j])
-                ).getAvailableDealBalance(address(this), _dealId, ts.tokens[i]);
-                if (bal < ts.pathFrom[i][j]) {
+                ).getAvailableDealBalance(address(this), _dealId, t[i]);
+                if (bal < p[j]) {
                     return false;
                 }
             }
@@ -292,39 +296,34 @@ contract TokenSwapModule is ModuleBaseWithFee {
         amountsOut = new uint256[](_ts.tokens.length);
         // Distribute tokens from the module
         for (uint256 i; i < _ts.tokens.length; ++i) {
-            for (uint256 k; k < _ts.pathTo[i].length / 4; ++k) {
+            uint256[] memory pt = _ts.pathTo[i];
+            address token = _ts.tokens[i];
+            for (uint256 k; k < pt.length / 4; ++k) {
                 // every 4 values, the values for a new dao start
                 // value 0 = instant amount
                 // value 1 = vested amount
                 // value 2 = vesting cliff
                 // value 3 = vesting duration
-                if (_ts.pathTo[i][k * 4] > 0) {
-                    amountsOut[i] += _ts.pathTo[i][k * 4];
-                    _transferTokenWithFee(
-                        _ts.tokens[i],
-                        _ts.daos[k],
-                        _ts.pathTo[i][k * 4]
-                    );
+                uint256 instant = pt[k * 4];
+                uint256 vested = pt[k * 4 + 1];
+
+                if (instant > 0) {
+                    amountsOut[i] += instant;
+                    _transferTokenWithFee(token, _ts.daos[k], instant);
                 }
-                if (_ts.pathTo[i][k * 4 + 1] > 0) {
-                    amountsOut[i] += _ts.pathTo[i][k * 4 + 1];
-                    uint256 amount = _payFeeAndReturnRemainder(
-                        _ts.tokens[i],
-                        _ts.pathTo[i][k * 4 + 1]
-                    );
-                    _approveDaoDepositManager(
-                        _ts.tokens[i],
-                        _ts.daos[k],
-                        amount
-                    );
+
+                if (vested > 0) {
+                    amountsOut[i] += vested;
+                    uint256 amount = _payFeeAndReturnRemainder(token, vested);
+                    _approveDaoDepositManager(token, _ts.daos[k], amount);
                     IDaoDepositManager(
                         dealManager.getDaoDepositManager(_ts.daos[k])
                     ).startVesting(
                             _dealId,
-                            _ts.tokens[i],
+                            token,
                             amount, // amount
-                            uint32(_ts.pathTo[i][k * 4 + 2]), // start
-                            uint32(_ts.pathTo[i][k * 4 + 3]) // end
+                            uint32(pt[k * 4 + 2]), // start
+                            uint32(pt[k * 4 + 3]) // end
                         );
                 }
             }
