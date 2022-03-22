@@ -321,7 +321,7 @@ contract DaoDepositManager {
     ) external onlyModule {
         // solhint-disable-next-line reason-string
         require(
-            _token != address(0), // TODO WHAT THE FUCK?????????
+            _token != address(0),
             "D2D-DEPOSIT-VESTING-INVALID-TOKEN-ADDRESS"
         );
         // solhint-disable-next-line reason-string
