@@ -54,7 +54,7 @@ contract ModuleBase {
         uint256[][] memory _path
     ) internal returns (uint256[] memory amountsIn) {
         amountsIn = new uint256[](_tokens.length);
-
+        require(_path.length == _tokens.length, "Module: length mismatch");
         for (uint256 i; i < _tokens.length; ++i) {
             require(_path[i].length == _daos.length, "Module: length mismatch");
             for (uint256 j; j < _path[i].length; ++j) {
