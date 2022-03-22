@@ -179,8 +179,9 @@ contract DaoDepositManager {
         } else {
             currentBalance = address(this).balance;
         }
-        if (currentBalance > tokenBalances[_token]) {
-            uint256 amount = currentBalance - tokenBalances[_token];
+        uint256 total = tokenBalances[_token] + vestedBalances[_token];
+        if (currentBalance > total) {
+            uint256 amount = currentBalance - total;
             tokenBalances[_token] = currentBalance;
             if (_token == address(0)) {
                 IWETH(_token).deposit{value: amount}();
