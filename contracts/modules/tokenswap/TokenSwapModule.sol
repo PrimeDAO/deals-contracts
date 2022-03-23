@@ -70,7 +70,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
     event TokenSwapExecuted(address indexed module, uint32 indexed dealId);
 
-    constructor(address _dealmanager) ModuleBaseWithFee(_dealmanager) {}
+    constructor(address _dealManager) ModuleBaseWithFee(_dealManager) {}
 
     /**
       * @dev                Create a new token swap action
@@ -108,14 +108,26 @@ contract TokenSwapModule is ModuleBaseWithFee {
             );
         }
         require(_daos.length >= 2, "Module: at least 2 daos required");
-        require(_tokens.length >= 1, "Module: at least 1 token required");
+        require(_tokens.length != 0, "Module: at least 1 token required");
+
+        // Check outer arrays
+        uint256 pathFromLen = _pathFrom.length;
         require(
-            _tokens.length == _pathFrom.length &&
-                _pathFrom.length == _pathTo.length &&
-                _pathFrom[0].length == _daos.length &&
-                _pathTo[0].length / 4 == _daos.length,
-            "Module: invalid array lengths"
+            _tokens.length == pathFromLen && pathFromLen == _pathTo.length,
+            "Module: invalid outer array lengths"
         );
+
+        // Check inner arrays
+        uint256 daosLen = _daos.length;
+        for (uint256 i; i < pathFromLen; ++i) {
+            require(
+                _pathFrom[i].length == daosLen &&
+                    _pathTo[i].length >> 2 == daosLen,
+                "Module: invalid inner array lengths"
+            );
+        }
+
+        require(_deadline > block.timestamp, "Module: invalid deadline");
 
         TokenSwap memory ts = TokenSwap(
             _daos,
@@ -175,9 +187,10 @@ contract TokenSwapModule is ModuleBaseWithFee {
         bytes calldata _metadata,
         uint32 _deadline
     ) external returns (uint32) {
-        for (uint256 i = 0; i < _daos.length; i++) {
-            if (!dealManager.hasDaoDepositManager(_daos[i])) {
-                dealManager.createDaoDepositManager(_daos[i]);
+        for (uint256 i; i < _daos.length; ++i) {
+            address dao = _daos[i];
+            if (!dealManager.hasDaoDepositManager(dao)) {
+                dealManager.createDaoDepositManager(dao);
             }
         }
         return (
@@ -211,16 +224,19 @@ contract TokenSwapModule is ModuleBaseWithFee {
         if (ts.deadline < uint32(block.timestamp)) {
             return false;
         }
-        for (uint256 i = 0; i < ts.tokens.length; i++) {
-            for (uint256 j = 0; j < ts.pathFrom[i].length; j++) {
+
+        address[] memory t = ts.tokens;
+        for (uint256 i; i < t.length; ++i) {
+            uint256[] memory p = ts.pathFrom[i];
+            for (uint256 j; j < p.length; ++j) {
                 // for each token and each pathFrom entry for this
                 // token, check whether the corresponding DAO
                 // has deposited the corresponding amount into their
                 // deposit contract
                 uint256 bal = IDaoDepositManager(
                     dealManager.getDaoDepositManager(ts.daos[j])
-                ).getAvailableDealBalance(address(this), _dealId, ts.tokens[i]);
-                if (bal < ts.pathFrom[i][j]) {
+                ).getAvailableDealBalance(address(this), _dealId, t[i]);
+                if (bal < p[j]) {
                     return false;
                 }
             }
@@ -256,7 +272,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256[] memory amountsOut = _distributeTokens(ts, _dealId);
 
         // verify whether the amounts being pulled and pushed match
-        for (uint256 i = 0; i < ts.tokens.length; i++) {
+        for (uint256 i; i < ts.tokens.length; ++i) {
             require(amountsIn[i] == amountsOut[i], "Module: amount mismatch");
         }
 
@@ -279,40 +295,35 @@ contract TokenSwapModule is ModuleBaseWithFee {
     {
         amountsOut = new uint256[](_ts.tokens.length);
         // Distribute tokens from the module
-        for (uint256 i = 0; i < _ts.tokens.length; i++) {
-            for (uint256 k = 0; k < _ts.pathTo[i].length / 4; k++) {
+        for (uint256 i; i < _ts.tokens.length; ++i) {
+            uint256[] memory pt = _ts.pathTo[i];
+            address token = _ts.tokens[i];
+            for (uint256 k; k < pt.length >> 2; ++k) {
                 // every 4 values, the values for a new dao start
                 // value 0 = instant amount
                 // value 1 = vested amount
                 // value 2 = vesting cliff
                 // value 3 = vesting duration
-                if (_ts.pathTo[i][k * 4] > 0) {
-                    amountsOut[i] += _ts.pathTo[i][k * 4];
-                    _transferTokenWithFee(
-                        _ts.tokens[i],
-                        _ts.daos[k],
-                        _ts.pathTo[i][k * 4]
-                    );
+                uint256 instant = pt[k << 2];
+                uint256 vested = pt[(k << 2) + 1];
+
+                if (instant > 0) {
+                    amountsOut[i] += instant;
+                    _transferTokenWithFee(token, _ts.daos[k], instant);
                 }
-                if (_ts.pathTo[i][k * 4 + 1] > 0) {
-                    amountsOut[i] += _ts.pathTo[i][k * 4 + 1];
-                    uint256 amount = _payFeeAndReturnRemainder(
-                        _ts.tokens[i],
-                        _ts.pathTo[i][k * 4 + 1]
-                    );
-                    _approveDaoDepositManager(
-                        _ts.tokens[i],
-                        _ts.daos[k],
-                        amount
-                    );
+
+                if (vested > 0) {
+                    amountsOut[i] += vested;
+                    uint256 amount = _payFeeAndReturnRemainder(token, vested);
+                    _approveDaoDepositManager(token, _ts.daos[k], amount);
                     IDaoDepositManager(
                         dealManager.getDaoDepositManager(_ts.daos[k])
                     ).startVesting(
                             _dealId,
-                            _ts.tokens[i],
+                            token,
                             amount, // amount
-                            uint32(_ts.pathTo[i][k * 4 + 2]), // start
-                            uint32(_ts.pathTo[i][k * 4 + 3]) // end
+                            uint32(pt[(k << 2) + 2]), // start
+                            uint32(pt[(k << 2) + 3]) // end
                         );
                 }
             }
@@ -347,7 +358,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256 dealId = metadataToDealId[_metadata];
         return (dealId == 0 &&
             keccak256(tokenSwaps[dealId].metadata) != keccak256(_metadata) &&
-            _metadata.length > 0);
+            _metadata.length != 0);
     }
 
     modifier validMetadata(bytes memory _metadata) {
