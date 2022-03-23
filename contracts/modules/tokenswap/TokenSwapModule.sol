@@ -317,21 +317,21 @@ contract TokenSwapModule is ModuleBaseWithFee {
                     uint256 amount = _payFeeAndReturnRemainder(token, vested);
                     _approveDaoDepositManager(token, _ts.daos[k], amount);
 
+                    address daoDepositManager = dealManager
+                        .getDaoDepositManager(_ts.daos[k]);
                     if (token == address(0)) {
                         // for ETH we need to manually send, since
                         // startVesting() works with transferFrom's
-                        _transfer(token, _ts.daos[k], amount);
+                        _transfer(token, daoDepositManager, amount);
                     }
 
-                    IDaoDepositManager(
-                        dealManager.getDaoDepositManager(_ts.daos[k])
-                    ).startVesting(
-                            _dealId,
-                            token,
-                            amount, // amount
-                            uint32(pt[(k << 2) + 2]), // start
-                            uint32(pt[(k << 2) + 3]) // end
-                        );
+                    IDaoDepositManager(daoDepositManager).startVesting(
+                        _dealId,
+                        token,
+                        amount, // amount
+                        uint32(pt[(k << 2) + 2]), // start
+                        uint32(pt[(k << 2) + 3]) // end
+                    );
                 }
             }
         }
