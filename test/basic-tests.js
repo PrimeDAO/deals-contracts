@@ -113,7 +113,7 @@ contract("Whole rundown", async (accounts) => {
         web3.utils.toWei("1", "ether"),
         { from: admin }
       ),
-      "ERC20: transfer amount exceeds allowance"
+      "D2D-TOKEN-TRANSFER-FROM-FAILED"
     );
 
     await testToken1.approve(

@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 import "../../ModuleBaseWithFee.sol";
 import "../../../interfaces/IUniswapV2Router02.sol";
 import "../../../interfaces/IUniswapV2Factory.sol";
+import "../../../interfaces/IWETH.sol";
 
 /**
  * @title PrimeDeals Liquidity Module (Uniswap)
@@ -260,9 +261,14 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
             la.pathFrom
         );
 
-        // Set approval for tokens
-        _approveToken(la.tokens[0], address(router), tokenAmountsIn[0]);
-        _approveToken(la.tokens[1], address(router), tokenAmountsIn[1]);
+        for (uint256 i; i < la.tokens.length; ++i) {
+            if (la.tokens[i] == address(0)) {
+                address weth = dealManager.weth();
+                IWETH(weth).deposit{value: tokenAmountsIn[i]}();
+                la.tokens[i] = weth;
+            }
+            _approveToken(la.tokens[i], address(router), tokenAmountsIn[i]);
+        }
 
         // Returns the min amounts for both tokens
         // based on the current balance of the pool
@@ -434,7 +440,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
                 if (k == _la.daos.length - 1 && tokensLeft > 0) {
                     payout += tokensLeft;
                 }
-                _transferTokenWithFee(_lpToken, _la.daos[k], payout);
+                _transferWithFee(_lpToken, _la.daos[k], payout);
             }
             daoShares[k] = share;
         }
@@ -470,7 +476,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
                     if (i == _daoShares.length - 1 && left[j] > 0) {
                         payout += left[j];
                     }
-                    _transferToken(
+                    _transfer(
                         liquidityActions[_dealId].tokens[j],
                         liquidityActions[_dealId].daos[i],
                         payout

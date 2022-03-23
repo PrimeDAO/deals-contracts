@@ -77,7 +77,7 @@ contract ModuleBaseWithFee is ModuleBase {
     {
         if (feeWallet != address(0) && feeInBasisPoints > 0) {
             uint256 fee = (_amount * feeInBasisPoints) / 10000;
-            _transferToken(_token, feeWallet, fee);
+            _transfer(_token, feeWallet, fee);
 
             return _amount - fee;
         }
@@ -90,12 +90,12 @@ contract ModuleBaseWithFee is ModuleBase {
      * @param _to       Target of the transfer
      * @param _amount   Amount of the transfer
      */
-    function _transferTokenWithFee(
+    function _transferWithFee(
         address _token,
         address _to,
         uint256 _amount
     ) internal {
-        _transferToken(_token, _to, _payFeeAndReturnRemainder(_token, _amount));
+        _transfer(_token, _to, _payFeeAndReturnRemainder(_token, _amount));
     }
 
     /**
@@ -106,13 +106,15 @@ contract ModuleBaseWithFee is ModuleBase {
      * @param _to       Target of the transfer
      * @param _amount   Amount of the transfer
      */
-    function _transferFromTokenWithFee(
+    function _transferFromWithFee(
         address _token,
         address _from,
         address _to,
         uint256 _amount
     ) internal {
-        _transferFromToken(
+        // TODO: does this even work? transferFrom expects funds and fee first?
+
+        _transferFrom(
             _token,
             _from,
             _to,
