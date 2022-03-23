@@ -94,8 +94,9 @@ contract ModuleBaseWithFee is ModuleBase {
         address _token,
         address _to,
         uint256 _amount
-    ) internal {
-        _transfer(_token, _to, _payFeeAndReturnRemainder(_token, _amount));
+    ) internal returns (uint256 amountAfterFee) {
+        amountAfterFee = _payFeeAndReturnRemainder(_token, _amount);
+        _transfer(_token, _to, amountAfterFee);
     }
 
     /**
@@ -111,8 +112,16 @@ contract ModuleBaseWithFee is ModuleBase {
         address _from,
         address _to,
         uint256 _amount
-    ) internal {
-        _transferFrom(_token, _from, _to, _amount);
-        _payFeeAndReturnRemainder(_token, _amount);
+    ) internal returns (uint256 amountAfterFee) {
+        // if the transfer from does not touch this contract, we first
+        // need to transfer it here, pay the fee, and then pass it on
+        // if that is not the case, we can do the regular transferFrom
+        if (_to != address(this)) {
+            _transferFrom(_token, _from, _to, _amount);
+            amountAfterFee = _transferWithFee(_token, _to, _amount);
+        } else {
+            _transferFrom(_token, _from, _to, _amount);
+            amountAfterFee = _payFeeAndReturnRemainder(_token, _amount);
+        }
     }
 }
