@@ -108,15 +108,20 @@ contract ModuleBase {
      * @param _to      Target of the transfer
      * @param _amount  Amount to be sent
      */
-    function _transferToken(
+    function _transfer(
         address _token,
         address _to,
         uint256 _amount
     ) internal {
-        try IERC20(_token).transfer(_to, _amount) returns (bool success) {
-            require(success, "Module: transfer was not successful");
-        } catch {
-            revert("Module: transfer failed");
+        if (_token != address(0)) {
+            try IERC20(_token).transfer(_to, _amount) returns (bool success) {
+                require(success, "Module: erc20 transfer was not successful");
+            } catch {
+                revert("Module: erc20 transfer failed");
+            }
+        } else {
+            (bool sent, ) = msg.sender.call{value: _amount}("");
+            require(sent, "Module: eth transfer failed");
         }
     }
 
@@ -127,12 +132,14 @@ contract ModuleBase {
      * @param _to      Target of the transfer
      * @param _amount  Amount to be sent
      */
-    function _transferFromToken(
+    function _transferFrom(
         address _token,
         address _from,
         address _to,
         uint256 _amount
     ) internal {
+        require(_token != address(0), "Module: transferFrom only for ERC20s");
+
         try IERC20(_token).transferFrom(_from, _to, _amount) returns (
             bool success
         ) {

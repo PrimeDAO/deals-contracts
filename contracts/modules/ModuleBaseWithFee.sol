@@ -77,7 +77,7 @@ contract ModuleBaseWithFee is ModuleBase {
     {
         if (feeWallet != address(0) && feeInBasisPoints > 0) {
             uint256 fee = (_amount * feeInBasisPoints) / 10000;
-            _transferToken(_token, feeWallet, fee);
+            _transfer(_token, feeWallet, fee);
 
             return _amount - fee;
         }
@@ -90,12 +90,13 @@ contract ModuleBaseWithFee is ModuleBase {
      * @param _to       Target of the transfer
      * @param _amount   Amount of the transfer
      */
-    function _transferTokenWithFee(
+    function _transferWithFee(
         address _token,
         address _to,
         uint256 _amount
-    ) internal {
-        _transferToken(_token, _to, _payFeeAndReturnRemainder(_token, _amount));
+    ) internal returns (uint256 amountAfterFee) {
+        amountAfterFee = _payFeeAndReturnRemainder(_token, _amount);
+        _transfer(_token, _to, amountAfterFee);
     }
 
     /**
@@ -106,17 +107,21 @@ contract ModuleBaseWithFee is ModuleBase {
      * @param _to       Target of the transfer
      * @param _amount   Amount of the transfer
      */
-    function _transferFromTokenWithFee(
+    function _transferFromWithFee(
         address _token,
         address _from,
         address _to,
         uint256 _amount
-    ) internal {
-        _transferFromToken(
-            _token,
-            _from,
-            _to,
-            _payFeeAndReturnRemainder(_token, _amount)
-        );
+    ) internal returns (uint256 amountAfterFee) {
+        // if the transfer from does not touch this contract, we first
+        // need to transfer it here, pay the fee, and then pass it on
+        // if that is not the case, we can do the regular transferFrom
+        if (_to != address(this)) {
+            _transferFrom(_token, _from, _to, _amount);
+            amountAfterFee = _transferWithFee(_token, _to, _amount);
+        } else {
+            _transferFrom(_token, _from, _to, _amount);
+            amountAfterFee = _payFeeAndReturnRemainder(_token, _amount);
+        }
     }
 }
