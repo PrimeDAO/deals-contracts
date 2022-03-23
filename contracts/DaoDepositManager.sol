@@ -154,22 +154,7 @@ contract DaoDepositManager {
             _tokens.length == _amounts.length,
             "D2D-DEPOSIT-ARRAY-LENGTH-MISMATCH"
         );
-
-        bool ethDepositDone = false;
         for (uint256 i; i < _tokens.length; ++i) {
-            // Due to the nature of msg.value in ETH-based transfers
-            // and the input parameter _amount that we use, the
-            // safest way to prevent any problems here is only
-            // to allow ONE of the deposits in here to be in ETH
-            // (there is no need to have multiple of them anyways)
-            if (_tokens[i] == address(0)) {
-                // If this would be true, this wouldn't be the first
-                // time we are here
-                require(!ethDepositDone, "");
-                // Setting it to true = first time we are here
-                ethDepositDone = true;
-            }
-
             deposit(_module, _dealId, _tokens[i], _amounts[i]);
         }
     }
