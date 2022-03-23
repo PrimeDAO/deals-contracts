@@ -62,7 +62,7 @@ const METADATA2 = formatBytes32String("helloao");
 const METADATA3 = formatBytes32String("helloaodfs");
 const METADATAS = [METADATA1, METADATA2, METADATA3];
 
-describe("> Contract: DaoDepositManager", () => {
+describe.only("> Contract: DaoDepositManager", () => {
   before(async () => {
     const signers = await ethers.getSigners();
     [root, prime, dao1, dao2, dao3, dao4, dao5, depositer1, depositer2] =
@@ -170,8 +170,13 @@ describe("> Contract: DaoDepositManager", () => {
         // );
       });
       it("» should fail on token address being ZERO and amount 0", async () => {
-        const depositParam = [tokenSwapModuleInstance.address, SWAP1];
-        await daoDepositManagerDao1.connect(depositor1).deposit();
+        const depositParam = [
+          tokenSwapModuleInstance.address,
+          SWAP1,
+          ZERO_ADDRESS,
+          parseEther("2"),
+        ];
+        await daoDepositManagerDao1.connect(depositor1).deposit(depositParam);
       });
       it("» should fail on token not being ZERO and amount being 0", async () => {});
       it("» should succeed in depositing token", async () => {});

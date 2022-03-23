@@ -59,7 +59,7 @@ const METADATA2 = formatBytes32String("helloao");
 const METADATA3 = formatBytes32String("helloaodfs");
 const METADATAS = [METADATA1, METADATA2, METADATA3];
 
-describe.only("> Contract: TokenSwapModule", () => {
+describe("> Contract: TokenSwapModule", () => {
   before(async () => {
     const signers = await ethers.getSigners();
     [root, prime, dao1, dao2, dao3, dao4, dao5] = signers;
@@ -625,7 +625,6 @@ describe.only("> Contract: TokenSwapModule", () => {
           createSwapParametersArray[0][5]
         );
         expect(tokenSwap1.status).to.equal(1);
-        console.log(tokenSwap1.metadata);
       });
       it("» should succeed with valid metadata2", async () => {
         const tokenSwap2 =
