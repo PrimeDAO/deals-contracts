@@ -20,6 +20,7 @@ const {
   fundDepositContracts,
   initializeParameters,
   callCreateSwap,
+  setupCreateSwapStateForSingleDeal,
 } = require("../helpers/setupTokenSwapStates.js");
 
 let root,
@@ -36,8 +37,9 @@ let root,
   depositer2;
 let tokenAddresses;
 let deal1Parameters, deal2Parameters, deal3Parameters;
+let daoDepositManagerDao1, daoDepositManagerDao2, daoDepositManagerDao3;
 let daoDepositManagerInstance,
-  daoDepositManagerInstances,
+  daoDepositManagerFactoryInstance,
   dealManagerInstance,
   tokenSwapModuleInstance;
 let tokenInstances, wethInstance;
@@ -78,6 +80,7 @@ describe("> Contract: DaoDepositManager", () => {
       tokenInstances,
       daoDepositManagerInstance,
       tokenSwapModuleInstance,
+      daoDepositManagerFactoryInstance,
     } = contractInstances);
     deadline = BigNumber.from((await time.latest()).toNumber() + DAY * 7);
     tokenAddresses = tokenInstances.map((token) => token.address);
@@ -140,38 +143,64 @@ describe("> Contract: DaoDepositManager", () => {
       });
     });
   });
-  // describe("$ DaoDepositManager through TokenSwapModule (end-to-end)", () => {
-  //   describe("# single deposit ", async () => {
-  //     beforeEach(async () => {
-  //       daoDepositManagerInstances = await callCreateSwap(
-  //         dealManagerInstance,
-  //         tokenSwapModuleInstance,
-  //         deal1Parameters
-  //       );
-  //     });
-  //     it("» should fail on token address being ZERO and amount 0", async () => {});
-  //     it("» should fail on token not being ZERO and amount being 0", async () => {});
-  //     it("» should succeed in depositing token", async () => {});
-  //     it("» should succeed in depositing WETH", async () => {});
-  //   });
-  //   describe("# multiple deposits ", async () => {
-  //     beforeEach(async () => {
-  //       daoDepositManagerInstances = await callCreateSwap(
-  //         dealManagerInstance,
-  //         tokenSwapModuleInstance,
-  //         deal1Parameters
-  //       );
-  //     });
-  //     it("» should fail arrays mismatch", async () => {});
-  //     it("» should succeed on depositing tokens", async () => {});
-  //   });
-  //   describe("# withdraw ", async () => {
-  //     beforeEach(async () => {});
-  //   });
-  //   it("» should fail on using an invalid ID", async () => {});
-  //   it("» should succeed in depositing token", async () => {});
-  //   describe("# multiple deposits ", async () => {
-  //     beforeEach(async () => {});
-  //   });
-  // });
+  describe("$ DaoDepositManager through TokenSwapModule (end-to-end)", () => {
+    describe("# single deposit ", async () => {
+      beforeEach(async () => {
+        const localContractInstances = {
+          tokenSwapModuleInstance,
+          dealManagerInstance,
+          daoDepositManagerFactoryInstance,
+        };
+        ({ daoDepositManagerInstances } =
+          await setupCreateSwapStateForSingleDeal(
+            localContractInstances,
+            daosDeal1,
+            deal1Parameters
+          ));
+        [daoDepositManagerDao1, daoDepositManagerDao2, daoDepositManagerDao3] =
+          daoDepositManagerInstances;
+
+        // await fundDaoDepositManagersForSingleDeal(
+        //   getTokenInstancesForSingelDeal(tokenInstances, deal1Parameters),
+        //   deal1Parameters,
+        //   daoDepositManagerInstances,
+        //   tokenSwapModuleInstance.address,
+        //   SWAP1,
+        //   depositer1
+        // );
+      });
+      it("» should fail on token address being ZERO and amount 0", async () => {
+        const depositParam = [tokenSwapModuleInstance.address, SWAP1];
+        await daoDepositManagerDao1.connect(depositor1).deposit();
+      });
+      it("» should fail on token not being ZERO and amount being 0", async () => {});
+      it("» should succeed in depositing token", async () => {});
+      it("» should succeed in depositing WETH", async () => {});
+    });
+    describe("# multiple deposits ", async () => {
+      beforeEach(async () => {
+        const localContractInstances = {
+          tokenSwapModuleInstance,
+          dealManagerInstance,
+          daoDepositManagerFactoryInstance,
+        };
+        ({ daoDepositManagerInstances } =
+          await setupCreateSwapStateForSingleDeal(
+            localContractInstances,
+            daosDeal1,
+            deal1Parameters
+          ));
+      });
+      it("» should fail arrays mismatch", async () => {});
+      it("» should succeed on depositing tokens", async () => {});
+    });
+    describe("# withdraw ", async () => {
+      beforeEach(async () => {});
+    });
+    it("» should fail on using an invalid ID", async () => {});
+    it("» should succeed in depositing token", async () => {});
+    describe("# multiple deposits ", async () => {
+      beforeEach(async () => {});
+    });
+  });
 });

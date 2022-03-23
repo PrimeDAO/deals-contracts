@@ -177,7 +177,7 @@ const getTokenInstancesForSingleDeal = (
   return tokenInstancesSubset;
 };
 
-const getIndex = (tokenPath) => {
+const getIndexOfNoneZeroAmount = (tokenPath) => {
   for (let i = 0; i < tokenPath.length; i++)
     if (tokenPath[i] != 0) {
       return { daoIndex: i, amount: tokenPath[i] };
@@ -195,29 +195,28 @@ const getdaoDepositManagerFromDepositContractArray = async (
   }
 };
 
-const fundDaoDepositManagerForSingelDeal = async (
+const fundDaoDepositManagersForSingelDeal = async (
   tokenInstances,
   createNewSwapParameters,
   daoDepositManagerSubset,
   moduleAddress,
-  swapID
+  swapID,
+  depositor
 ) => {
   for (let i = 0; i < createNewSwapParameters[2].length; i++) {
-    let { daoIndex, amount } = getIndex(createNewSwapParameters[2][i]);
+    let { daoIndex, amount } = getIndexOfNoneZeroAmount(
+      createNewSwapParameters[2][i]
+    );
     let daoDepositManagerInstance =
       getdaoDepositManagerFromDepositContractArray(
         daoDepositManagerSubset,
         createNewSwapParameters[0][daoIndex]
       );
-    await fundDAOWithToken(
-      tokenInstances[i],
-      createNewSwapParameters[0][daoIndex],
-      amount
-    );
+    await fundDepositorWithToken(tokenInstances[i], depositor, amount);
     await transferTokenToDaoDepositManager(
       tokenInstances[i],
       daoDepositManagerInstance,
-      createNewSwapParameters[0][daoIndex],
+      depositor,
       amount,
       moduleAddress,
       swapID
@@ -228,16 +227,16 @@ const fundDaoDepositManagerForSingelDeal = async (
 const transferTokenToDaoDepositManager = async (
   tokenInstance,
   daoDepositManagerInstance,
-  dao,
+  depositor,
   amount,
   moduleAddress,
   swapID
 ) => {
   await tokenInstance
-    .connect(dao)
+    .connect(depositor)
     .approve(daoDepositManagerInstance.address, amount);
   await daoDepositManagerInstance
-    .connect(dao)
+    .connect(depositor)
     .deposit(moduleAddress, swapID, tokenInstance.address, amount);
 };
 
@@ -266,7 +265,7 @@ const fundDaoDepositManagerForMultipleDeals = async (
       tokenInstancesSubset,
       createSwapParametersArray[i]
     );
-    fundDaoDepositManagerForSingelDeal(
+    fundDaoDepositManagersForSingelDeal(
       tokenInstancesSubset,
       createSwapParametersArray[i],
       daoDepositManagerSubset,
@@ -361,13 +360,17 @@ const setupExecuteSwapState = async (
   const DAO_TOKEN_AMOUNT = "10";
 
   const { tokenSwapModuleInstance, daoDepositManagerInstances } =
-    await setupCreateSwapState(contractInstances, daos, createSwapParameters);
+    await setupCreateSwapStateForSingleDeal(
+      contractInstances,
+      daos,
+      createSwapParameters
+    );
   const { tokenInstances } = contractInstances;
 
-  await fundDAOWithToken(tokenInstances[0], daos[0], DAO_TOKEN_AMOUNT);
-  await fundDAOWithToken(tokenInstances[1], daos[1], DAO_TOKEN_AMOUNT);
-  await fundDAOWithToken(tokenInstances[2], daos[2], DAO_TOKEN_AMOUNT);
-  await fundDAOWithToken(tokenInstances[3], daos[2], DAO_TOKEN_AMOUNT);
+  await fundDepositorWithToken(tokenInstances[0], daos[0], DAO_TOKEN_AMOUNT);
+  await fundDepositorWithToken(tokenInstances[1], daos[1], DAO_TOKEN_AMOUNT);
+  await fundDepositorWithToken(tokenInstances[2], daos[2], DAO_TOKEN_AMOUNT);
+  await fundDepositorWithToken(tokenInstances[3], daos[2], DAO_TOKEN_AMOUNT);
 
   await fundDaoDepositManager(
     tokenInstances,
@@ -380,11 +383,11 @@ const setupExecuteSwapState = async (
   return { tokenSwapModuleInstance, tokenInstances };
 };
 
-const fundDAOWithToken = async (tokenInstance, dao, amount) => {
-  await tokenInstance.transfer(dao.address, parseEther(amount));
+const fundDepositorWithToken = async (tokenInstance, depositor, amount) => {
+  await tokenInstance.transfer(depositor.address, parseEther(amount));
 };
 
-const setupCreateSwapState = async (
+const setupCreateSwapStateForSingleDeal = async (
   contractInstances,
   daos,
   createSwapParameters
@@ -417,8 +420,8 @@ const setupCreateSwapState = async (
   ];
 
   return {
-    tokenSwapModuleInstance,
     daoDepositManagerInstances,
+    tokenSwapModuleInstance,
   };
 };
 
@@ -427,7 +430,7 @@ module.exports = {
   fundDaoDepositManager,
   initializeParameters,
   setupExecuteSwapState,
-  fundDAOWithToken,
-  setupCreateSwapState,
+  fundDepositorWithToken,
+  setupCreateSwapStateForSingleDeal,
   callCreateSwap,
 };

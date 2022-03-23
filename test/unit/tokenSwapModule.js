@@ -21,8 +21,9 @@ const {
   initializeParameters,
   setupMultipleCreateSwapStates,
   setupExecuteSwapState,
-  setupCreateSwapState,
+  setupCreateSwapStateForSingleDeal,
 } = require("../helpers/setupTokenSwapStates.js");
+const { parseBytes32String, AbiCoder } = require("ethers/lib/utils");
 
 let root,
   prime,
@@ -58,7 +59,7 @@ const METADATA2 = formatBytes32String("helloao");
 const METADATA3 = formatBytes32String("helloaodfs");
 const METADATAS = [METADATA1, METADATA2, METADATA3];
 
-describe("> Contract: TokenSwapModule", () => {
+describe.only("> Contract: TokenSwapModule", () => {
   before(async () => {
     const signers = await ethers.getSigners();
     [root, prime, dao1, dao2, dao3, dao4, dao5] = signers;
@@ -300,11 +301,11 @@ describe("> Contract: TokenSwapModule", () => {
   describe("$ Function: checkExecutability", () => {
     describe("# invalid parameters", () => {
       beforeEach(async () => {
-        ({ tokenSwapModuleInstance } = await setupCreateSwapState(
+        await setupCreateSwapStateForSingleDeal(
           contractInstances,
           daosDeal1,
           createSwapParameters
-        ));
+        );
       });
       it("» should revert when using an invalid ID", async () => {
         await expect(
@@ -314,11 +315,11 @@ describe("> Contract: TokenSwapModule", () => {
     });
     describe("# return false", () => {
       beforeEach(async () => {
-        ({ tokenSwapModuleInstance } = await setupCreateSwapState(
+        await setupCreateSwapStateForSingleDeal(
           contractInstances,
           daosDeal1,
           createSwapParameters
-        ));
+        );
       });
       it("» should be false when deadline exeeded", async () => {
         await time.increase(DAY * 8);
@@ -346,12 +347,12 @@ describe("> Contract: TokenSwapModule", () => {
           deadline
         );
 
-        ({ tokenSwapModuleInstance } = await setupExecuteSwapState(
+        await setupExecuteSwapState(
           contractInstances,
           daosDeal1,
           createNewSwapParameters,
           SWAP1
-        ));
+        );
         await tokenSwapModuleInstance.executeSwap(SWAP1);
         expect(
           await tokenSwapModuleInstance.checkExecutability(SWAP1)
@@ -360,12 +361,12 @@ describe("> Contract: TokenSwapModule", () => {
     });
     describe("# return true", () => {
       beforeEach(async () => {
-        ({ tokenSwapModuleInstance } = await setupExecuteSwapState(
+        await setupExecuteSwapState(
           contractInstances,
           daosDeal1,
           createSwapParameters,
           SWAP1
-        ));
+        );
       });
       it("» should be true when funded", async () => {
         expect(
@@ -377,12 +378,11 @@ describe("> Contract: TokenSwapModule", () => {
   describe("$ Function: executeSwap", () => {
     describe("# when not able to execute", () => {
       beforeEach(async () => {
-        ({ tokenSwapModuleInstance, depositContractInstances } =
-          await setupCreateSwapState(
-            contractInstances,
-            daosDeal1,
-            createSwapParameters
-          ));
+        ({ depositContractInstances } = await setupCreateSwapStateForSingleDeal(
+          contractInstances,
+          daosDeal1,
+          createSwapParameters
+        ));
       });
       it("» should fail on invalid ID", async () => {
         await expect(
@@ -416,12 +416,12 @@ describe("> Contract: TokenSwapModule", () => {
           deadline
         );
 
-        ({ tokenSwapModuleInstance } = await setupExecuteSwapState(
+        await setupExecuteSwapState(
           contractInstances,
           daosDeal1,
           createNewSwapParameters,
           SWAP1
-        ));
+        );
         await tokenSwapModuleInstance.executeSwap(SWAP1);
         await expect(
           tokenSwapModuleInstance.executeSwap(SWAP1)
@@ -430,13 +430,12 @@ describe("> Contract: TokenSwapModule", () => {
     });
     describe("# when able to execute", () => {
       beforeEach(async () => {
-        ({ tokenSwapModuleInstance, tokenInstances } =
-          await setupExecuteSwapState(
-            contractInstances,
-            daosDeal1,
-            createSwapParameters,
-            SWAP1
-          ));
+        ({ tokenInstances } = await setupExecuteSwapState(
+          contractInstances,
+          daosDeal1,
+          createSwapParameters,
+          SWAP1
+        ));
       });
       it("» should succeed in executing the swap", async () => {
         // Balance before swap
@@ -569,12 +568,11 @@ describe("> Contract: TokenSwapModule", () => {
   describe("$ Function: getTokenswapFromMetadata", () => {
     describe("# when not able to execute", () => {
       beforeEach(async () => {
-        ({ tokenSwapModuleInstance, depositContractInstances } =
-          await setupCreateSwapState(
-            contractInstances,
-            daosDeal1,
-            createSwapParameters
-          ));
+        ({ depositContractInstances } = await setupCreateSwapStateForSingleDeal(
+          contractInstances,
+          daosDeal1,
+          createSwapParameters
+        ));
       });
       it("» should fail with invalid metadata", async () => {
         await expect(
@@ -607,17 +605,14 @@ describe("> Contract: TokenSwapModule", () => {
           swapParameterDeal3,
         ];
 
-        ({
-          tokenSwapModuleInstance,
-          depositContractInstances,
-          createSwapParametersArray,
-        } = await setupMultipleCreateSwapStates(
-          contractInstances,
-          allDaos,
-          METADATAS,
-          tokenAddresses,
-          createSwapParameters
-        ));
+        ({ depositContractInstances, createSwapParametersArray } =
+          await setupMultipleCreateSwapStates(
+            contractInstances,
+            allDaos,
+            METADATAS,
+            tokenAddresses,
+            createSwapParameters
+          ));
       });
       it("» should succeed with valid metadata1", async () => {
         const tokenSwap1 =
@@ -630,6 +625,7 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParametersArray[0][5]
         );
         expect(tokenSwap1.status).to.equal(1);
+        console.log(tokenSwap1.metadata);
       });
       it("» should succeed with valid metadata2", async () => {
         const tokenSwap2 =
