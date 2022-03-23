@@ -10,7 +10,7 @@ import "../ModuleBaseWithFee.sol";
  */
 contract TokenSwapModule is ModuleBaseWithFee {
     TokenSwap[] public tokenSwaps;
-    mapping(bytes => uint32) public metadataToDealId;
+    mapping(bytes32 => uint32) public metadataToDealId;
 
     /**
      * @dev
@@ -52,7 +52,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         // unix timestamp of the execution
         uint32 executionDate;
         // hash of the deal information.
-        bytes metadata;
+        bytes32 metadata;
         // status of the deal
         Status status;
     }
@@ -60,7 +60,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
     event TokenSwapCreated(
         address indexed module,
         uint32 indexed dealId,
-        bytes indexed metadata,
+        bytes32 indexed metadata,
         address[] daos,
         address[] tokens,
         uint256[][] pathFrom,
@@ -90,6 +90,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
                                 array look like:
                                 [[instantAmount_dao1, vestedAmount_dao1, vestingStart_dao1,
                                 vestingEnd_dao1, instantAmount_dao2, ...], [...]]
+      *@param _metadata     Unique ID that is generated throught the Prime Deals frontend
       * @param _deadline    Time until which this action can be executed (unix timestamp)
       * @return             The dealId of the new action
     */
@@ -98,7 +99,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         address[] memory _tokens,
         uint256[][] memory _pathFrom,
         uint256[][] memory _pathTo,
-        bytes memory _metadata,
+        bytes32 _metadata,
         uint32 _deadline
     ) internal returns (uint32) {
         if (tokenSwaps.length >= 1) {
@@ -148,7 +149,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         emit TokenSwapCreated(
             address(this),
             dealId,
-            _metadata,
+            ts.metadata,
             _daos,
             _tokens,
             _pathFrom,
@@ -177,6 +178,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
                                 array look like:
                                 [[instantAmount_dao1, vestedAmount_dao1, vestingStart_dao1,
                                 vestingEnd_dao1, instantAmount_dao2, ...], [...]]
+      *@param _metadata     Unique ID that is generated throught the Prime Deals frontend
       * @param _deadline    Time until which this action can be executed (unix timestamp)
     */
     function createSwap(
@@ -184,7 +186,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         address[] calldata _tokens,
         uint256[][] calldata _pathFrom,
         uint256[][] calldata _pathTo,
-        bytes calldata _metadata,
+        bytes32 _metadata,
         uint32 _deadline
     ) external returns (uint32) {
         for (uint256 i; i < _daos.length; ++i) {
@@ -330,7 +332,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         }
     }
 
-    function getTokenswapFromMetadata(bytes memory _metadata)
+    function getTokenswapFromMetadata(bytes32 _metadata)
         public
         view
         validMetadata(_metadata)
@@ -350,22 +352,21 @@ contract TokenSwapModule is ModuleBaseWithFee {
             tokenSwaps[_dealId].deadline < uint32(block.timestamp);
     }
 
-    function _metadataDoesNotExist(bytes memory _metadata)
+    function _metadataDoesNotExist(bytes32 _metadata)
         internal
         view
         returns (bool)
     {
         uint256 dealId = metadataToDealId[_metadata];
         return (dealId == 0 &&
-            keccak256(tokenSwaps[dealId].metadata) != keccak256(_metadata) &&
-            _metadata.length != 0);
+            tokenSwaps[dealId].metadata != _metadata &&
+            _metadata.length > 0);
     }
 
-    modifier validMetadata(bytes memory _metadata) {
+    modifier validMetadata(bytes32 _metadata) {
         uint256 dealId = metadataToDealId[_metadata];
         require(
-            dealId != 0 ||
-                keccak256(tokenSwaps[dealId].metadata) == keccak256(_metadata),
+            dealId != 0 || tokenSwaps[dealId].metadata == _metadata,
             "Module: metadata does not exist"
         );
         _;

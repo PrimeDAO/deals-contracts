@@ -1,6 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { parseEther, formatBytes32String, formatUnits } = ethers.utils;
+const { parseEther, formatBytes32String, formatUnits, parseBytes32String } =
+  ethers.utils;
 const {
   constants: { ZERO_ADDRESS },
   time,
@@ -53,9 +54,9 @@ const SWAP1 = 0;
 const SWAP2 = 1;
 const SWAP3 = 2;
 const INVALID_SWAP = 20;
-const METADATA1 = formatBytes32String("hello");
-const METADATA2 = formatBytes32String("helloao");
-const METADATA3 = formatBytes32String("helloaodfs");
+const METADATA1 = formatBytes32String("Uad8AA2CFPaVdyxa805p");
+const METADATA2 = formatBytes32String("pnthglKd0wFHOK6Bn78C");
+const METADATA3 = formatBytes32String("TqoScXB3Dv79eDjsSvfh");
 const METADATAS = [METADATA1, METADATA2, METADATA3];
 
 describe("> Contract: TokenSwapModule", () => {
@@ -224,6 +225,20 @@ describe("> Contract: TokenSwapModule", () => {
           .not.be.empty;
         expect(await baseContractInstance.daoDepositManager(dao3.address)).to
           .not.be.empty;
+      });
+      it("» should succeed emitting right metadata event", async () => {
+        const tx = await tokenSwapModuleInstance.createSwap(
+          ...createSwapParameters
+        );
+        const receipt = await tx.wait();
+
+        const events = receipt.events.filter((x) => {
+          return x.event == "TokenSwapCreated";
+        });
+        const localMetadata = events[0].args[2];
+        expect(METADATA1).to.equal(
+          formatBytes32String(parseBytes32String(localMetadata))
+        );
       });
       it("» should succeed in creating 2 swaps", async () => {
         await expect(
