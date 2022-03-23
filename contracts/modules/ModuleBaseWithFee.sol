@@ -112,13 +112,7 @@ contract ModuleBaseWithFee is ModuleBase {
         address _to,
         uint256 _amount
     ) internal {
-        // TODO: does this even work? transferFrom expects funds and fee first?
-
-        _transferFrom(
-            _token,
-            _from,
-            _to,
-            _payFeeAndReturnRemainder(_token, _amount)
-        );
+        _transferFrom(_token, _from, _to, _amount);
+        _payFeeAndReturnRemainder(_token, _amount);
     }
 }
