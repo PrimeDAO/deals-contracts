@@ -118,18 +118,11 @@ contract DaoDepositManager {
         address _token,
         uint256 _amount
     ) public payable {
-        require(
-            (
-                _token != address(0) // if token is not eth
-                    ? (msg.value == 0 && _amount > 0) // true, amount set + no value
-                    : (msg.value != 0) // false (amount doesn't matter, we use msg.value)
-            ),
-            "D2D-DEPOSIT-INVALID-TOKEN-AMOUNT"
-        );
+        require(_amount > 0, "D2D-DEPOSIT-INVALID-AMOUNT");
         if (_token != address(0)) {
             _transferFrom(_token, msg.sender, address(this), _amount);
         } else {
-            _amount = msg.value;
+            require(_amount == msg.value, "D2D-DEPOSIT-INVALID-ETH-VALUE");
         }
 
         tokenBalances[_token] += _amount;
@@ -161,7 +154,22 @@ contract DaoDepositManager {
             _tokens.length == _amounts.length,
             "D2D-DEPOSIT-ARRAY-LENGTH-MISMATCH"
         );
+
+        bool ethDepositDone = false;
         for (uint256 i; i < _tokens.length; ++i) {
+            // Due to the nature of msg.value in ETH-based transfers
+            // and the input parameter _amount that we use, the
+            // safest way to prevent any problems here is only
+            // to allow ONE of the deposits in here to be in ETH
+            // (there is no need to have multiple of them anyways)
+            if (_tokens[i] == address(0)) {
+                // If this would be true, this wouldn't be the first
+                // time we are here
+                require(!ethDepositDone, "");
+                // Setting it to true = first time we are here
+                ethDepositDone = true;
+            }
+
             deposit(_module, _dealId, _tokens[i], _amounts[i]);
         }
     }
