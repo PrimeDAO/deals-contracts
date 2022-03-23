@@ -28,8 +28,8 @@ contract BlueprintModule is ModuleBase {
 
     event ActionExecuted(uint256 id);
 
-    constructor(address _dealmanager)
-        ModuleBase(_dealmanager)
+    constructor(address _dealManager)
+        ModuleBase(_dealManager)
     // solhint-disable-next-line no-empty-blocks
     {
 
@@ -69,7 +69,7 @@ contract BlueprintModule is ModuleBase {
         string calldata _value3
     ) external returns (uint256) {
         uint256 newId = createAction(_daos, _value1, _value2, _value3);
-        for (uint256 i = 0; i < _daos.length; i++) {
+        for (uint256 i; i < _daos.length; ++i) {
             if (!dealManager.hasDaoDepositManager(_daos[i])) {
                 dealManager.createDaoDepositManager(_daos[i]);
             }
@@ -78,7 +78,7 @@ contract BlueprintModule is ModuleBase {
     }
 
     function checkExecutability(uint256 _id)
-        external
+        public
         view
         validId(_id)
         returns (bool)
@@ -86,14 +86,6 @@ contract BlueprintModule is ModuleBase {
         Blueprint storage blueprint = blueprints[_id];
         if (blueprint.status != Status.ACTIVE) {
             return false;
-        }
-
-        if (
-            blueprint.value1 > 0 &&
-            blueprint.value2 != address(0) &&
-            bytes(blueprint.value3).length > 0
-        ) {
-            return true;
         }
 
         return true;
@@ -107,9 +99,7 @@ contract BlueprintModule is ModuleBase {
         Blueprint memory blueprint = blueprints[_id];
 
         require(
-            blueprint.value1 > 0 &&
-                blueprint.value2 != address(0) &&
-                bytes(blueprint.value3).length > 0,
+            checkExecutability(_id),
             "Module: execution conditions not met"
         );
 
@@ -119,7 +109,7 @@ contract BlueprintModule is ModuleBase {
     }
 
     modifier validId(uint256 _id) {
-        require(_id <= blueprints.length, "Module: id doesn't exist");
+        require(_id < blueprints.length, "Module: id doesn't exist");
         _;
     }
 

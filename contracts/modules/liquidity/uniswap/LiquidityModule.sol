@@ -28,7 +28,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         // the maximum difference between the
         // token ratio from pathFrom and the
         // actual ratio on-chain in basis points
-        // (1% = 10000)
+        // (1% = 100)
         uint256 maxDiff;
         // unix timestamp of the deadline
         uint32 deadline;
@@ -49,7 +49,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
     // from the module, includes vesting.
     // since we do not know the amount of the LP tokens in any case
     // we use percentage values here in basis points, so
-    // 100% = 1000000
+    // 1% = 100
     // token -> dao -> tuple(4)
     // [[instantAmount_dao1, vestedAmount_dao1, vestingStart_dao1,
     // vestingEnd_dao1, instantAmount_dao2, ...], [...]]
@@ -89,11 +89,11 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
                               - Contains absolute numbers of tokens
       * @param _pathTo      Array containing the resulting LP tokens flowing to the DAOs
                               - Contains percentage numbers of tokens
-                              - In Basis Points (1% = 10000) 
+                              - In Basis Points (1% = 100) 
       * @param _maxDiff     The maximum difference between the ratio resulting from the 
                             pathFrom and the actual balance of the pool (if it already 
                             exists)
-                              - In Basis Points (1% = 10000) 
+                              - In Basis Points (1% = 100) 
       * @param _deadline    Time until which this action can be executed (unix timestamp)
       * @return             The ID of the new action
     */
@@ -117,9 +117,11 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         require(
             _pathFrom.length == _pathTo.length &&
                 _pathFrom[0].length == _daos.length &&
-                _pathTo.length / 4 == _daos.length,
+                _pathTo.length >> 2 == _daos.length,
             "Module: invalid array lengths"
         );
+
+        require(_deadline > block.timestamp, "Module: invalid deadline");
 
         LiquidityAction memory la = LiquidityAction(
             _daos,
@@ -159,11 +161,11 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
                               - Contains absolute numbers of tokens
       * @param _pathTo      Array containing the resulting LP tokens flowing to the DAOs
                               - Contains percentage numbers of tokens
-                              - In Basis Points (1% = 10000) 
+                              - In Basis Points (1% = 100) 
       * @param _maxDiff     The maximum difference between the ratio resulting from the 
                             pathFrom and the actual balance of the pool (if it already 
                             exists)
-                              - In Basis Points (1% = 10000) 
+                              - In Basis Points (1% = 100) 
       * @param _deadline    Time until which this action can be executed (unix timestamp)
       * @return             The ID of the new action
     */
@@ -175,7 +177,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         uint256 _maxDiff,
         uint32 _deadline
     ) external returns (uint32) {
-        for (uint256 i = 0; i < _daos.length; i++) {
+        for (uint256 i; i < _daos.length; ++i) {
             if (!dealManager.hasDaoDepositManager(_daos[i])) {
                 dealManager.createDaoDepositManager(_daos[i]);
             }
@@ -212,8 +214,8 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         if (la.deadline < uint32(block.timestamp)) {
             return false;
         }
-        for (uint256 i = 0; i < la.tokens.length; i++) {
-            for (uint256 j = 0; j < la.pathFrom[i].length; j++) {
+        for (uint256 i; i < la.tokens.length; ++i) {
+            for (uint256 j; j < la.pathFrom[i].length; ++j) {
                 // for each token and each pathFrom entry for this
                 // token, check whether the corresponding DAO
                 // has deposited the corresponding amount into their
@@ -351,8 +353,8 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
 
         // ratioDiff = ((big*1000000)/small)-1000000
         // max ratio is defined in percent is
-        // basis points, so 1% = 10000 and
-        // 100% = 1000000
+        // basis points, so 1% = 100 and
+        // 100% = 10000
 
         if (desiredRatio >= ratio) {
             require(
@@ -391,11 +393,11 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         uint256[] memory _leftOverAmounts
     ) internal {
         uint256[] memory daoShares = new uint256[](_la.daos.length);
-        uint256 amountsTo = 0;
+        uint256 amountsTo;
         uint256 tokensLeft = _amount;
 
-        for (uint256 k = 0; k < _la.pathTo.length / 4; k++) {
-            uint256 share = 0;
+        for (uint256 k; k < _la.pathTo.length >> 4; ++k) {
+            uint256 share;
             // every 4 values, the values for a new dao start
             // value 0 = instant amount
             // value 1 = vested amount
@@ -403,9 +405,9 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
             // value 3 = vesting end
 
             // sending the vested amount first
-            if (_la.pathTo[k * 4 + 1] > 0) {
-                share += _la.pathTo[k * 4 + 1];
-                uint256 payout = (_amount * _la.pathTo[k * 4 + 1]) / 10000;
+            if (_la.pathTo[(k << 2) + 1] > 0) {
+                share += _la.pathTo[(k << 2) + 1];
+                uint256 payout = (_amount * _la.pathTo[(k << 2) + 1]) / 10000;
                 amountsTo += payout;
                 tokensLeft -= payout;
                 payout = _payFeeAndReturnRemainder(_lpToken, payout);
@@ -416,15 +418,15 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
                         _dealId,
                         _lpToken,
                         payout, // amount
-                        uint32(_la.pathTo[k * 4 + 2]), // start
-                        uint32(_la.pathTo[k * 4 + 3]) // end
+                        uint32(_la.pathTo[(k << 2) + 2]), // start
+                        uint32(_la.pathTo[(k << 2) + 3]) // end
                     );
             }
 
             // sending the instant amount
-            if (_la.pathTo[k * 4] > 0) {
-                share += _la.pathTo[k * 4];
-                uint256 payout = (_amount * _la.pathTo[k * 4]) / 10000;
+            if (_la.pathTo[(k << 2)] > 0) {
+                share += _la.pathTo[(k << 2)];
+                uint256 payout = (_amount * _la.pathTo[(k << 2)]) / 10000;
                 amountsTo += payout;
                 tokensLeft -= payout;
                 // If we are at the last one, make sure that
@@ -445,7 +447,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
                                 their LP token shares
       * @param _dealId              The ID of the action (position in the array)
       * @param _daoShares       Array of the percentage shares of each DAO for LP tokens
-                                  - In Basis Points (1% = 10000) 
+                                  - In Basis Points (1% = 100) 
       * @param _amounts         Array of the amounts left for each input token
     */
     function _distributeLeftoverTokens(
@@ -458,8 +460,8 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
             "Module: array length mismatch"
         );
         uint256[] memory left = _amounts;
-        for (uint256 i = 0; i < _daoShares.length; i++) {
-            for (uint256 j = 0; j < _amounts.length; j++) {
+        for (uint256 i; i < _daoShares.length; ++i) {
+            for (uint256 j; j < _amounts.length; ++j) {
                 if (_amounts[j] > 0) {
                     uint256 payout = (_amounts[j] * _daoShares[i]) / 10000;
                     left[j] -= payout;
@@ -480,7 +482,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
 
     modifier validId(uint32 _dealId) {
         require(
-            _dealId <= uint32(liquidityActions.length),
+            _dealId < uint32(liquidityActions.length),
             "Module: id doesn't exist"
         );
         _;

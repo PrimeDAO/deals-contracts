@@ -49,7 +49,7 @@ interface IDaoDepositManager {
         uint32 _dealId,
         address _token,
         uint256 _amount
-    ) external returns (bool);
+    ) external;
 
     function startVesting(
         uint32 _dealId,

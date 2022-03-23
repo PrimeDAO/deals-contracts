@@ -198,19 +198,19 @@ describe("> Contract: TokenSwapModule", () => {
 
         await expect(
           tokenSwapModuleInstance.createSwap(...mismatchLengthTokensAndPathFrom)
-        ).to.be.revertedWith("Module: invalid array lengths");
+        ).to.be.revertedWith("Module: invalid outer array lengths");
 
         await expect(
           tokenSwapModuleInstance.createSwap(...invalidLengthTokensAndPathTo)
-        ).to.be.revertedWith("Module: invalid array lengths");
+        ).to.be.revertedWith("Module: invalid outer array lengths");
 
         await expect(
           tokenSwapModuleInstance.createSwap(...invalidPathFromLength)
-        ).to.be.revertedWith("Module: invalid array lengths");
+        ).to.be.revertedWith("Module: invalid inner array lengths");
 
         await expect(
           tokenSwapModuleInstance.createSwap(...invalidPathToLength)
-        ).to.be.revertedWith("Module: invalid array lengths");
+        ).to.be.revertedWith("Module: invalid inner array lengths");
       });
     });
     describe("# when initializing with valid parameters", () => {
