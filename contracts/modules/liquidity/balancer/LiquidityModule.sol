@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 import "../../ModuleBaseWithFee.sol";
 import "../../../interfaces/IBalancerV2.sol";
+import "../../../interfaces/IWETH.sol";
 
 /**
  * @title PrimeDeals Liquidity Module (Balancer V2)
@@ -26,7 +27,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         // the maximum difference between the
         // token ratio from pathFrom and the
         // actual ratio on-chain in basis points
-        // (1% = 10000)
+        // (1% = 100)
         uint256 maxDiff;
         // unix timestamp of the deadline
         uint32 deadline;
@@ -47,7 +48,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
     // from the module, includes vesting.
     // since we do not know the amount of the LP tokens in any case
     // we use percentage values here in basis points, so
-    // 100% = 1000000
+    // 1% = 100
     // token -> dao -> tuple(4)
     // [[instantAmount_dao1, vestedAmount_dao1, vestingStart_dao1,
     // vestingEnd_dao1, instantAmount_dao2, ...], [...]]
@@ -86,11 +87,11 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
                               - Contains absolute numbers of tokens
       * @param _pathTo      Array containing the resulting LP tokens flowing to the DAOs
                               - Contains percentage numbers of tokens
-                              - In Basis Points (1% = 10000) 
+                              - In Basis Points (1% = 100) 
       * @param _maxDiff     The maximum difference between the ratio resulting from the 
                             pathFrom and the actual balance of the pool (if it already 
                             exists)
-                              - In Basis Points (1% = 10000) 
+                              - In Basis Points (1% = 100) 
       * @param _deadline    Time until which this action can be executed (unix timestamp)
       * @return             The ID of the new action
     */
@@ -114,9 +115,11 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         require(
             _pathFrom.length == _pathTo.length &&
                 _pathFrom[0].length == _daos.length &&
-                _pathTo.length / 4 == _daos.length,
+                _pathTo.length >> 2 == _daos.length,
             "Module: invalid array lengths"
         );
+
+        require(_deadline > block.timestamp, "Module: invalid deadline");
 
         LiquidityAction memory la = LiquidityAction(
             _daos,
@@ -154,11 +157,11 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
                               - Contains absolute numbers of tokens
       * @param _pathTo      Array containing the resulting LP tokens flowing to the DAOs
                               - Contains percentage numbers of tokens
-                              - In Basis Points (1% = 10000) 
+                              - In Basis Points (1% = 100) 
       * @param _maxDiff     The maximum difference between the ratio resulting from the 
                             pathFrom and the actual balance of the pool (if it already 
                             exists)
-                              - In Basis Points (1% = 10000) 
+                              - In Basis Points (1% = 100) 
       * @param _deadline    Time until which this action can be executed (unix timestamp)
       * @return             The ID of the new action
     */
@@ -170,7 +173,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         uint256 _maxDiff,
         uint32 _deadline
     ) external returns (uint32) {
-        for (uint256 i = 0; i < _daos.length; i++) {
+        for (uint256 i; i < _daos.length; ++i) {
             if (!dealManager.hasDaoDepositManager(_daos[i])) {
                 dealManager.createDaoDepositManager(_daos[i]);
             }
@@ -207,8 +210,9 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         if (la.deadline < uint32(block.timestamp)) {
             return false;
         }
-        for (uint256 i = 0; i < la.tokens.length; i++) {
-            for (uint256 j = 0; j < la.pathFrom[i].length; j++) {
+
+        for (uint256 i; i < la.tokens.length; ++i) {
+            for (uint256 j; j < la.pathFrom[i].length; ++j) {
                 if (
                     IDaoDepositManager(
                         dealManager.getDaoDepositManager(la.daos[j])
@@ -249,12 +253,17 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
             la.pathFrom
         );
 
-        // Set approval for tokens
-        _approveToken(la.tokens[0], address(vault), tokenAmountsIn[0]);
-        _approveToken(la.tokens[1], address(vault), tokenAmountsIn[1]);
+        for (uint256 i; i < la.tokens.length; ++i) {
+            if (la.tokens[i] == address(0)) {
+                address weth = dealManager.weth();
+                IWETH(weth).deposit{value: tokenAmountsIn[i]}();
+                la.tokens[i] = weth;
+            }
+            _approveToken(la.tokens[i], address(vault), tokenAmountsIn[i]);
+        }
 
         IAsset[] memory assets = new IAsset[](la.tokens.length);
-        for (uint256 i = 0; i < la.tokens.length; i++) {
+        for (uint256 i; i < la.tokens.length; ++i) {
             assets[i] = IAsset(la.tokens[i]);
         }
 
@@ -285,7 +294,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
       * @param _lpToken     Address of the lp token
       * @param _amount      Amount of lp tokens
       * @return _daoShares  The percentage share of each DAO for the lp tokens
-                            in basis points (1% = 10000)
+                            in basis points (1% = 100)
     */
     function _distributeLPTokens(
         uint32 _dealId,
@@ -293,12 +302,12 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         address _lpToken,
         uint256 _amount
     ) internal returns (uint256[] memory _daoShares) {
-        uint256 amountsTo = 0;
+        uint256 amountsTo;
         uint256 tokensLeft = _amount;
         _daoShares = new uint256[](_la.daos.length);
 
-        for (uint256 k = 0; k < _la.pathTo.length / 4; k++) {
-            uint256 share = 0;
+        for (uint256 k; k < _la.pathTo.length >> 2; ++k) {
+            uint256 share;
             // every 4 values, the values for a new dao start
             // value 0 = instant amount
             // value 1 = vested amount
@@ -306,9 +315,9 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
             // value 3 = vesting end
 
             // sending the vested amount first
-            if (_la.pathTo[k * 4 + 1] > 0) {
-                share += _la.pathTo[k * 4 + 1];
-                uint256 payout = (_amount * _la.pathTo[k * 4 + 1]) / 10000;
+            if (_la.pathTo[(k << 2) + 1] > 0) {
+                share += _la.pathTo[(k << 2) + 1];
+                uint256 payout = (_amount * _la.pathTo[(k << 2) + 1]) / 10000;
                 amountsTo += payout;
                 tokensLeft -= payout;
                 payout = _payFeeAndReturnRemainder(_lpToken, payout);
@@ -319,15 +328,15 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
                         _dealId,
                         _lpToken,
                         payout, // amount
-                        uint32(_la.pathTo[k * 4 + 2]), // start
-                        uint32(_la.pathTo[k * 4 + 3]) // end
+                        uint32(_la.pathTo[(k << 2) + 2]), // start
+                        uint32(_la.pathTo[(k << 2) + 3]) // end
                     );
             }
 
             // sending the instant amount
-            if (_la.pathTo[k * 4] > 0) {
-                share += _la.pathTo[k * 4];
-                uint256 payout = (_amount * _la.pathTo[k * 4]) / 10000;
+            if (_la.pathTo[(k << 2)] > 0) {
+                share += _la.pathTo[(k << 2)];
+                uint256 payout = (_amount * _la.pathTo[(k << 2)]) / 10000;
                 amountsTo += payout;
                 tokensLeft -= payout;
                 // If we are at the last one, make sure that
@@ -335,7 +344,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
                 if (k == _la.daos.length - 1 && tokensLeft > 0) {
                     payout += tokensLeft;
                 }
-                _transferTokenWithFee(_lpToken, _la.daos[k], payout);
+                _transferWithFee(_lpToken, _la.daos[k], payout);
             }
             _daoShares[k] = share;
         }
@@ -347,7 +356,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
                                 their LP token shares
       * @param _dealId              The ID of the action (position in the array)
       * @param _daoShares       Array of the percentage shares of each DAO for LP tokens
-                                  - In Basis Points (1% = 10000) 
+                                  - In Basis Points (1% = 100) 
       * @param _amounts         Array of the amounts left for each input token
     */
     function _distributeLeftoverTokens(
@@ -360,8 +369,8 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
             "Module: array length mismatch"
         );
         uint256[] memory left = _amounts;
-        for (uint256 i = 0; i < _daoShares.length; i++) {
-            for (uint256 j = 0; j < _amounts.length; j++) {
+        for (uint256 i; i < _daoShares.length; ++i) {
+            for (uint256 j; j < _amounts.length; ++j) {
                 if (_amounts[j] > 0) {
                     uint256 payout = (_amounts[j] * _daoShares[i]) / 10000;
                     left[j] -= payout;
@@ -370,7 +379,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
                     if (i == _daoShares.length - 1 && left[j] > 0) {
                         payout += left[j];
                     }
-                    _transferToken(
+                    _transfer(
                         liquidityActions[_dealId].tokens[j],
                         liquidityActions[_dealId].daos[i],
                         payout
@@ -382,7 +391,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
 
     modifier validId(uint32 _dealId) {
         require(
-            _dealId <= uint32(liquidityActions.length),
+            _dealId < uint32(liquidityActions.length),
             "Module: id doesn't exist"
         );
         _;

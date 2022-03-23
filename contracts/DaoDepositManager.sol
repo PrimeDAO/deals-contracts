@@ -3,7 +3,6 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IDealManager.sol";
-import "./interfaces/IWETH.sol";
 import "./interfaces/IModuleBase.sol";
 
 contract DaoDepositManager {
@@ -120,16 +119,17 @@ contract DaoDepositManager {
         uint256 _amount
     ) public payable {
         require(
-            (_token != address(0) && _amount > 0) ||
-                (_token == address(0) && msg.value > 0),
+            (
+                _token != address(0) // if token is not eth
+                    ? (msg.value == 0 && _amount > 0) // true, amount set + no value
+                    : (msg.value != 0) // false (amount doesn't matter, we use msg.value)
+            ),
             "D2D-DEPOSIT-INVALID-TOKEN-AMOUNT"
         );
         if (_token != address(0)) {
-            _transferTokenFrom(_token, msg.sender, address(this), _amount);
+            _transferFrom(_token, msg.sender, address(this), _amount);
         } else {
             _amount = msg.value;
-            _token = dealManager.weth();
-            IWETH(_token).deposit{value: _amount}();
         }
 
         tokenBalances[_token] += _amount;
@@ -161,7 +161,7 @@ contract DaoDepositManager {
             _tokens.length == _amounts.length,
             "D2D-DEPOSIT-ARRAY-LENGTH-MISMATCH"
         );
-        for (uint256 i = 0; i < _tokens.length; i++) {
+        for (uint256 i; i < _tokens.length; ++i) {
             deposit(_module, _dealId, _tokens[i], _amounts[i]);
         }
     }
@@ -171,19 +171,11 @@ contract DaoDepositManager {
         uint32 _dealId,
         address _token
     ) public {
-        uint256 currentBalance = 0;
-        if (_token != address(0)) {
-            currentBalance = IERC20(_token).balanceOf(address(this));
-        } else {
-            _token = dealManager.weth();
-            currentBalance = address(this).balance;
-        }
-        if (currentBalance > tokenBalances[_token]) {
-            uint256 amount = currentBalance - tokenBalances[_token];
+        uint256 currentBalance = getBalance(_token);
+        uint256 total = tokenBalances[_token] + vestedBalances[_token];
+        if (currentBalance > total) {
+            uint256 amount = currentBalance - total;
             tokenBalances[_token] = currentBalance;
-            if (_token == address(0)) {
-                IWETH(_token).deposit{value: amount}();
-            }
             availableDealBalances[_token][_module][_dealId] += amount;
             deposits[_module][_dealId].push(
                 Deposit(dao, _token, amount, 0, uint32(block.timestamp))
@@ -205,7 +197,7 @@ contract DaoDepositManager {
         uint32 _dealId,
         address[] calldata _tokens
     ) external {
-        for (uint256 i = 0; i < _tokens.length; i++) {
+        for (uint256 i; i < _tokens.length; ++i) {
             registerDeposit(_module, _dealId, _tokens[i]);
         }
     }
@@ -245,20 +237,7 @@ contract DaoDepositManager {
         d.used = d.amount;
         availableDealBalances[d.token][_module][_dealId] -= freeAmount;
         tokenBalances[d.token] -= freeAmount;
-
-        // If it's a token
-        if (d.token != dealManager.weth()) {
-            _transferToken(d.token, d.depositor, freeAmount);
-            // Else if it's Ether
-        } else {
-            IWETH(dealManager.weth()).withdraw(freeAmount);
-            require(
-                address(this).balance >= freeAmount,
-                "D2D-DEPOSIT-INVALID-AMOUNT"
-            );
-            (bool sent, ) = d.depositor.call{value: freeAmount}("");
-            require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
-        }
+        _transfer(d.token, d.depositor, freeAmount);
 
         emit Withdrawn(
             _module,
@@ -275,34 +254,31 @@ contract DaoDepositManager {
         uint32 _dealId,
         address _token,
         uint256 _amount
-    ) external onlyModule returns (bool) {
+    ) external onlyModule {
         uint256 amountLeft = _amount;
-        for (uint256 i = 0; i < deposits[msg.sender][_dealId].length; i++) {
-            if (deposits[msg.sender][_dealId][i].token == _token) {
-                uint256 freeAmount = deposits[msg.sender][_dealId][i].amount -
-                    deposits[msg.sender][_dealId][i].used;
+        for (uint256 i; i < deposits[msg.sender][_dealId].length; ++i) {
+            Deposit storage d = deposits[msg.sender][_dealId][i];
+            if (d.token == _token) {
+                uint256 freeAmount = d.amount - d.used;
                 if (freeAmount > amountLeft) {
                     freeAmount = amountLeft;
                 }
                 amountLeft -= freeAmount;
-                deposits[msg.sender][_dealId][i].used += freeAmount;
+                d.used += freeAmount;
+
                 if (amountLeft == 0) {
-                    if (_token == address(0)) {
-                        IWETH(dealManager.weth()).withdraw(_amount);
-                        (bool sent, ) = msg.sender.call{value: _amount}("");
-                        require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
-                    } else {
-                        _transferToken(_token, msg.sender, _amount);
-                        tokenBalances[_token] -= _amount;
-                    }
+                    _transfer(_token, msg.sender, _amount);
+                    tokenBalances[_token] -= _amount;
                     availableDealBalances[_token][msg.sender][
                         _dealId
                     ] -= _amount;
-                    return true;
+                    // break out of the loop, since we sent the tokens
+                    // we now jump to the require statement at the end
+                    break;
                 }
             }
         }
-        return false;
+        require(amountLeft == 0, "D2D-DEPOSIT-NOT-ENOUGH-SENT-TO-MODULE");
     }
 
     function startVesting(
@@ -313,11 +289,6 @@ contract DaoDepositManager {
         uint32 _vestingDuration
     ) external onlyModule {
         // solhint-disable-next-line reason-string
-        require(
-            _token != address(0),
-            "D2D-DEPOSIT-VESTING-INVALID-TOKEN-ADDRESS"
-        );
-        // solhint-disable-next-line reason-string
         require(_amount > 0, "D2D-DEPOSIT-VESTING-INVALID-AMOUNT");
         // solhint-disable-next-line reason-string
         require(
@@ -325,8 +296,16 @@ contract DaoDepositManager {
             "D2D-DEPOSIT-VESTINGCLIFF-BIGGER-THAN-DURATION"
         );
 
-        _transferTokenFrom(_token, msg.sender, address(this), _amount);
+        if (_token != address(0)) {
+            _transferFrom(_token, msg.sender, address(this), _amount);
+        }
+        // no else path, since ETH will be sent by the module,
+        // which is verified by the verifyBalance() call after
+        // updating the vestedBalances
+
         vestedBalances[_token] += _amount;
+
+        verifyBalance(_token);
 
         vestings.push(
             Vesting(
@@ -351,7 +330,7 @@ contract DaoDepositManager {
         // unlikely edge-case of multiple vestings of the
         // same token for one deal. This is necessary
         // for deal-based vesting claims to work.
-        tokensPerDeal[msg.sender][_dealId]++;
+        ++tokensPerDeal[msg.sender][_dealId];
 
         emit VestingStarted(
             msg.sender,
@@ -375,13 +354,13 @@ contract DaoDepositManager {
         // Copy storage array to memory, since the "original"
         // array might change during sendReleasableClaim() if
         // the amount of a token reaches zero
-        for (uint256 i = 0; i < vestingCount; i++) {
+        for (uint256 i; i < vestingCount; ++i) {
             tokens[i] = vestedTokenAddresses[i];
         }
 
-        for (uint256 i = 0; i < vestings.length; i++) {
+        for (uint256 i; i < vestings.length; ++i) {
             (address token, uint256 amount) = sendReleasableClaim(vestings[i]);
-            for (uint256 j = 0; j < vestingCount; j++) {
+            for (uint256 j; j < vestingCount; ++j) {
                 if (token == tokens[j]) {
                     amounts[j] += amount;
                 }
@@ -397,16 +376,12 @@ contract DaoDepositManager {
         uint256 amountOfTokens = tokensPerDeal[_module][_dealId];
         tokens = new address[](amountOfTokens);
         amounts = new uint256[](amountOfTokens);
-        uint256 counter = 0;
-        for (uint256 i = 0; i < vestings.length; i++) {
-            if (
-                vestings[i].dealModule == _module &&
-                vestings[i].dealId == _dealId
-            ) {
-                (tokens[counter], amounts[counter]) = sendReleasableClaim(
-                    vestings[i]
-                );
-                counter++;
+        uint256 counter;
+        for (uint256 i; i < vestings.length; ++i) {
+            Vesting storage v = vestings[i];
+            if (v.dealModule == _module && v.dealId == _dealId) {
+                (tokens[counter], amounts[counter]) = sendReleasableClaim(v);
+                ++counter;
             }
         }
     }
@@ -442,7 +417,7 @@ contract DaoDepositManager {
             // we remove it from the array
             if (vestedTokenAmounts[token] == 0) {
                 uint256 arrLen = vestedTokenAddresses.length;
-                for (uint256 i = 0; i < arrLen; i++) {
+                for (uint256 i; i < arrLen; ++i) {
                     if (vestedTokenAddresses[i] == token) {
                         // if it's not the last element
                         // move the last to the current slot
@@ -463,13 +438,7 @@ contract DaoDepositManager {
                 "D2D-VESTING-CLAIM-AMOUNT-MISMATCH"
             );
             vestedBalances[token] -= amount;
-            if (token != dealManager.weth()) {
-                _transferToken(token, dao, amount);
-            } else {
-                IWETH(dealManager.weth()).withdraw(amount);
-                (bool sent, ) = dao.call{value: amount}("");
-                require(sent, "D2D-DEPOSIT-FAILED-TO-SEND-ETHER");
-            }
+            _transfer(token, dao, amount);
 
             emit VestingClaimed(
                 vesting.dealModule,
@@ -482,13 +451,9 @@ contract DaoDepositManager {
     }
 
     function verifyBalance(address _token) public view {
-        if (_token == address(0)) {
-            _token = dealManager.weth();
-        }
-
-        uint256 balance = IERC20(_token).balanceOf(address(this));
         require(
-            balance >= tokenBalances[_token] + vestedBalances[_token],
+            getBalance(_token) >=
+                tokenBalances[_token] + vestedBalances[_token],
             "D2D-DEPOSIT-BALANCE-INVALID"
         );
     }
@@ -509,13 +474,7 @@ contract DaoDepositManager {
         )
     {
         Deposit memory d = deposits[_module][_dealId][_depositId];
-        return (
-            d.depositor,
-            d.token == dealManager.weth() ? address(0) : d.token,
-            d.amount,
-            d.used,
-            d.depositedAt
-        );
+        return (d.depositor, d.token, d.amount, d.used, d.depositedAt);
     }
 
     function getDepositRange(
@@ -540,7 +499,7 @@ contract DaoDepositManager {
         amounts = new uint256[](range);
         usedAmounts = new uint256[](range);
         times = new uint256[](range);
-        for (uint32 i = _toDepositId; i <= _fromDepositId; i++) {
+        for (uint32 i = _toDepositId; i <= _fromDepositId; ++i) {
             (
                 senders[i],
                 tokens[i],
@@ -574,8 +533,8 @@ contract DaoDepositManager {
         address _user,
         address _token
     ) external view returns (uint256) {
-        uint256 freeAmount = 0;
-        for (uint256 i = 0; i < deposits[_module][_dealId].length; i++) {
+        uint256 freeAmount;
+        for (uint256 i; i < deposits[_module][_dealId].length; ++i) {
             if (
                 deposits[_module][_dealId][i].depositor == _user &&
                 deposits[_module][_dealId][i].token == _token
@@ -587,38 +546,47 @@ contract DaoDepositManager {
         return freeAmount;
     }
 
-    function getBalance(address _token) external view returns (uint256) {
+    function getBalance(address _token) public view returns (uint256) {
         if (_token == address(0)) {
             return address(this).balance;
         }
-        return tokenBalances[_token];
+        return IERC20(_token).balanceOf(address(this));
     }
 
     function getVestedBalance(address _token) external view returns (uint256) {
         return vestedBalances[_token];
     }
 
-    function _transferToken(
+    function _transfer(
         address _token,
         address _to,
         uint256 _amount
     ) internal {
-        require(
-            IERC20(_token).transfer(_to, _amount),
-            "D2D-TOKEN-TRANSFER-FAILED"
-        );
+        if (_token != address(0)) {
+            try IERC20(_token).transfer(_to, _amount) returns (bool success) {
+                require(success, "D2D-TOKEN-TRANSFER-UNSUCCESSFUL");
+            } catch {
+                revert("D2D-TOKEN-TRANSFER-FAILED");
+            }
+        } else {
+            (bool sent, ) = msg.sender.call{value: _amount}("");
+            require(sent, "D2D-ETH-TRANSFER-FAILED");
+        }
     }
 
-    function _transferTokenFrom(
+    function _transferFrom(
         address _token,
         address _from,
         address _to,
         uint256 _amount
     ) internal {
-        require(
-            IERC20(_token).transferFrom(_from, _to, _amount),
-            "D2D-TOKEN-TRANSFER-FAILED"
-        );
+        try IERC20(_token).transferFrom(_from, _to, _amount) returns (
+            bool success
+        ) {
+            require(success, "D2D-TOKEN-TRANSFER-FROM-UNSUCCESSFUL");
+        } catch {
+            revert("D2D-TOKEN-TRANSFER-FROM-FAILED");
+        }
     }
 
     modifier onlyDealManager() {

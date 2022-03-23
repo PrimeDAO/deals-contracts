@@ -44,7 +44,7 @@ contract DealManager is Ownable {
         daoDepositManagerImplementation = _newImplementation;
     }
 
-    // Sets a new address for the deposit contract implementation
+    // Sets a new address for the weth contract
     function setWETHAddress(address _newWETH) external onlyOwner {
         // solhint-disable-next-line reason-string
         require(_newWETH != address(0), "BASECONTRACT-INVALID-WETH-ADDRESS");

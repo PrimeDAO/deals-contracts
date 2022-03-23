@@ -54,15 +54,20 @@ contract ModuleBase {
         uint256[][] memory _path
     ) internal returns (uint256[] memory amountsIn) {
         amountsIn = new uint256[](_tokens.length);
-
-        for (uint256 i = 0; i < _tokens.length; i++) {
-            require(_path[i].length == _daos.length, "Module: length mismatch");
-            for (uint256 j = 0; j < _path[i].length; j++) {
-                if (_path[i][j] > 0) {
-                    amountsIn[i] += _path[i][j];
+        require(_path.length == _tokens.length, "Module: length mismatch");
+        for (uint256 i; i < _tokens.length; ++i) {
+            uint256[] memory tokenPath = _path[i];
+            require(
+                tokenPath.length == _daos.length,
+                "Module: length mismatch"
+            );
+            for (uint256 j; j < tokenPath.length; ++j) {
+                uint256 daoAmount = tokenPath[j];
+                if (daoAmount > 0) {
+                    amountsIn[i] += daoAmount;
                     IDaoDepositManager(
                         dealManager.getDaoDepositManager(_daos[j])
-                    ).sendToModule(_dealId, _tokens[i], _path[i][j]);
+                    ).sendToModule(_dealId, _tokens[i], daoAmount);
                 }
             }
         }
@@ -103,15 +108,21 @@ contract ModuleBase {
      * @param _to      Target of the transfer
      * @param _amount  Amount to be sent
      */
-    function _transferToken(
+    function _transfer(
         address _token,
         address _to,
         uint256 _amount
     ) internal {
-        require(
-            IERC20(_token).transfer(_to, _amount),
-            "Module: transfer failed"
-        );
+        if (_token != address(0)) {
+            try IERC20(_token).transfer(_to, _amount) returns (bool success) {
+                require(success, "Module: erc20 transfer was not successful");
+            } catch {
+                revert("Module: erc20 transfer failed");
+            }
+        } else {
+            (bool sent, ) = msg.sender.call{value: _amount}("");
+            require(sent, "Module: eth transfer failed");
+        }
     }
 
     /**
@@ -121,16 +132,21 @@ contract ModuleBase {
      * @param _to      Target of the transfer
      * @param _amount  Amount to be sent
      */
-    function _transferFromToken(
+    function _transferFrom(
         address _token,
         address _from,
         address _to,
         uint256 _amount
     ) internal {
-        require(
-            IERC20(_token).transferFrom(_from, _to, _amount),
-            "Module: transfer from failed"
-        );
+        require(_token != address(0), "Module: transferFrom only for ERC20s");
+
+        try IERC20(_token).transferFrom(_from, _to, _amount) returns (
+            bool success
+        ) {
+            require(success, "Module: transferFrom was not successful");
+        } catch {
+            revert("Module: transferFrom failed");
+        }
     }
 
     function hasDealExpired(uint32 _dealId)

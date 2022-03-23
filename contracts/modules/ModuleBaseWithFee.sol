@@ -12,7 +12,7 @@ contract ModuleBaseWithFee is ModuleBase {
     // Wallet that is receiving the fees
     address public feeWallet;
 
-    // Fee in basis points (1% = 10000)
+    // Fee in basis points (100% = 10000)
     uint32 public feeInBasisPoints;
 
     /**
@@ -33,29 +33,35 @@ contract ModuleBaseWithFee is ModuleBase {
 
     /**
      * @notice                  This event is emitted when the fee is updated
-     * @param oldFee            Old fee amount in basis points (1% = 1000)
-     * @param newFee            New fee in basis points (1% = 1000) that is updated
+     * @param oldFee            Old fee amount in basis points (1% = 100)
+     * @param newFee            New fee in basis points (1% = 100) that is updated
      */
     event FeeChanged(uint32 indexed oldFee, uint32 indexed newFee);
 
     /**
      * @dev                 Sets a new fee wallet
      * @param _feeWallet    Address of the new fee wallet
+     * @notice              The fee system will be inactive if the feeWallet
+     *                      is set to a zero-address
      */
     function setFeeWallet(address _feeWallet) external {
         require(msg.sender == dealManager.owner(), "Fee: not authorized");
-        emit FeeWalletChanged(feeWallet, _feeWallet);
+        if (feeWallet != _feeWallet) {
+            emit FeeWalletChanged(feeWallet, _feeWallet);
+        }
         feeWallet = _feeWallet;
     }
 
     /**
      * @dev                         Sets a new fee
-     * @param _feeInBasisPoints     Fee amount in basis points (1% = 10000)
+     * @param _feeInBasisPoints     Fee amount in basis points (1% = 100)
      */
     function setFee(uint32 _feeInBasisPoints) external {
         require(msg.sender == dealManager.owner(), "Fee: not authorized");
-        require(_feeInBasisPoints <= 10000, "Fee: can't be more than 100%");
-        emit FeeChanged(feeInBasisPoints, _feeInBasisPoints);
+        require(_feeInBasisPoints <= 2000, "Fee: can't be more than 20%");
+        if (feeInBasisPoints != _feeInBasisPoints) {
+            emit FeeChanged(feeInBasisPoints, _feeInBasisPoints);
+        }
         feeInBasisPoints = _feeInBasisPoints;
     }
 
@@ -71,7 +77,7 @@ contract ModuleBaseWithFee is ModuleBase {
     {
         if (feeWallet != address(0) && feeInBasisPoints > 0) {
             uint256 fee = (_amount * feeInBasisPoints) / 10000;
-            _transferToken(_token, feeWallet, fee);
+            _transfer(_token, feeWallet, fee);
 
             return _amount - fee;
         }
@@ -84,12 +90,13 @@ contract ModuleBaseWithFee is ModuleBase {
      * @param _to       Target of the transfer
      * @param _amount   Amount of the transfer
      */
-    function _transferTokenWithFee(
+    function _transferWithFee(
         address _token,
         address _to,
         uint256 _amount
-    ) internal {
-        _transferToken(_token, _to, _payFeeAndReturnRemainder(_token, _amount));
+    ) internal returns (uint256 amountAfterFee) {
+        amountAfterFee = _payFeeAndReturnRemainder(_token, _amount);
+        _transfer(_token, _to, amountAfterFee);
     }
 
     /**
@@ -100,17 +107,21 @@ contract ModuleBaseWithFee is ModuleBase {
      * @param _to       Target of the transfer
      * @param _amount   Amount of the transfer
      */
-    function _transferFromTokenWithFee(
+    function _transferFromWithFee(
         address _token,
         address _from,
         address _to,
         uint256 _amount
-    ) internal {
-        _transferFromToken(
-            _token,
-            _from,
-            _to,
-            _payFeeAndReturnRemainder(_token, _amount)
-        );
+    ) internal returns (uint256 amountAfterFee) {
+        // if the transfer from does not touch this contract, we first
+        // need to transfer it here, pay the fee, and then pass it on
+        // if that is not the case, we can do the regular transferFrom
+        if (_to != address(this)) {
+            _transferFrom(_token, _from, _to, _amount);
+            amountAfterFee = _transferWithFee(_token, _to, _amount);
+        } else {
+            _transferFrom(_token, _from, _to, _amount);
+            amountAfterFee = _payFeeAndReturnRemainder(_token, _amount);
+        }
     }
 }
