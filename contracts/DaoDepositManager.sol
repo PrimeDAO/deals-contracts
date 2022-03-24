@@ -595,4 +595,8 @@ contract DaoDepositManager {
         require(dealManager.addressIsModule(msg.sender), "D2D-NOT-MODULE");
         _;
     }
+
+    fallback() external payable {}
+
+    receive() external payable {}
 }
