@@ -118,18 +118,11 @@ contract DaoDepositManager {
         address _token,
         uint256 _amount
     ) public payable {
-        require(
-            (
-                _token != address(0) // if token is not eth
-                    ? (msg.value == 0 && _amount > 0) // true, amount set + no value
-                    : (msg.value != 0) // false (amount doesn't matter, we use msg.value)
-            ),
-            "D2D-DEPOSIT-INVALID-TOKEN-AMOUNT"
-        );
+        require(_amount > 0, "D2D-DEPOSIT-INVALID-AMOUNT");
         if (_token != address(0)) {
             _transferFrom(_token, msg.sender, address(this), _amount);
         } else {
-            _amount = msg.value;
+            require(_amount == msg.value, "D2D-DEPOSIT-INVALID-ETH-VALUE");
         }
 
         tokenBalances[_token] += _amount;
