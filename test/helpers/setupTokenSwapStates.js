@@ -189,7 +189,8 @@ const getdaoDepositManagerFromDepositContractArray = async (
   daoAddress
 ) => {
   for (let i = 0; i < daoDepositManagerInstancesSubset.length; i++) {
-    if ((await daoDepositManagerInstancesSubset[i].dao()) == daoAddress) {
+    let depositAddress = await daoDepositManagerInstancesSubset[i].dao();
+    if (depositAddress == daoAddress) {
       return daoDepositManagerInstancesSubset[i];
     }
   }
@@ -201,25 +202,60 @@ const fundDaoDepositManagersForSingelDeal = async (
   daoDepositManagerSubset,
   moduleAddress,
   swapID,
-  depositor
+  depositer
 ) => {
+  let daoDepositManagerInstances = [];
   for (let i = 0; i < createNewSwapParameters[2].length; i++) {
     let { daoIndex, amount } = getIndexOfNoneZeroAmount(
       createNewSwapParameters[2][i]
     );
+
     let daoDepositManagerInstance =
-      getdaoDepositManagerFromDepositContractArray(
+      await getdaoDepositManagerFromDepositContractArray(
         daoDepositManagerSubset,
         createNewSwapParameters[0][daoIndex]
       );
-    await fundDepositorWithToken(tokenInstances[i], depositor, amount);
-    await transferTokenToDaoDepositManager(
+
+    await fundDepositerWithToken(tokenInstances[i], depositer, amount);
+
+    daoDepositManagerInstance = await transferTokenToDaoDepositManager(
       tokenInstances[i],
       daoDepositManagerInstance,
-      depositor,
+      depositer,
       amount,
       moduleAddress,
       swapID
+    );
+    if (!daoDepositManagerInstances.includes(daoDepositManagerInstance, 0)) {
+      daoDepositManagerInstances.push(daoDepositManagerInstance);
+    }
+  }
+  return { daoDepositManagerInstances };
+};
+const approveTokenForDaoDepositManager = async (
+  tokenInstance,
+  depositer,
+  daoDepositManagerInstance,
+  amount
+) => {
+  await tokenInstance
+    .connect(depositer)
+    .approve(daoDepositManagerInstance.address, amount);
+};
+
+// Approves multiple tokens and amounts for a single daoDealManager
+const approveMultipleTokensForDaoDepositSingleManager = async (
+  tokenInstances,
+  depositors,
+  amounts,
+  daoDepositManagerInstance
+) => {
+  for (let i = 0; i < tokenInstances.length; i++) {
+    await approveTokenForDaoDepositManager(
+      tokenInstances[i],
+      depositors[i],
+      daoDepositManagerInstance,
+      amounts[i]
     );
   }
 };
@@ -227,17 +263,22 @@ const fundDaoDepositManagersForSingelDeal = async (
 const transferTokenToDaoDepositManager = async (
   tokenInstance,
   daoDepositManagerInstance,
-  depositor,
+  depositer,
   amount,
   moduleAddress,
   swapID
 ) => {
-  await tokenInstance
-    .connect(depositor)
-    .approve(daoDepositManagerInstance.address, amount);
+  await approveTokenForDaoDepositManager(
+    tokenInstance,
+    depositer,
+    daoDepositManagerInstance,
+    amount
+  );
+
   await daoDepositManagerInstance
-    .connect(depositor)
+    .connect(depositer)
     .deposit(moduleAddress, swapID, tokenInstance.address, amount);
+  return daoDepositManagerInstance;
 };
 
 const fundDaoDepositManagerForMultipleDeals = async (
@@ -351,13 +392,37 @@ const fundDaoDepositManager = async (
     );
 };
 
+const setupExecuteSwapStateForSingleDeal = async () => {
+  ({ daoDepositManagerInstances } = await setupCreateSwapStateForSingleDeal(
+    localContractInstances,
+    daosDeal1,
+    deal1Parameters
+  ));
+
+  const tokenInstancesSubset = getTokenInstancesForSingleDeal(
+    tokenInstances,
+    deal1Parameters
+  );
+  ({ daoDepositManagerInstances } = await fundDaoDepositManagersForSingelDeal(
+    tokenInstancesSubset,
+    deal1Parameters,
+    daoDepositManagerInstances,
+    tokenSwapModuleInstance.address,
+    SWAP1,
+    depositer1
+  ));
+
+  await callExecuteSwap(tokenSwapModuleInstance, [SWAP1]);
+  return { daoDepositManagerInstances };
+};
+
 const setupExecuteSwapState = async (
   contractInstances,
   daos,
   createSwapParameters,
   swapID
 ) => {
-  const DAO_TOKEN_AMOUNT = "10";
+  const DAO_TOKEN_AMOUNT = parseEther("10");
 
   const { tokenSwapModuleInstance, daoDepositManagerInstances } =
     await setupCreateSwapStateForSingleDeal(
@@ -367,10 +432,10 @@ const setupExecuteSwapState = async (
     );
   const { tokenInstances } = contractInstances;
 
-  await fundDepositorWithToken(tokenInstances[0], daos[0], DAO_TOKEN_AMOUNT);
-  await fundDepositorWithToken(tokenInstances[1], daos[1], DAO_TOKEN_AMOUNT);
-  await fundDepositorWithToken(tokenInstances[2], daos[2], DAO_TOKEN_AMOUNT);
-  await fundDepositorWithToken(tokenInstances[3], daos[2], DAO_TOKEN_AMOUNT);
+  await fundDepositerWithToken(tokenInstances[0], daos[0], DAO_TOKEN_AMOUNT);
+  await fundDepositerWithToken(tokenInstances[1], daos[1], DAO_TOKEN_AMOUNT);
+  await fundDepositerWithToken(tokenInstances[2], daos[2], DAO_TOKEN_AMOUNT);
+  await fundDepositerWithToken(tokenInstances[3], daos[2], DAO_TOKEN_AMOUNT);
 
   await fundDaoDepositManager(
     tokenInstances,
@@ -383,8 +448,8 @@ const setupExecuteSwapState = async (
   return { tokenSwapModuleInstance, tokenInstances };
 };
 
-const fundDepositorWithToken = async (tokenInstance, depositor, amount) => {
-  await tokenInstance.transfer(depositor.address, parseEther(amount));
+const fundDepositerWithToken = async (tokenInstance, depositer, amount) => {
+  await tokenInstance.transfer(depositer.address, amount);
 };
 
 const setupCreateSwapStateForSingleDeal = async (
@@ -430,7 +495,12 @@ module.exports = {
   fundDaoDepositManager,
   initializeParameters,
   setupExecuteSwapState,
-  fundDepositorWithToken,
+  fundDepositerWithToken,
   setupCreateSwapStateForSingleDeal,
   callCreateSwap,
+  transferTokenToDaoDepositManager,
+  approveTokenForDaoDepositManager,
+  approveMultipleTokensForDaoDepositSingleManager,
+  fundDaoDepositManagersForSingelDeal,
+  getTokenInstancesForSingleDeal,
 };

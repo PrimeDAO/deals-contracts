@@ -24,7 +24,6 @@ const {
   setupExecuteSwapState,
   setupCreateSwapStateForSingleDeal,
 } = require("../helpers/setupTokenSwapStates.js");
-const { parseBytes32String, AbiCoder } = require("ethers/lib/utils");
 
 let root,
   prime,
