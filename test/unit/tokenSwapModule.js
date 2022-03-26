@@ -21,7 +21,7 @@ const {
 const {
   initializeParameters,
   setupMultipleCreateSwapStates,
-  setupExecuteSwapState,
+  setupExecuteSwapStateSingleDeal,
   setupFundingStateSingleDeal,
 } = require("../helpers/setupTokenSwapStates.js");
 
@@ -364,7 +364,7 @@ describe("> Contract: TokenSwapModule", () => {
           deadline1
         );
 
-        ({ tokenSwapModuleInstance } = await setupExecuteSwapState(
+        ({ tokenSwapModuleInstance } = await setupExecuteSwapStateSingleDeal(
           contractInstances,
           daosDeal1,
           createNewSwapParameters,
@@ -381,7 +381,7 @@ describe("> Contract: TokenSwapModule", () => {
     });
     describe("# return true", () => {
       beforeEach(async () => {
-        ({ tokenSwapModuleInstance } = await setupExecuteSwapState(
+        ({ tokenSwapModuleInstance } = await setupExecuteSwapStateSingleDeal(
           contractInstances,
           daosDeal1,
           createSwapParameters,
@@ -438,7 +438,7 @@ describe("> Contract: TokenSwapModule", () => {
           deadline1
         );
 
-        ({ tokenSwapModuleInstance } = await setupExecuteSwapState(
+        ({ tokenSwapModuleInstance } = await setupExecuteSwapStateSingleDeal(
           contractInstances,
           daosDeal1,
           createNewSwapParameters,
@@ -456,7 +456,7 @@ describe("> Contract: TokenSwapModule", () => {
     describe("# when able to execute", () => {
       beforeEach(async () => {
         ({ tokenInstancesSubset, tokenSwapModuleInstance } =
-          await setupExecuteSwapState(
+          await setupExecuteSwapStateSingleDeal(
             contractInstances,
             daosDeal1,
             createSwapParameters,

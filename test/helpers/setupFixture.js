@@ -55,7 +55,7 @@ const setupFixture = deployments.createFixture(
     // Return contract instances
     const contractInstances = {
       dealManagerInstance: await ethers.getContract("DealManager"),
-      tokenInstances: await tokens.getErc20TokenInstances(4, root),
+      tokenInstances: await tokens.getErc20TokenInstances(10, root),
       tokenSwapModuleInstance: tokenSwapModuleInstance,
       daoDepositManagerInstance: daoDepositManagerInstance,
       daoDepositManagerFactoryInstance: await ethers.getContractFactory(

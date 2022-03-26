@@ -23,9 +23,10 @@ const {
   approveTokenForDaoDepositManager,
   approveAllDealTokensForDaoDepositManagerSingleDeal,
   setupClaimStateSingleDeal,
-  setupExecuteSwapState,
-} = require("../helpers/setupTokenSwapStates.js");
+  setupExecuteSwapStateSingleDeal,
 
+  setupClaimStateMultipleDeals,
+} = require("../helpers/setupTokenSwapStates.js");
 let root,
   dao1,
   dao2,
@@ -39,12 +40,14 @@ let root,
   depositer1,
   depositer2;
 let tokenAddresses;
-let deal1Parameters, deal2Parameters, deal3Parameters;
+let deal1Parameters, deal2Parameters, deal3Parameters, dealParametersArray;
 let daoDepositManagerDao1, daoDepositManagerDao2, daoDepositManagerDao3;
 let daoDepositManagerInstance,
   daoDepositManagerFactoryInstance,
   dealManagerInstance,
-  tokenSwapModuleInstance;
+  tokenSwapModuleInstance,
+  tokenInstancesAllDeals,
+  daoDepositManagerInstancesAllDeal;
 let tokenInstances, tokenInstancesSubset, wethInstance;
 let deadline, currTime;
 
@@ -59,12 +62,13 @@ const VESTING_DURATION3 = DAY * 3;
 const SWAP1 = 0;
 const SWAP2 = 1;
 const SWAP3 = 2;
+const SWAPS_ARRAY = [SWAP1, SWAP2, SWAP3];
 const INVALID_SWAP = 20;
 const METADATA1 = formatBytes32String("hello");
 const METADATA2 = formatBytes32String("helloao");
 const METADATA3 = formatBytes32String("helloaodfs");
 
-describe("> Contract: DaoDepositManager", () => {
+describe.only("> Contract: DaoDepositManager", () => {
   before(async () => {
     const signers = await ethers.getSigners();
     [root, prime, dao1, dao2, dao3, dao4, dao5, depositer1, depositer2] =
@@ -72,7 +76,7 @@ describe("> Contract: DaoDepositManager", () => {
     daosDeal1 = [dao1, dao2, dao3];
     daosDeal2 = [dao1, dao3, dao4];
     daosDeal3 = [dao4, dao2, dao5];
-    allDaos = [...daosDeal1, dao4, dao5];
+    allDaos = [daosDeal1, daosDeal2, daosDeal3];
   });
 
   beforeEach(async () => {
@@ -148,13 +152,8 @@ describe("> Contract: DaoDepositManager", () => {
   describe("$ DaoDepositManager through TokenSwapModule (end-to-end)", () => {
     describe("# single deposit ", async () => {
       beforeEach(async () => {
-        const localContractInstances = {
-          tokenSwapModuleInstance,
-          dealManagerInstance,
-          daoDepositManagerFactoryInstance,
-        };
         ({ daoDepositManagerInstances } = await setupFundingStateSingleDeal(
-          localContractInstances,
+          contractInstances,
           daosDeal1,
           deal1Parameters
         ));
@@ -253,13 +252,8 @@ describe("> Contract: DaoDepositManager", () => {
     });
     describe("# multiple deposits ", async () => {
       beforeEach(async () => {
-        const localContractInstances = {
-          tokenSwapModuleInstance,
-          dealManagerInstance,
-          daoDepositManagerFactoryInstance,
-        };
         ({ daoDepositManagerInstances } = await setupFundingStateSingleDeal(
-          localContractInstances,
+          contractInstances,
           daosDeal1,
           deal1Parameters
         ));
@@ -347,13 +341,8 @@ describe("> Contract: DaoDepositManager", () => {
     });
     describe("# register deposit ", async () => {
       beforeEach(async () => {
-        const localContractInstances = {
-          tokenSwapModuleInstance,
-          dealManagerInstance,
-          daoDepositManagerFactoryInstance,
-        };
         ({ daoDepositManagerInstances } = await setupFundingStateSingleDeal(
-          localContractInstances,
+          contractInstances,
           daosDeal1,
           deal1Parameters
         ));
@@ -410,21 +399,21 @@ describe("> Contract: DaoDepositManager", () => {
     });
     describe("# withdraw ", async () => {
       // This setup:
-      //  - creates the swap
-      //  - funds the daoDepositContracts
+      //  - creates single swap
+      //  - funds the daoDepositContracts for this swap
+      // It returns:
+      //  - The tokensInstances for testing in the format:
+      //    - [token1, token2, ...]
       beforeEach(async () => {
-        ({
-          tokenInstancesSubset,
-          daoDepositManagerInstances,
-          tokenSwapModuleInstance,
-        } = await setupExecuteSwapState(
-          contractInstances,
-          daosDeal1,
-          deal1Parameters,
-          tokenInstances,
-          depositer1,
-          SWAP1
-        ));
+        ({ tokenInstancesSubset, daoDepositManagerInstances } =
+          await setupExecuteSwapStateSingleDeal(
+            contractInstances,
+            daosDeal1,
+            deal1Parameters,
+            tokenInstances,
+            depositer1,
+            SWAP1
+          ));
 
         [daoDepositManagerDao1, daoDepositManagerDao2, daoDepositManagerDao3] =
           daoDepositManagerInstances;
@@ -454,18 +443,21 @@ describe("> Contract: DaoDepositManager", () => {
     });
     describe("# claimVesting ", async () => {
       // This setup:
-      //  - creates the swap
-      //  - funds the daoDepositContracts
+      //  - creates single swap
+      //  - funds the daoDepositContracts for single swap
       //  - executes the swap
+      // It returns:
+      //  - The tokensInstances for testing in the format:
+      //    - [token1, token2, ...]
       beforeEach(async () => {
         currTime = await time.latest();
 
         ({ tokenInstancesSubset, daoDepositManagerInstances } =
           await setupClaimStateSingleDeal(
             contractInstances,
+            tokenInstances,
             daosDeal1,
             deal1Parameters,
-            tokenInstances,
             depositer1,
             SWAP1
           ));
@@ -521,7 +513,31 @@ describe("> Contract: DaoDepositManager", () => {
       });
     });
     describe("# claimDealVesting ", async () => {
-      beforeEach(async () => {});
+      // This setup:
+      //  - creates all the swaps in the dealParameterArray
+      //  - funds all the DaoDepositManagers across all deals
+      //  - executes all the deal
+      // It returns:
+      //  - All the tokensInstances for testing in the format:
+      //    - [[tokenInstancesDeal1], [tokensInstancesDeal2]...]
+      //  - All the depositManagerInstances for testing in this format:
+      //    - [[daoDepositManagersDeal1], [daoDepositManagersDeal2]...]
+
+      beforeEach(async () => {
+        ({ tokenInstancesAllDeals, daoDepositManagerInstancesAllDeal } =
+          await setupClaimStateMultipleDeals(
+            contractInstances,
+            tokenInstances,
+            allDaos,
+            dealParametersArray,
+            [depositer1, depositer1, depositer1],
+            SWAPS_ARRAY
+          ));
+      });
+      it("» should succeed on claiming", async () => {
+        // should be ready for testing. See format above on how to access parts
+        expect(false).to.be.true;
+      });
     });
   });
 });
