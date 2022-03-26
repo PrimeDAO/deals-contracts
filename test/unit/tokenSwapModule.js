@@ -22,7 +22,7 @@ const {
   initializeParameters,
   setupMultipleCreateSwapStates,
   setupExecuteSwapState,
-  setupCreateSwapStateForSingleDeal,
+  setupFundingStateSingleDeal,
 } = require("../helpers/setupTokenSwapStates.js");
 
 let root,
@@ -32,14 +32,15 @@ let root,
   dao3,
   dao4,
   dao5,
+  depositer1,
   daosDeal1,
   daosDeal2,
   daosDeal3,
   allDaos;
-let tokenAddresses;
+let tokenAddresses, tokenInstancesSubset;
 let createSwapParameters, createSwapParametersArray;
 let dealManagerInstance, tokenSwapModuleInstance, tokenInstances;
-let deadline;
+let deadline1, deadline2, deadline3;
 
 const MONTH = 60 * 60 * 24 * 31;
 const DAY = 60 * 60 * 24;
@@ -62,7 +63,7 @@ const METADATAS = [METADATA1, METADATA2, METADATA3];
 describe("> Contract: TokenSwapModule", () => {
   before(async () => {
     const signers = await ethers.getSigners();
-    [root, prime, dao1, dao2, dao3, dao4, dao5] = signers;
+    [root, prime, dao1, dao2, dao3, dao4, dao5, depositer1] = signers;
     daosDeal1 = [dao1, dao2, dao3];
     daosDeal2 = [dao1, dao3, dao4];
     daosDeal3 = [dao4, dao2, dao5];
@@ -75,7 +76,9 @@ describe("> Contract: TokenSwapModule", () => {
       contractInstances);
 
     tokenAddresses = tokenInstances.map((token) => token.address);
-    deadline = BigNumber.from((await time.latest()).toNumber() + DAY * 7);
+    deadline1 = BigNumber.from((await time.latest()).toNumber() + DAY * 7);
+    deadline2 = BigNumber.from((await time.latest()).toNumber() + DAY * 10);
+    deadline3 = BigNumber.from((await time.latest()).toNumber() + DAY * 12);
 
     createSwapParameters = initializeParameters(
       [daosDeal1[0].address, daosDeal1[1].address, daosDeal1[2].address],
@@ -88,7 +91,7 @@ describe("> Contract: TokenSwapModule", () => {
       setupPathFromDeal1(),
       setupPathToDeal1(VESTING_CLIFF1, VESTING_DURATION1),
       METADATA1,
-      deadline
+      deadline1
     );
   });
   describe("$ Function: createSwap", () => {
@@ -315,7 +318,7 @@ describe("> Contract: TokenSwapModule", () => {
   describe("$ Function: checkExecutability", () => {
     describe("# invalid parameters", () => {
       beforeEach(async () => {
-        await setupCreateSwapStateForSingleDeal(
+        await setupFundingStateSingleDeal(
           contractInstances,
           daosDeal1,
           createSwapParameters
@@ -329,7 +332,7 @@ describe("> Contract: TokenSwapModule", () => {
     });
     describe("# return false", () => {
       beforeEach(async () => {
-        await setupCreateSwapStateForSingleDeal(
+        await setupFundingStateSingleDeal(
           contractInstances,
           daosDeal1,
           createSwapParameters
@@ -358,15 +361,18 @@ describe("> Contract: TokenSwapModule", () => {
           setupPathFromDeal1(),
           setupPathToDeal1(VESTING_CLIFF1, VESTING_DURATION1),
           METADATA2,
-          deadline
+          deadline1
         );
 
-        await setupExecuteSwapState(
+        ({ tokenSwapModuleInstance } = await setupExecuteSwapState(
           contractInstances,
           daosDeal1,
           createNewSwapParameters,
+          tokenInstances,
+          depositer1,
           SWAP1
-        );
+        ));
+
         await tokenSwapModuleInstance.executeSwap(SWAP1);
         expect(
           await tokenSwapModuleInstance.checkExecutability(SWAP1)
@@ -375,12 +381,14 @@ describe("> Contract: TokenSwapModule", () => {
     });
     describe("# return true", () => {
       beforeEach(async () => {
-        await setupExecuteSwapState(
+        ({ tokenSwapModuleInstance } = await setupExecuteSwapState(
           contractInstances,
           daosDeal1,
           createSwapParameters,
+          tokenInstances,
+          depositer1,
           SWAP1
-        );
+        ));
       });
       it("» should be true when funded", async () => {
         expect(
@@ -392,7 +400,7 @@ describe("> Contract: TokenSwapModule", () => {
   describe("$ Function: executeSwap", () => {
     describe("# when not able to execute", () => {
       beforeEach(async () => {
-        ({ depositContractInstances } = await setupCreateSwapStateForSingleDeal(
+        ({ depositContractInstances } = await setupFundingStateSingleDeal(
           contractInstances,
           daosDeal1,
           createSwapParameters
@@ -427,15 +435,18 @@ describe("> Contract: TokenSwapModule", () => {
           setupPathFromDeal1(),
           setupPathToDeal1(VESTING_CLIFF1, VESTING_DURATION1),
           METADATA2,
-          deadline
+          deadline1
         );
 
-        await setupExecuteSwapState(
+        ({ tokenSwapModuleInstance } = await setupExecuteSwapState(
           contractInstances,
           daosDeal1,
           createNewSwapParameters,
+          tokenInstances,
+          depositer1,
           SWAP1
-        );
+        ));
+
         await tokenSwapModuleInstance.executeSwap(SWAP1);
         await expect(
           tokenSwapModuleInstance.executeSwap(SWAP1)
@@ -444,24 +455,27 @@ describe("> Contract: TokenSwapModule", () => {
     });
     describe("# when able to execute", () => {
       beforeEach(async () => {
-        ({ tokenInstances } = await setupExecuteSwapState(
-          contractInstances,
-          daosDeal1,
-          createSwapParameters,
-          SWAP1
-        ));
+        ({ tokenInstancesSubset, tokenSwapModuleInstance } =
+          await setupExecuteSwapState(
+            contractInstances,
+            daosDeal1,
+            createSwapParameters,
+            tokenInstances,
+            depositer1,
+            SWAP1
+          ));
       });
       it("» should succeed in executing the swap", async () => {
         // Balance before swap
         expect(
           await tokenInstances[0].balanceOf(daosDeal1[0].address)
-        ).to.equal(parseEther("4"));
+        ).to.equal(parseEther("0"));
         expect(
           await tokenInstances[1].balanceOf(daosDeal1[1].address)
-        ).to.equal(parseEther("4"));
+        ).to.equal(parseEther("0"));
         expect(
           await tokenInstances[2].balanceOf(daosDeal1[2].address)
-        ).to.equal(parseEther("4"));
+        ).to.equal(parseEther("0"));
         expect(
           await tokenInstances[3].balanceOf(daosDeal1[2].address)
         ).to.equal(parseEther("0"));
@@ -481,7 +495,7 @@ describe("> Contract: TokenSwapModule", () => {
               "ether"
             )
           )
-        ).to.equal(4);
+        ).to.equal(0);
         expect(
           Math.round(
             formatUnits(
@@ -515,7 +529,7 @@ describe("> Contract: TokenSwapModule", () => {
               "ether"
             )
           )
-        ).to.equal(4);
+        ).to.equal(0);
         expect(
           Math.round(
             formatUnits(
@@ -549,7 +563,7 @@ describe("> Contract: TokenSwapModule", () => {
               "ether"
             )
           )
-        ).to.equal(4);
+        ).to.equal(0);
 
         // Token 4
         expect(
@@ -582,7 +596,7 @@ describe("> Contract: TokenSwapModule", () => {
   describe("$ Function: getTokenswapFromMetadata", () => {
     describe("# when not able to execute", () => {
       beforeEach(async () => {
-        ({ depositContractInstances } = await setupCreateSwapStateForSingleDeal(
+        ({ depositContractInstances } = await setupFundingStateSingleDeal(
           contractInstances,
           daosDeal1,
           createSwapParameters
