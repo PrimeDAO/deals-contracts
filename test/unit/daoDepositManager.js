@@ -68,7 +68,7 @@ const METADATA1 = formatBytes32String("hello");
 const METADATA2 = formatBytes32String("helloao");
 const METADATA3 = formatBytes32String("helloaodfs");
 
-describe.only("> Contract: DaoDepositManager", () => {
+describe("> Contract: DaoDepositManager", () => {
   before(async () => {
     const signers = await ethers.getSigners();
     [root, prime, dao1, dao2, dao3, dao4, dao5, depositer1, depositer2] =
