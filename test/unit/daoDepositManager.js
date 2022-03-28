@@ -148,10 +148,46 @@ describe("> Contract: DaoDepositManager", () => {
         ).to.be.revertedWith("D2D-DEPOSIT-ALREADY-INITIALIZED");
       });
     });
+    describe("# When updating the DealManager contract", () => {
+      it("» should fail on unauthorized access", async () => {
+        await daoDepositManagerInstance.connect(dao1).initialize(dao1.address);
+
+        await expect(await daoDepositManagerInstance.dealManager()).to.equal(
+          dao1.address
+        );
+
+        await expect(
+          daoDepositManagerInstance
+            .connect(dao2)
+            .setDealManagerImplementation(dao2.address)
+        ).to.be.revertedWith("");
+
+        await expect(await daoDepositManagerInstance.dealManager()).to.equal(
+          dao1.address
+        );
+      });
+      it("» should succeed on authorized access", async () => {
+        await daoDepositManagerInstance.connect(dao1).initialize(dao1.address);
+
+        await expect(await daoDepositManagerInstance.dealManager()).to.equal(
+          dao1.address
+        );
+
+        await daoDepositManagerInstance
+          .connect(dao1)
+          .setDealManagerImplementation(dao2.address);
+
+        await expect(await daoDepositManagerInstance.dealManager()).to.equal(
+          dao2.address
+        );
+      });
+    });
   });
   describe("$ DaoDepositManager through TokenSwapModule (end-to-end)", () => {
     describe("# single deposit ", async () => {
       beforeEach(async () => {
+        currTime = await time.latest();
+
         ({ daoDepositManagerInstances } = await setupFundingStateSingleDeal(
           contractInstances,
           daosDeal1,
@@ -223,6 +259,21 @@ describe("> Contract: DaoDepositManager", () => {
             token.address,
             depositAmount
           );
+
+        let depositDetails = await daoDepositManagerDao1.getDeposit(
+          tokenSwapModuleInstance.address,
+          SWAP1,
+          0
+        );
+
+        expect(depositDetails[0]).to.equal(depositer1.address);
+        expect(depositDetails[1]).to.equal(token.address);
+        expect(Math.round(formatUnits(depositDetails[2], "ether"))).to.equal(2);
+        expect(Math.round(formatUnits(depositDetails[3], "ether"))).to.equal(0);
+        // increase time by 4 seconds, since each call adds 1 second to the timer
+        expect(depositDetails[4].toString()).to.equal(
+          (parseInt(currTime.toString()) + 4).toString()
+        );
       });
       it("» should succeed in depositing ETH", async () => {
         const token = ZERO_ADDRESS;
@@ -259,7 +310,34 @@ describe("> Contract: DaoDepositManager", () => {
         ));
       });
       it("» should fail arrays mismatch", async () => {
-        // ToDo
+        const token1 = tokenInstances[0];
+        const token2 = tokenInstances[1];
+        const fundDepositerAmount1 = parseEther("4");
+        const fundDepositerAmount2 = parseEther("6");
+        const depositAmount1 = parseEther("2");
+        const depositAmount2 = parseEther("4");
+        const depositAmount3 = parseEther("6");
+        const tokensList = [token1, token2];
+        const tokenListAddresses = tokensList.map((token) => token.address);
+        const depositAmountList = [
+          depositAmount1,
+          depositAmount2,
+          depositAmount3,
+        ];
+        const depositParam = [
+          tokenSwapModuleInstance.address,
+          SWAP1,
+          tokenListAddresses,
+          depositAmountList,
+        ];
+        await fundDepositerWithToken(token1, depositer1, fundDepositerAmount1);
+        await fundDepositerWithToken(token2, depositer1, fundDepositerAmount2);
+
+        await expect(
+          daoDepositManagerDao1
+            .connect(depositer1)
+            .multipleDeposits(...depositParam)
+        ).to.be.revertedWith("D2D-DEPOSIT-ARRAY-LENGTH-MISMATCH");
       });
       it("» should succeed on depositing multiple tokens", async () => {
         const token1 = tokenInstances[0];
@@ -300,6 +378,31 @@ describe("> Contract: DaoDepositManager", () => {
             .connect(depositer1)
             .multipleDeposits(...depositParam)
         ).to.emit(daoDepositManagerDao1, "Deposited");
+
+        await expect(
+          await daoDepositManagerDao1.getTotalDepositCount(
+            tokenSwapModuleInstance.address,
+            SWAP1
+          )
+        ).to.equal(tokensList.length);
+
+        let allDeposits = await daoDepositManagerDao1.getDepositRange(
+          tokenSwapModuleInstance.address,
+          SWAP1,
+          0,
+          2
+        );
+
+        await expect(allDeposits[0].length).to.equal(3);
+
+        let someDeposits = await daoDepositManagerDao1.getDepositRange(
+          tokenSwapModuleInstance.address,
+          SWAP1,
+          1,
+          2
+        );
+
+        await expect(someDeposits[0].length).to.equal(2);
       });
       it("» should succeed on depositing tokens and ETH", async () => {
         const token1 = tokenInstances[0];
@@ -385,16 +488,92 @@ describe("> Contract: DaoDepositManager", () => {
         });
 
         const depositParam = [tokenSwapModuleInstance.address, SWAP1, token1];
-        await expect(daoDepositManagerDao1.registerDeposit(...depositParam))
-          .to.emit(daoDepositManagerDao1, "Deposited")
-          .withArgs(
-            tokenSwapModuleInstance.address,
-            SWAP1,
-            dao1.address,
-            0,
-            token1.address,
-            depositAmount
-          );
+        expect(
+          Math.round(
+            formatUnits(
+              await daoDepositManagerDao1.tokenBalances(token1),
+              "ether"
+            )
+          )
+        ).to.equal(0);
+
+        await daoDepositManagerDao1.registerDeposit(...depositParam);
+
+        expect(
+          Math.round(
+            formatUnits(
+              await daoDepositManagerDao1.tokenBalances(token1),
+              "ether"
+            )
+          )
+        ).to.equal(2);
+      });
+      it("» should succeed on registering multiple deposits", async () => {
+        const token1 = ZERO_ADDRESS;
+        const depositAmount1 = parseEther("2");
+
+        await depositer1.sendTransaction({
+          to: daoDepositManagerDao1.address,
+          value: depositAmount1,
+        });
+
+        const depositParam1 = [tokenSwapModuleInstance.address, SWAP1, token1];
+        expect(
+          Math.round(
+            formatUnits(
+              await daoDepositManagerDao1.tokenBalances(token1),
+              "ether"
+            )
+          )
+        ).to.equal(0);
+
+        const token2 = tokenInstances[0];
+        const fundDepositerAmount2 = parseEther("2");
+        const depositAmount2 = parseEther("2");
+
+        await fundDepositerWithToken(token2, depositer1, fundDepositerAmount2);
+        await token2
+          .connect(depositer1)
+          .transfer(daoDepositManagerDao1.address, depositAmount2);
+
+        const depositParam2 = [
+          tokenSwapModuleInstance.address,
+          SWAP1,
+          token2.address,
+        ];
+
+        expect(
+          Math.round(
+            formatUnits(
+              await daoDepositManagerDao1.tokenBalances(token2.address),
+              "ether"
+            )
+          )
+        ).to.equal(0);
+
+        await daoDepositManagerDao1.registerDeposits(
+          depositParam1[0],
+          depositParam1[1],
+          [depositParam1[2], depositParam2[2]]
+        );
+
+        expect(
+          Math.round(
+            formatUnits(
+              await daoDepositManagerDao1.tokenBalances(token1),
+              "ether"
+            )
+          )
+        ).to.equal(2);
+
+        expect(
+          Math.round(
+            formatUnits(
+              await daoDepositManagerDao1.tokenBalances(token2.address),
+              "ether"
+            )
+          )
+        ).to.equal(2);
       });
     });
     describe("# withdraw ", async () => {
@@ -405,6 +584,8 @@ describe("> Contract: DaoDepositManager", () => {
       //  - The tokensInstances for testing in the format:
       //    - [token1, token2, ...]
       beforeEach(async () => {
+        currTime = await time.latest();
+
         ({ tokenInstancesSubset, daoDepositManagerInstances } =
           await setupExecuteSwapStateSingleDeal(
             contractInstances,
@@ -427,18 +608,97 @@ describe("> Contract: DaoDepositManager", () => {
       it("» should fail on invalid msg.sender", async () => {
         const params = [tokenSwapModuleInstance.address, SWAP1, SWAP1];
         await expect(
-          daoDepositManagerDao1.withdraw(...params)
+          daoDepositManagerDao1.connect(dao4).withdraw(...params)
         ).to.be.revertedWith("D2D-WITHDRAW-NOT-AUTHORIZED");
       });
       it("» should fail on call by dao, but not expired", async () => {
-        expect(false).to.be.true;
+        const params = [tokenSwapModuleInstance.address, SWAP1, SWAP1];
+        // Deal has not expired
+        await expect(await tokenSwapModuleInstance.hasDealExpired(SWAP1)).to.be
+          .false;
+
+        // Called by the dao
+        await expect(
+          daoDepositManagerDao1.connect(dao1).withdraw(...params)
+        ).to.be.revertedWith("D2D-WITHDRAW-NOT-AUTHORIZED");
       });
       it("» should fail on freeAmount not available", async () => {
-        expect(false).to.be.true;
-        // Will test after execution tests have been done to copy paste setup
+        const params = [tokenSwapModuleInstance.address, SWAP1, SWAP1];
+        await expect(await tokenSwapModuleInstance.checkExecutability(SWAP1)).to
+          .be.true;
+
+        await expect(tokenSwapModuleInstance.executeSwap(SWAP1))
+          .to.emit(tokenSwapModuleInstance, "TokenSwapExecuted")
+          .withArgs(tokenSwapModuleInstance.address, SWAP1);
+
+        await expect(
+          daoDepositManagerDao1.connect(depositer1).withdraw(...params)
+        ).to.be.revertedWith("D2D-DEPOSIT-NOT-WITHDRAWABLE");
       });
-      it("» should succeed on withdrawing", async () => {
-        expect(false).to.be.true;
+      it("» should succeed on withdrawing tokens", async () => {
+        const params = [tokenSwapModuleInstance.address, SWAP1, SWAP1];
+
+        // Called by the right address
+        await expect(
+          daoDepositManagerDao1.connect(depositer1).withdraw(...params)
+        )
+          .to.emit(daoDepositManagerDao1, "Withdrawn")
+          .withArgs(
+            tokenSwapModuleInstance.address,
+            SWAP1,
+            depositer1.address,
+            SWAP1,
+            tokenInstances[0].address,
+            parseEther("6")
+          );
+
+        await expect(
+          daoDepositManagerDao1.connect(depositer1).withdraw(...params)
+        ).to.be.revertedWith("D2D-DEPOSIT-NOT-WITHDRAWABLE");
+      });
+      it("» should succeed on withdrawing ETH", async () => {
+        const token = ZERO_ADDRESS;
+        const amount = parseEther("2");
+        const depositParam = [
+          tokenSwapModuleInstance.address,
+          SWAP1,
+          ZERO_ADDRESS,
+          amount,
+        ];
+
+        await expect(
+          daoDepositManagerDao1
+            .connect(depositer1)
+            .deposit(...depositParam, { value: amount })
+        )
+          .to.emit(daoDepositManagerDao1, "Deposited")
+          .withArgs(
+            tokenSwapModuleInstance.address,
+            SWAP1,
+            depositer1.address,
+            1,
+            token,
+            amount
+          );
+
+        const params = [tokenSwapModuleInstance.address, SWAP1, 1];
+
+        await expect(
+          daoDepositManagerDao1.connect(depositer1).withdraw(...params)
+        )
+          .to.emit(daoDepositManagerDao1, "Withdrawn")
+          .withArgs(
+            tokenSwapModuleInstance.address,
+            SWAP1,
+            depositer1.address,
+            1,
+            ZERO_ADDRESS,
+            parseEther("2")
+          );
+
+        await expect(
+          daoDepositManagerDao1.connect(depositer1).withdraw(...params)
+        ).to.be.revertedWith("D2D-DEPOSIT-NOT-WITHDRAWABLE");
       });
     });
     describe("# claimVesting ", async () => {
@@ -452,18 +712,18 @@ describe("> Contract: DaoDepositManager", () => {
       beforeEach(async () => {
         currTime = await time.latest();
 
-        ({ tokenInstancesSubset, daoDepositManagerInstances } =
-          await setupClaimStateSingleDeal(
+        ({ tokenInstancesAllDeals, daoDepositManagerInstancesAllDeal } =
+          await setupClaimStateMultipleDeals(
             contractInstances,
             tokenInstances,
-            daosDeal1,
-            deal1Parameters,
-            depositer1,
-            SWAP1
+            allDaos,
+            dealParametersArray,
+            [depositer1, depositer2, depositer2],
+            SWAPS_ARRAY
           ));
 
         [daoDepositManagerDao1, daoDepositManagerDao2, daoDepositManagerDao3] =
-          daoDepositManagerInstances;
+          daoDepositManagerInstancesAllDeal[0];
       });
       it("» should succeed on claiming", async () => {
         // The pathFrom/PathTo values can be found in test/helpers/setupPaths.js
@@ -474,42 +734,74 @@ describe("> Contract: DaoDepositManager", () => {
         expect(
           Math.round(
             formatUnits(
-              await tokenInstancesSubset[0].balanceOf(daosDeal1[1].address),
+              await daoDepositManagerDao1.getVestedBalance(
+                tokenInstancesAllDeals[0][1].address
+              ),
               "ether"
             )
           )
-        ).to.equal(1);
-        await daoDepositManagerDao2.claimDealVestings(
-          tokenSwapModuleInstance.address,
-          SWAP1
-        );
+        ).to.equal(2);
+
         expect(
           Math.round(
             formatUnits(
-              await tokenInstancesSubset[0].balanceOf(daosDeal1[1].address),
+              await tokenInstancesAllDeals[0][1].balanceOf(
+                daosDeal1[0].address
+              ),
               "ether"
             )
           )
         ).to.equal(1);
 
-        // After cliff ended
-        await time.increase(
-          (await time.latest()) -
-            currTime +
-            (VESTING_DURATION1 - VESTING_CLIFF1) / 2
-        );
-        await daoDepositManagerDao2.claimDealVestings(
-          tokenSwapModuleInstance.address,
-          SWAP1
-        );
         expect(
           Math.round(
             formatUnits(
-              await tokenInstancesSubset[0].balanceOf(daosDeal1[1].address),
+              await tokenInstancesAllDeals[1][1].balanceOf(
+                daosDeal1[0].address
+              ),
               "ether"
             )
           )
-        ).to.equal(1.5);
+        ).to.equal(2);
+
+        await time.increase(
+          (await time.latest()) - currTime + VESTING_DURATION3
+        );
+
+        await daoDepositManagerDao1.claimVestings();
+
+        expect(
+          Math.round(
+            formatUnits(
+              await daoDepositManagerDao1.getVestedBalance(
+                tokenInstancesAllDeals[0][1].address
+              ),
+              "ether"
+            )
+          )
+        ).to.equal(0);
+
+        expect(
+          Math.round(
+            formatUnits(
+              await tokenInstancesAllDeals[0][1].balanceOf(
+                daosDeal1[0].address
+              ),
+              "ether"
+            )
+          )
+        ).to.equal(3);
+
+        expect(
+          Math.round(
+            formatUnits(
+              await tokenInstancesAllDeals[1][1].balanceOf(
+                daosDeal1[0].address
+              ),
+              "ether"
+            )
+          )
+        ).to.equal(6);
       });
     });
     describe("# claimDealVesting ", async () => {
@@ -524,19 +816,108 @@ describe("> Contract: DaoDepositManager", () => {
       //    - [[daoDepositManagersDeal1], [daoDepositManagersDeal2]...]
 
       beforeEach(async () => {
+        currTime = await time.latest();
+
         ({ tokenInstancesAllDeals, daoDepositManagerInstancesAllDeal } =
           await setupClaimStateMultipleDeals(
             contractInstances,
             tokenInstances,
             allDaos,
             dealParametersArray,
-            [depositer1, depositer1, depositer1],
+            [depositer1, depositer2, depositer2],
             SWAPS_ARRAY
           ));
+
+        [daoDepositManagerDao1, daoDepositManagerDao2, daoDepositManagerDao3] =
+          daoDepositManagerInstancesAllDeal[0];
       });
       it("» should succeed on claiming", async () => {
-        // should be ready for testing. See format above on how to access parts
-        expect(false).to.be.true;
+        // The pathFrom/PathTo values can be found in test/helpers/setupPaths.js
+        // Only the depositer gets funded with tokens to deposit, so no DAO has
+        // any balance before the token swap gets executed.
+
+        // Before cliff ended
+        expect(
+          Math.round(
+            formatUnits(
+              await tokenInstancesAllDeals[0][1].balanceOf(
+                daosDeal1[0].address
+              ),
+              "ether"
+            )
+          )
+        ).to.equal(1);
+
+        expect(
+          Math.round(
+            formatUnits(
+              await tokenInstancesAllDeals[1][1].balanceOf(
+                daosDeal1[0].address
+              ),
+              "ether"
+            )
+          )
+        ).to.equal(2);
+
+        await daoDepositManagerDao1.claimDealVestings(
+          tokenSwapModuleInstance.address,
+          SWAP1
+        );
+        expect(
+          Math.round(
+            formatUnits(
+              await tokenInstancesAllDeals[0][1].balanceOf(
+                daosDeal1[0].address
+              ),
+              "ether"
+            )
+          )
+        ).to.equal(1);
+
+        expect(
+          Math.round(
+            formatUnits(
+              await tokenInstancesAllDeals[1][1].balanceOf(
+                daosDeal1[0].address
+              ),
+              "ether"
+            )
+          )
+        ).to.equal(2);
+
+        // After cliff ended
+        await time.increase(
+          (await time.latest()) - currTime + VESTING_DURATION3
+        );
+        await daoDepositManagerDao1.claimDealVestings(
+          tokenSwapModuleInstance.address,
+          SWAP1
+        );
+
+        // This belongs to deal 1 an dshould have increased
+        expect(
+          Math.round(
+            formatUnits(
+              await tokenInstancesAllDeals[0][1].balanceOf(
+                daosDeal1[0].address
+              ),
+              "ether"
+            )
+          )
+        ).to.equal(3);
+
+        // This belongs to deal 2 and should NOT have increased
+        // since we only claimed deal 1
+        expect(
+          Math.round(
+            formatUnits(
+              await tokenInstancesAllDeals[1][1].balanceOf(
+                daosDeal1[0].address
+              ),
+              "ether"
+            )
+          )
+        ).to.equal(2);
       });
     });
   });

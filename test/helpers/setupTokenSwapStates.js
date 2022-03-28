@@ -1,3 +1,4 @@
+const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants");
 const { ethers } = require("hardhat");
 const { parseEther } = ethers.utils;
 
@@ -112,7 +113,6 @@ const getdaoDepositManagerFromDAOArray = async (
   allDaos
 ) => {
   let daoDepositManagerInstances = [];
-
   for (let i = 0; i < allDaos.length; i++) {
     daoDepositManagerInstances.push(
       await dealManagerInstance.daoDepositManager(allDaos[i].address)
@@ -168,7 +168,13 @@ const getTokenInstancesForSingleDeal = (
   createSwapParameters
 ) => {
   let tokenInstancesSubset = [];
+  if (createSwapParameters[1][0] == ZERO_ADDRESS) {
+    tokenInstancesSubset.push(ZERO_ADDRESS);
+  }
   for (let i = 0; i < createSwapParameters[1].length; i++) {
+    if (tokenInstancesSubset.length == 1 && i == 0) {
+      continue;
+    }
     for (let j = 0; j < tokenInstances.length; j++) {
       if (createSwapParameters[1][i] == tokenInstances[j].address) {
         tokenInstancesSubset.push(tokenInstances[j]);
@@ -198,7 +204,7 @@ const getdaoDepositManagerFromDepositContractArray = async (
   }
 };
 
-const fundDaoDepositManagersForSingelDeal = async (
+const fundDaoDepositManagersForSingleDeal = async (
   tokenInstances,
   createNewSwapParameters,
   daoDepositManagerSubset,
@@ -240,9 +246,15 @@ const approveTokenForDaoDepositManager = async (
   daoDepositManagerInstance,
   amount
 ) => {
-  await tokenInstance
-    .connect(depositer)
-    .approve(daoDepositManagerInstance.address, amount);
+  try {
+    await tokenInstance
+      .connect(depositer)
+      .approve(daoDepositManagerInstance.address, amount);
+  } catch (e) {
+    if (tokenInstance != ZERO_ADDRESS) {
+      console.error(e);
+    }
+  }
 };
 
 // Approves multiple tokens and amounts for a single daoDealManager
@@ -277,9 +289,20 @@ const transferTokenToDaoDepositManager = async (
     amount
   );
 
-  await daoDepositManagerInstance
-    .connect(depositer)
-    .deposit(moduleAddress, swapID, tokenInstance.address, amount);
+  try {
+    // try to deposit regularly
+    await daoDepositManagerInstance
+      .connect(depositer)
+      .deposit(moduleAddress, swapID, tokenInstance.address, amount);
+  } catch (e) {
+    // if this fails, it's an eth deposit, so we do that
+    await daoDepositManagerInstance
+      .connect(depositer)
+      .deposit(moduleAddress, swapID, ZERO_ADDRESS, amount, {
+        value: amount,
+      });
+  }
+
   return daoDepositManagerInstance;
 };
 
@@ -308,7 +331,7 @@ const fundDaoDepositManagerForMultipleDeals = async (
       tokenInstancesSubset,
       createSwapParametersArray[i]
     );
-    fundDaoDepositManagersForSingelDeal(
+    fundDaoDepositManagersForSingleDeal(
       tokenInstancesSubset,
       createSwapParametersArray[i],
       daoDepositManagerSubset,
@@ -406,7 +429,7 @@ const setupExecuteSwapStateSingleDeal = async (
     dealParameters
   );
 
-  ({ daoDepositManagerInstances } = await fundDaoDepositManagersForSingelDeal(
+  ({ daoDepositManagerInstances } = await fundDaoDepositManagersForSingleDeal(
     tokenInstancesSubset,
     dealParameters,
     daoDepositManagerInstances,
@@ -423,7 +446,13 @@ const setupExecuteSwapStateSingleDeal = async (
 };
 
 const fundDepositerWithToken = async (tokenInstance, depositer, amount) => {
-  await tokenInstance.transfer(depositer.address, amount);
+  try {
+    await tokenInstance.transfer(depositer.address, amount);
+  } catch (e) {
+    if (tokenInstance != ZERO_ADDRESS) {
+      console.error(e);
+    }
+  }
 };
 
 const setupFundingStateMultipleDeals = async (
@@ -496,9 +525,10 @@ module.exports = {
   setupClaimStateMultipleDeals,
   setupMultipleCreateSwapStates, // old and will be replaced
   getTokenInstancesForSingleDeal,
+  getdaoDepositManagerFromDAOArray,
   transferTokenToDaoDepositManager,
   approveTokenForDaoDepositManager,
-  fundDaoDepositManagersForSingelDeal,
+  fundDaoDepositManagersForSingleDeal,
   fundDaoDepositManagerForMultipleDeals,
   approveAllDealTokensForDaoDepositManagerSingleDeal,
 };
