@@ -404,4 +404,8 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         );
         _;
     }
+
+    fallback() external payable {}
+
+    receive() external payable {}
 }

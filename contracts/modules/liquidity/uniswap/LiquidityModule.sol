@@ -501,4 +501,8 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         );
         _;
     }
+
+    fallback() external payable {}
+
+    receive() external payable {}
 }
