@@ -120,7 +120,7 @@ contract ModuleBase {
                 revert("Module: erc20 transfer failed");
             }
         } else {
-            (bool sent, ) = msg.sender.call{value: _amount}("");
+            (bool sent, ) = _to.call{value: _amount}("");
             require(sent, "Module: eth transfer failed");
         }
     }

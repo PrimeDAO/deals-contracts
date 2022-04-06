@@ -231,6 +231,9 @@ contract TokenSwapModule is ModuleBaseWithFee {
         for (uint256 i; i < t.length; ++i) {
             uint256[] memory p = ts.pathFrom[i];
             for (uint256 j; j < p.length; ++j) {
+                if (p[j] == 0) {
+                    continue;
+                }
                 // for each token and each pathFrom entry for this
                 // token, check whether the corresponding DAO
                 // has deposited the corresponding amount into their
@@ -317,14 +320,14 @@ contract TokenSwapModule is ModuleBaseWithFee {
                 if (vested > 0) {
                     amountsOut[i] += vested;
                     uint256 amount = _payFeeAndReturnRemainder(token, vested);
-                    _approveDaoDepositManager(token, _ts.daos[k], amount);
-
                     address daoDepositManager = dealManager
                         .getDaoDepositManager(_ts.daos[k]);
                     if (token == address(0)) {
                         // for ETH we need to manually send, since
                         // startVesting() works with transferFrom's
                         _transfer(token, daoDepositManager, amount);
+                    } else {
+                        _approveDaoDepositManager(token, _ts.daos[k], amount);
                     }
 
                     IDaoDepositManager(daoDepositManager).startVesting(
@@ -391,4 +394,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
         );
         _;
     }
+
+    fallback() external payable {}
+
+    receive() external payable {}
 }

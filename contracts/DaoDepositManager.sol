@@ -421,6 +421,7 @@ contract DaoDepositManager {
                         }
                         // remove the last entry
                         vestedTokenAddresses.pop();
+                        --arrLen;
                     }
                 }
             }
@@ -486,20 +487,22 @@ contract DaoDepositManager {
             uint256[] memory times
         )
     {
-        uint32 range = 2 + _toDepositId - _fromDepositId; // inclusive range
+        uint32 range = 1 + _toDepositId - _fromDepositId; // inclusive range
         senders = new address[](range);
         tokens = new address[](range);
         amounts = new uint256[](range);
         usedAmounts = new uint256[](range);
         times = new uint256[](range);
-        for (uint32 i = _toDepositId; i <= _fromDepositId; ++i) {
+        uint256 index = 0; // needed since the ids can start at > 0
+        for (uint32 i = _fromDepositId; i <= _toDepositId; ++i) {
             (
-                senders[i],
-                tokens[i],
-                amounts[i],
-                usedAmounts[i],
-                times[i]
+                senders[index],
+                tokens[index],
+                amounts[index],
+                usedAmounts[index],
+                times[index]
             ) = getDeposit(_module, _dealId, i);
+            ++index;
         }
         return (senders, tokens, amounts, usedAmounts, times);
     }
@@ -562,7 +565,7 @@ contract DaoDepositManager {
                 revert("D2D-TOKEN-TRANSFER-FAILED");
             }
         } else {
-            (bool sent, ) = msg.sender.call{value: _amount}("");
+            (bool sent, ) = _to.call{value: _amount}("");
             require(sent, "D2D-ETH-TRANSFER-FAILED");
         }
     }
@@ -595,4 +598,8 @@ contract DaoDepositManager {
         require(dealManager.addressIsModule(msg.sender), "D2D-NOT-MODULE");
         _;
     }
+
+    fallback() external payable {}
+
+    receive() external payable {}
 }

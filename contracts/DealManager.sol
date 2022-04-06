@@ -115,13 +115,4 @@ contract DealManager is Ownable {
     function addressIsModule(address _address) public view returns (bool) {
         return isModule[_address];
     }
-
-    modifier onlyModule() {
-        // solhint-disable-next-line reason-string
-        require(
-            addressIsModule(msg.sender),
-            "BASECONTRACT-CAN-ONLY-BE-CALLED-BY-MODULE"
-        );
-        _;
-    }
 }
