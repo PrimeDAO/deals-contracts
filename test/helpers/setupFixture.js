@@ -26,22 +26,22 @@ const setupFixture = deployments.createFixture(
       logs: true,
     });
 
-    const depositContractInstance = await ethers.getContract(
+    const daoDepositManagerInstance = await ethers.getContract(
       "DaoDepositManager"
     );
-    const baseContractInstance = await ethers.getContract("DealManager");
+    const dealManagerInstance = await ethers.getContract("DealManager");
     const wethInstance = await ethers.getContract("WETH");
 
-    await baseContractInstance.setWETHAddress(wethInstance.address);
-    await baseContractInstance.setDaoDepositManagerImplementation(
-      depositContractInstance.address
+    await dealManagerInstance.setWETHAddress(wethInstance.address);
+    await dealManagerInstance.setDaoDepositManagerImplementation(
+      daoDepositManagerInstance.address
     );
 
     // Set up TokenSwapModule contract
     await deploy("TokenSwapModule", {
       contract: "TokenSwapModule",
       from: root.address,
-      args: [baseContractInstance.address],
+      args: [dealManagerInstance.address],
       logs: true,
     });
 
@@ -54,11 +54,11 @@ const setupFixture = deployments.createFixture(
 
     // Return contract instances
     const contractInstances = {
-      baseContractInstance: await ethers.getContract("DealManager"),
-      tokenInstances: await tokens.getErc20TokenInstances(4, root),
+      dealManagerInstance: await ethers.getContract("DealManager"),
+      tokenInstances: await tokens.getErc20TokenInstances(10, root),
       tokenSwapModuleInstance: tokenSwapModuleInstance,
-      depositContractInstance: depositContractInstance,
-      depositContractFactoryInstance: await ethers.getContractFactory(
+      daoDepositManagerInstance: daoDepositManagerInstance,
+      daoDepositManagerFactoryInstance: await ethers.getContractFactory(
         "DaoDepositManager"
       ),
       wethInstance: wethInstance,

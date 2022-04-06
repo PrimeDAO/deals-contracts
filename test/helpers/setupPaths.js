@@ -2,6 +2,7 @@ const { ethers } = require("hardhat");
 
 const { parseEther } = ethers.utils;
 
+// Deal 1 parameters
 const setupPathFromDeal1 = () => [
   [parseEther("6"), 0, 0],
   [0, parseEther("6"), 0],
@@ -9,6 +10,8 @@ const setupPathFromDeal1 = () => [
   [0, 0, parseEther("10")],
 ];
 
+// VESTING_CLIFF1 = HOUR * 2;
+// VESTING_DURATION1 = DAY
 const setupPathToDeal1 = (vestingCliff, vestingDuration) => [
   [
     0,
@@ -42,6 +45,7 @@ const setupPathToDeal1 = (vestingCliff, vestingDuration) => [
   [parseEther("5"), 0, 0, 0, parseEther("5"), 0, 0, 0, 0, 0, 0, 0],
 ];
 
+// Deal 2 parameters
 const setupPathFromDeal2 = () => [
   [parseEther("12"), 0, 0],
   [0, parseEther("12"), 0],
@@ -49,6 +53,8 @@ const setupPathFromDeal2 = () => [
   [0, 0, parseEther("5")],
 ];
 
+// VESTING_CLIFF2 = HOUR * 4;
+// VESTING_DURATION2 = DAY * 2
 const setupPathToDeal2 = (vestingCliff, vestingDuration) => [
   [
     0,
@@ -81,6 +87,8 @@ const setupPathToDeal2 = (vestingCliff, vestingDuration) => [
   [parseEther("6"), 0, 0, 0, parseEther("6"), 0, 0, 0, 0, 0, 0, 0],
   [parseEther("2.5"), 0, 0, 0, parseEther("2.5"), 0, 0, 0, 0, 0, 0, 0],
 ];
+
+// Deal 3 parameters
 const setupPathFromDeal3 = () => [
   [parseEther("3"), 0, 0],
   [0, parseEther("3"), 0],
@@ -88,6 +96,8 @@ const setupPathFromDeal3 = () => [
   [0, 0, parseEther("20")],
 ];
 
+// VESTING_CLIFF3 = HOUR * 6;
+// VESTING_DURATION3 = DAY * 3
 const setupPathToDeal3 = (vestingCliff, vestingDuration) => [
   [
     0,
