@@ -12,17 +12,20 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
     log: true,
   });
 
-  const depositContractInstance = await ethers.getContract("DaoDepositManager");
+  const daoDepositManagerInstance = await ethers.getContract(
+    "DaoDepositManager"
+  );
 
   await deploy("DealManager", {
     from: root,
+    args: [daoDepositManagerInstance.address, WETHAddress],
     log: true,
   });
 
   const dealManagerInstance = await ethers.getContract("DealManager");
 
   await dealManagerInstance.setDaoDepositManagerImplementation(
-    depositContractInstance.address
+    daoDepositManagerInstance.address
   );
 
   await dealManagerInstance.setWETHAddress(WETHAddress);

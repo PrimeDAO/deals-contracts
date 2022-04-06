@@ -109,8 +109,8 @@ task("deactivateModule", "will deactive a module in the DealManager contract ")
   )
   .setAction(async ({ address }, { ethers }) => {
     const dealMangerInstance = await ethers.getContract("DealManager");
-    await dealMangerInstance.activateModule(address);
+    await dealMangerInstance.deactivateModule(address);
     console.log(
-      `Module with address ${address} has been successfully deactived`
+      `Module with address ${address} has been successfully deactivated`
     );
   });
