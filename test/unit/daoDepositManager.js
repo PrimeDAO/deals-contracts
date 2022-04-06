@@ -629,7 +629,7 @@ describe("> Contract: DaoDepositManager", () => {
 
         await expect(tokenSwapModuleInstance.executeSwap(SWAP1))
           .to.emit(tokenSwapModuleInstance, "TokenSwapExecuted")
-          .withArgs(tokenSwapModuleInstance.address, SWAP1);
+          .withArgs(tokenSwapModuleInstance.address, SWAP1, METADATA1);
 
         await expect(
           daoDepositManagerDao1.connect(depositer1).withdraw(...params)

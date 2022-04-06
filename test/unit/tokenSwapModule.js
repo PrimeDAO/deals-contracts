@@ -484,7 +484,7 @@ describe("> Contract: TokenSwapModule", () => {
         // Execute swap
         await expect(tokenSwapModuleInstance.executeSwap(SWAP1))
           .to.emit(tokenSwapModuleInstance, "TokenSwapExecuted")
-          .withArgs(tokenSwapModuleInstance.address, SWAP1);
+          .withArgs(tokenSwapModuleInstance.address, SWAP1, METADATA1);
 
         // Balance after swap
 
@@ -657,7 +657,7 @@ describe("> Contract: TokenSwapModule", () => {
         // Execute swap
         await expect(tokenSwapModuleInstance.executeSwap(SWAP1))
           .to.emit(tokenSwapModuleInstance, "TokenSwapExecuted")
-          .withArgs(tokenSwapModuleInstance.address, SWAP1);
+          .withArgs(tokenSwapModuleInstance.address, SWAP1, METADATA2);
 
         // Balance after swap
 

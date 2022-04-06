@@ -1217,7 +1217,7 @@
       ]
     },
     "TokenSwapModule": {
-      "address": "0xB9d6709EA15f0e52F959636756dE443F865c6410",
+      "address": "0x930E2E8b21095Be1671A38AaaFB61e37b93874E5",
       "abi": [
         {
           "inputs": [
@@ -1337,10 +1337,20 @@
               "internalType": "uint32",
               "name": "dealId",
               "type": "uint32"
+            },
+            {
+              "indexed": true,
+              "internalType": "bytes32",
+              "name": "metadata",
+              "type": "bytes32"
             }
           ],
           "name": "TokenSwapExecuted",
           "type": "event"
+        },
+        {
+          "stateMutability": "payable",
+          "type": "fallback"
         },
         {
           "inputs": [
@@ -1615,6 +1625,10 @@
           ],
           "stateMutability": "view",
           "type": "function"
+        },
+        {
+          "stateMutability": "payable",
+          "type": "receive"
         }
       ]
     },
