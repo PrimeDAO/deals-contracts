@@ -133,6 +133,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         );
         liquidityActions.push(la);
         uint32 dealId = uint32(liquidityActions.length - 1);
+
         emit LiquidityActionCreated(
             dealId,
             _daos,

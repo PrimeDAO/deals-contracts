@@ -47,11 +47,11 @@
 //     const depositContractInstance = await ethers.getContract(
 //       "DaoDepositManager"
 //     );
-//     const baseContractInstance = await ethers.getContract("DealManager");
+//     const dealManagerInstance = await ethers.getContract("DealManager");
 //     const wethInstance = await ethers.getContract("WETH");
 
-//     await baseContractInstance.setWETHAddress(wethInstance.address);
-//     await baseContractInstance.setDaoDepositManagerImplementation(
+//     await dealManagerInstance.setWETHAddress(wethInstance.address);
+//     await dealManagerInstance.setDaoDepositManagerImplementation(
 //       depositContractInstance.address
 //     );
 
@@ -59,7 +59,7 @@
 //     await deploy("TokenSwapModule", {
 //       contract: "TokenSwapModule",
 //       from: root.address,
-//       args: [baseContractInstance.address],
+//       args: [dealManagerInstance.address],
 //       logs: true,
 //     });
 
@@ -68,11 +68,11 @@
 //     await tokenSwapModuleInstance.setFee(30);
 
 //     // Register TokenSwapModule in DealManager
-//     await baseContractInstance.registerModule(tokenSwapModuleInstance.address);
+//     await dealManagerInstance.registerModule(tokenSwapModuleInstance.address);
 
 //     // Return contract instances
 //     const contractInstances = {
-//       baseContractInstance: await ethers.getContract("DealManager"),
+//       dealManagerInstance: await ethers.getContract("DealManager"),
 //       tokenInstances: await tokens.getErc20TokenInstances(4, root),
 //       tokenSwapModuleInstance: tokenSwapModuleInstance,
 //       depositContractInstance: depositContractInstance,

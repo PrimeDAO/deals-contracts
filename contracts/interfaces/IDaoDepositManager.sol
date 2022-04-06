@@ -59,7 +59,7 @@ interface IDaoDepositManager {
         uint256 _amount,
         uint32 _vestingCliff,
         uint32 _vestingDuration
-    ) external;
+    ) external payable;
 
     function claimVestings() external;
 

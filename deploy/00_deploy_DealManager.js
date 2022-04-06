@@ -19,13 +19,13 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
     log: true,
   });
 
-  const baseContractInstance = await ethers.getContract("DealManager");
+  const dealManagerInstance = await ethers.getContract("DealManager");
 
-  await baseContractInstance.setDaoDepositManagerImplementation(
+  await dealManagerInstance.setDaoDepositManagerImplementation(
     depositContractInstance.address
   );
 
-  await baseContractInstance.setWETHAddress(WETHAddress);
+  await dealManagerInstance.setWETHAddress(WETHAddress);
 };
 
 module.exports = deployFunction;

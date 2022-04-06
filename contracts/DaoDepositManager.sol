@@ -285,7 +285,7 @@ contract DaoDepositManager {
         uint256 _amount,
         uint32 _vestingCliff,
         uint32 _vestingDuration
-    ) external onlyModule {
+    ) external payable onlyModule {
         // solhint-disable-next-line reason-string
         require(_amount > 0, "D2D-DEPOSIT-VESTING-INVALID-AMOUNT");
         // solhint-disable-next-line reason-string
@@ -296,6 +296,8 @@ contract DaoDepositManager {
 
         if (_token != address(0)) {
             _transferFrom(_token, msg.sender, address(this), _amount);
+        } else {
+            require(_amount == msg.value, "D2D-DEPOSIT-VALUE-INVALID");
         }
         // no else path, since ETH will be sent by the module,
         // which is verified by the verifyBalance() call after
@@ -382,6 +384,7 @@ contract DaoDepositManager {
                 ++counter;
             }
         }
+        return (tokens, amounts);
     }
 
     function sendReleasableClaim(Vesting memory vesting)
@@ -390,11 +393,10 @@ contract DaoDepositManager {
     {
         if (vesting.totalClaimed < vesting.totalVested) {
             // Check cliff was reached
-            uint256 elapsedSeconds = uint32(block.timestamp) -
-                vesting.startTime;
+            uint32 elapsedSeconds = uint32(block.timestamp) - vesting.startTime;
 
             if (elapsedSeconds < vesting.cliff) {
-                return (address(0), 0);
+                return (vesting.token, 0);
             }
             if (elapsedSeconds >= vesting.duration) {
                 amount = vesting.totalVested - vesting.totalClaimed;
@@ -402,8 +404,8 @@ contract DaoDepositManager {
                 tokensPerDeal[vesting.dealModule][vesting.dealId]--;
             } else {
                 amount =
-                    (vesting.totalVested * elapsedSeconds) /
-                    vesting.duration;
+                    (vesting.totalVested * uint256(elapsedSeconds)) /
+                    uint256(vesting.duration);
                 vesting.totalClaimed += amount;
             }
 

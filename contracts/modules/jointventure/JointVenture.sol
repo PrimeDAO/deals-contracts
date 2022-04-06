@@ -110,7 +110,6 @@ contract JointVentureModule is ModuleBase {
             "Module: invalid safe threshold"
         );
 
-        uint32 dealId = uint32(jointVentures.length + 1);
         JointVenture memory jv = JointVenture(
             _daos,
             _safeMembers,
@@ -122,6 +121,7 @@ contract JointVentureModule is ModuleBase {
             Status.ACTIVE
         );
         jointVentures.push(jv);
+        uint32 dealId = uint32(jointVentures.length - 1);
 
         emit JointVentureActionCreated(
             dealId,

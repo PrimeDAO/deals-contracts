@@ -48,7 +48,6 @@ contract BlueprintModule is ModuleBase {
             "Module: invalid inputs"
         );
 
-        uint256 id = blueprints.length + 1;
         Blueprint memory newBlueprint = Blueprint(
             _daos,
             _value1,
@@ -58,6 +57,7 @@ contract BlueprintModule is ModuleBase {
             Status.ACTIVE
         );
         blueprints.push(newBlueprint);
+        uint32 id = uint32(blueprints.length - 1);
         emit ActionCreated(id, _daos, _value1, _value2, _value3);
         return id;
     }

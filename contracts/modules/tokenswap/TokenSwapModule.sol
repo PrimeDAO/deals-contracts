@@ -68,7 +68,11 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint32 deadline
     );
 
-    event TokenSwapExecuted(address indexed module, uint32 indexed dealId);
+    event TokenSwapExecuted(
+        address indexed module,
+        uint32 indexed dealId,
+        bytes32 indexed metadata
+    );
 
     constructor(address _dealManager) ModuleBaseWithFee(_dealManager) {}
 
@@ -102,12 +106,11 @@ contract TokenSwapModule is ModuleBaseWithFee {
         bytes32 _metadata,
         uint32 _deadline
     ) internal returns (uint32) {
-        if (tokenSwaps.length >= 1) {
-            require(
-                _metadataDoesNotExist(_metadata),
-                "Module: metadata already exists"
-            );
-        }
+        require(_metadata != "", "Module: metadata empty");
+        require(
+            tokenSwaps.length == 0 || _metadataDoesNotExist(_metadata),
+            "Module: metadata already exists"
+        );
         require(_daos.length >= 2, "Module: at least 2 daos required");
         require(_tokens.length != 0, "Module: at least 1 token required");
 
@@ -123,7 +126,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         for (uint256 i; i < pathFromLen; ++i) {
             require(
                 _pathFrom[i].length == daosLen &&
-                    _pathTo[i].length >> 2 == daosLen,
+                    _pathTo[i].length == daosLen << 2,
                 "Module: invalid inner array lengths"
             );
         }
@@ -220,10 +223,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         returns (bool)
     {
         TokenSwap memory ts = tokenSwaps[_dealId];
-        if (ts.status != Status.ACTIVE) {
-            return false;
-        }
-        if (ts.deadline < uint32(block.timestamp)) {
+        if (hasDealExpired(_dealId)) {
             return false;
         }
 
@@ -260,7 +260,6 @@ contract TokenSwapModule is ModuleBaseWithFee {
     {
         TokenSwap storage ts = tokenSwaps[_dealId];
 
-        require(ts.deadline >= uint32(block.timestamp), "Module: swap expired");
         require(checkExecutability(_dealId), "Module: swap not executable");
 
         // transfer the tokens from the deposit manager of the DAOs
@@ -283,7 +282,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
         ts.status = Status.DONE;
         ts.executionDate = uint32(block.timestamp);
-        emit TokenSwapExecuted(address(this), _dealId);
+        emit TokenSwapExecuted(address(this), _dealId, ts.metadata);
     }
 
     /**
@@ -322,15 +321,13 @@ contract TokenSwapModule is ModuleBaseWithFee {
                     uint256 amount = _payFeeAndReturnRemainder(token, vested);
                     address daoDepositManager = dealManager
                         .getDaoDepositManager(_ts.daos[k]);
-                    if (token == address(0)) {
-                        // for ETH we need to manually send, since
-                        // startVesting() works with transferFrom's
-                        _transfer(token, daoDepositManager, amount);
-                    } else {
+                    if (token != address(0)) {
                         _approveDaoDepositManager(token, _ts.daos[k], amount);
                     }
 
-                    IDaoDepositManager(daoDepositManager).startVesting(
+                    IDaoDepositManager(daoDepositManager).startVesting{
+                        value: token == address(0) ? amount : 0
+                    }(
                         _dealId,
                         token,
                         amount, // amount
@@ -345,14 +342,19 @@ contract TokenSwapModule is ModuleBaseWithFee {
     function getTokenswapFromMetadata(bytes32 _metadata)
         public
         view
-        validMetadata(_metadata)
         returns (TokenSwap memory swap)
     {
+        uint256 dealId = metadataToDealId[_metadata];
+        require(
+            dealId != 0 ||
+                (tokenSwaps[dealId].metadata == _metadata && _metadata != ""),
+            "Module: metadata does not exist"
+        );
         return tokenSwaps[metadataToDealId[_metadata]];
     }
 
     function hasDealExpired(uint32 _dealId)
-        external
+        public
         view
         override
         returns (bool)
@@ -368,18 +370,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         returns (bool)
     {
         uint256 dealId = metadataToDealId[_metadata];
-        return (dealId == 0 &&
-            tokenSwaps[dealId].metadata != _metadata &&
-            _metadata.length > 0);
-    }
-
-    modifier validMetadata(bytes32 _metadata) {
-        uint256 dealId = metadataToDealId[_metadata];
-        require(
-            dealId != 0 || tokenSwaps[dealId].metadata == _metadata,
-            "Module: metadata does not exist"
-        );
-        _;
+        return (dealId == 0 && tokenSwaps[dealId].metadata != _metadata);
     }
 
     modifier validDealId(uint32 _dealId) {

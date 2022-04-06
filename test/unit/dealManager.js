@@ -27,12 +27,29 @@ describe("> Contract: DealManager", () => {
       daoDepositManagerInstance,
       dealManagerInstance,
       tokenInstances,
-      wethInstance,
+      Instance,
       tokenSwapModuleInstance,
       daoDepositManagerFactoryInstance,
+      wethInstance,
     } = contractInstances);
 
     tokenAddresses = tokenInstances.map((token) => token.address);
+  });
+  describe("$ When deploying the DealManager", () => {
+    it("» should fail on Dao Deposit Manager zero address", async () => {
+      const deployArgs = [ZERO_ADDRESS, wethInstance.address];
+      const DealManagerFactory = await ethers.getContractFactory("DealManager");
+      await expect(DealManagerFactory.deploy(...deployArgs)).to.be.revertedWith(
+        "BASECONTRACT-INVALID-IMPLEMENTATION-ADDRESS"
+      );
+    });
+    it("» should fail on weth zero address", async () => {
+      const deployArgs = [daoDepositManagerInstance.address, ZERO_ADDRESS];
+      const DealManagerFactory = await ethers.getContractFactory("DealManager");
+      await expect(DealManagerFactory.deploy(...deployArgs)).to.be.revertedWith(
+        "BASECONTRACT-INVALID-WETH-ADDRESS"
+      );
+    });
   });
   describe("$ When setting the DaoDepositManager", () => {
     it("» should fail on executed not by the owner", async () => {
@@ -56,22 +73,6 @@ describe("> Contract: DealManager", () => {
       ).to.equal(daoDepositManagerInstance.address);
     });
   });
-  describe("$ When setting the WETH address", () => {
-    it("» should fail on executed not by the owner", async () => {
-      await expect(
-        dealManagerInstance.connect(dao1).setWETHAddress(wethInstance.address)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
-    });
-    it("» should fail on parsing zero address", async () => {
-      await expect(
-        dealManagerInstance.setWETHAddress(ZERO_ADDRESS)
-      ).to.be.revertedWith("BASECONTRACT-INVALID-WETH-ADDRESS");
-    });
-    it("» should succeed on setting the WETH address", async () => {
-      await dealManagerInstance.setWETHAddress(wethInstance.address);
-      expect(await dealManagerInstance.weth()).to.equal(wethInstance.address);
-    });
-  });
   describe("$ When registering a new Module", () => {
     it("» should fail on executed not by the owner", async () => {
       await expect(
@@ -82,7 +83,7 @@ describe("> Contract: DealManager", () => {
     });
     it("» should fail on parsing zero address", async () => {
       await expect(
-        baseContractInstance.activateModule(ZERO_ADDRESS)
+        dealManagerInstance.activateModule(ZERO_ADDRESS)
       ).to.be.revertedWith("BASECONTRACT-INVALID-MODULE-ADDRESS");
     });
     it("» should fail on invalid mdule setup", async () => {
@@ -94,7 +95,7 @@ describe("> Contract: DealManager", () => {
       );
 
       await expect(
-        baseContractInstance.activateModule(tokenswapModuleInstance2.address)
+        dealManagerInstance.activateModule(tokenswapModuleInstance2.address)
       ).to.be.revertedWith("BASECONTRACT-MODULE-SETUP-INVALID");
     });
     it("» should have succeeded on registering the module", async () => {
@@ -135,24 +136,13 @@ describe("> Contract: DealManager", () => {
       ).to.be.false;
     });
   });
-  describe("$ When creating a Deposit Contract", () => {
+  describe("$ When creating a Dao Deposit Manager", () => {
     it("» should fail on DAO address is zero", async () => {
       await expect(
         dealManagerInstance.createDaoDepositManager(ZERO_ADDRESS)
       ).to.be.revertedWith("BASECONTRACT-INVALID-DAO-ADDRESS");
     });
-    it("» should fail on Deposit contract implementation not set", async () => {
-      const BaseContractFactory = await ethers.getContractFactory(
-        "DealManager"
-      );
-      const localdealManagerInstance = await BaseContractFactory.deploy();
-      await expect(
-        localdealManagerInstance.createDaoDepositManager(dao1.address)
-      ).to.be.revertedWith(
-        "BASECONTRACT-DEPOSIT-CONTRACT-IMPLEMENTATION-IS-NOT-SET"
-      );
-    });
-    it("» should fail on Deposit contract already exist for DAO", async () => {
+    it("» should fail on Dao Deposit Manager already exist for DAO", async () => {
       await dealManagerInstance.setDaoDepositManagerImplementation(
         daoDepositManagerInstance.address
       );
@@ -162,7 +152,7 @@ describe("> Contract: DealManager", () => {
         dealManagerInstance.createDaoDepositManager(dao1.address)
       ).to.be.revertedWith("BASECONTRACT-DEPOSIT-CONTRACT-ALREADY-EXISTS");
     });
-    it("» should succeed in creating Deposit Contract", async () => {
+    it("» should succeed in creating Dao Deposit Manager", async () => {
       await dealManagerInstance.setDaoDepositManagerImplementation(
         daoDepositManagerInstance.address
       );

@@ -6,13 +6,6 @@ const setupFixture = deployments.createFixture(
     const { deploy } = deployments;
     const { root, prime } = await ethers.getNamedSigners();
 
-    // Set up DealManager contract
-    await deploy("DealManager", {
-      contract: "DealManager",
-      from: root.address,
-      log: true,
-    });
-
     await deploy("DaoDepositManager", {
       contract: "DaoDepositManager",
       from: root.address,
@@ -29,13 +22,17 @@ const setupFixture = deployments.createFixture(
     const daoDepositManagerInstance = await ethers.getContract(
       "DaoDepositManager"
     );
-    const dealManagerInstance = await ethers.getContract("DealManager");
     const wethInstance = await ethers.getContract("WETH");
 
-    await dealManagerInstance.setWETHAddress(wethInstance.address);
-    await dealManagerInstance.setDaoDepositManagerImplementation(
-      daoDepositManagerInstance.address
-    );
+    // Set up DealManager contract
+    await deploy("DealManager", {
+      contract: "DealManager",
+      from: root.address,
+      args: [daoDepositManagerInstance.address, wethInstance.address],
+      log: true,
+    });
+
+    const dealManagerInstance = await ethers.getContract("DealManager");
 
     // Set up TokenSwapModule contract
     await deploy("TokenSwapModule", {
@@ -50,7 +47,7 @@ const setupFixture = deployments.createFixture(
     await tokenSwapModuleInstance.setFee(30);
 
     // Register TokenSwapModule in DealManager
-    await baseContractInstance.activateModule(tokenSwapModuleInstance.address);
+    await dealManagerInstance.activateModule(tokenSwapModuleInstance.address);
 
     // Return contract instances
     const contractInstances = {

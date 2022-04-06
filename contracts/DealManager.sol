@@ -18,7 +18,7 @@ contract DealManager is Ownable {
     address public daoDepositManagerImplementation;
 
     // Address of the ETH wrapping contract
-    address public weth;
+    address public immutable weth;
 
     // Address DAO => address dao deposit manager of the DAO
     mapping(address => address) public daoDepositManager;
@@ -31,6 +31,18 @@ contract DealManager is Ownable {
         address indexed daoDepositManager
     );
 
+    constructor(address _daoDepositManager, address _weth) {
+        // solhint-disable-next-line reason-string
+        require(
+            _daoDepositManager != address(0),
+            "BASECONTRACT-INVALID-IMPLEMENTATION-ADDRESS"
+        );
+        // solhint-disable-next-line reason-string
+        require(_weth != address(0), "BASECONTRACT-INVALID-WETH-ADDRESS");
+        daoDepositManagerImplementation = _daoDepositManager;
+        weth = _weth;
+    }
+
     // Sets a new address for the deposit contract implementation
     function setDaoDepositManagerImplementation(address _newImplementation)
         external
@@ -42,13 +54,6 @@ contract DealManager is Ownable {
             "BASECONTRACT-INVALID-IMPLEMENTATION-ADDRESS"
         );
         daoDepositManagerImplementation = _newImplementation;
-    }
-
-    // Sets a new address for the weth contract
-    function setWETHAddress(address _newWETH) external onlyOwner {
-        // solhint-disable-next-line reason-string
-        require(_newWETH != address(0), "BASECONTRACT-INVALID-WETH-ADDRESS");
-        weth = _newWETH;
     }
 
     // Registers a new module

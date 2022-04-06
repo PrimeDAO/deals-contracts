@@ -43,7 +43,6 @@ let createSwapParameters, createSwapParametersArray;
 let dealManagerInstance, tokenSwapModuleInstance, tokenInstances;
 let deadline1, deadline2, deadline3;
 
-const MONTH = 60 * 60 * 24 * 31;
 const DAY = 60 * 60 * 24;
 const HOUR = 60 * 60;
 const VESTING_CLIFF1 = HOUR * 2;
@@ -59,6 +58,7 @@ const INVALID_SWAP = 20;
 const METADATA1 = formatBytes32String("Uad8AA2CFPaVdyxa805p");
 const METADATA2 = formatBytes32String("pnthglKd0wFHOK6Bn78C");
 const METADATA3 = formatBytes32String("TqoScXB3Dv79eDjsSvfh");
+const EMPTY_METADATA = formatBytes32String("");
 const METADATAS = [METADATA1, METADATA2, METADATA3];
 
 describe("> Contract: TokenSwapModule", () => {
@@ -141,6 +141,20 @@ describe("> Contract: TokenSwapModule", () => {
         await expect(
           tokenSwapModuleInstance.createSwap(...createSwapParameters)
         ).to.be.revertedWith("Module: metadata already exists");
+      });
+      it("» should fail on metadata being empty", async () => {
+        const createSwapParameters1 = [
+          [daosDeal2[0].address, daosDeal2[1].address, daosDeal2[2].address],
+          createSwapParameters[1],
+          createSwapParameters[2],
+          createSwapParameters[3],
+          EMPTY_METADATA,
+          createSwapParameters[5],
+        ];
+
+        await expect(
+          tokenSwapModuleInstance.createSwap(...createSwapParameters1)
+        ).to.be.revertedWith("Module: metadata empty");
       });
       it("» should fail on number of tokens is 0", async () => {
         const invalidParameters = [
@@ -229,6 +243,10 @@ describe("> Contract: TokenSwapModule", () => {
           .be.empty;
         expect(await dealManagerInstance.daoDepositManager(dao3.address)).to.not
           .be.empty;
+
+        expect(
+          (await tokenSwapModuleInstance.tokenSwaps(SWAP1)).metadata
+        ).to.equal(METADATA1);
       });
       it("» should succeed emitting right metadata event", async () => {
         const tx = await tokenSwapModuleInstance.createSwap(
@@ -422,7 +440,7 @@ describe("> Contract: TokenSwapModule", () => {
 
         await expect(
           tokenSwapModuleInstance.executeSwap(SWAP1)
-        ).to.revertedWith("Module: swap expired");
+        ).to.revertedWith("Module: swap not executable");
       });
       it("» should fail on not ACTIVE status", async () => {
         const createNewSwapParameters = initializeParameters(
@@ -484,7 +502,7 @@ describe("> Contract: TokenSwapModule", () => {
         // Execute swap
         await expect(tokenSwapModuleInstance.executeSwap(SWAP1))
           .to.emit(tokenSwapModuleInstance, "TokenSwapExecuted")
-          .withArgs(tokenSwapModuleInstance.address, SWAP1);
+          .withArgs(tokenSwapModuleInstance.address, SWAP1, METADATA1);
 
         // Balance after swap
 
@@ -657,7 +675,7 @@ describe("> Contract: TokenSwapModule", () => {
         // Execute swap
         await expect(tokenSwapModuleInstance.executeSwap(SWAP1))
           .to.emit(tokenSwapModuleInstance, "TokenSwapExecuted")
-          .withArgs(tokenSwapModuleInstance.address, SWAP1);
+          .withArgs(tokenSwapModuleInstance.address, SWAP1, METADATA2);
 
         // Balance after swap
 

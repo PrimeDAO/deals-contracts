@@ -12,7 +12,7 @@ import "../interfaces/IDealManager.sol";
  */
 contract ModuleBase {
     // Address of the DealManager implementation
-    IDealManager public dealManager;
+    IDealManager public immutable dealManager;
 
     // @notics      Status of a deal
     // NULL         Uninitialized deal
@@ -150,7 +150,7 @@ contract ModuleBase {
     }
 
     function hasDealExpired(uint32 _dealId)
-        external
+        public
         view
         virtual
         returns (bool)

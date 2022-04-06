@@ -7,6 +7,7 @@ const dealManager = artifacts.require("DealManager");
 const daoDepositManager = artifacts.require("DaoDepositManager");
 const tokenSwapModule = artifacts.require("TokenSwapModule");
 const testERC20 = artifacts.require("TestToken");
+const { formatBytes32String } = ethers.utils;
 
 const MONTH = 60 * 60 * 24 * 31;
 const DAY = 60 * 60 * 24;
@@ -15,7 +16,13 @@ const SWAP1 = 0;
 const SWAP2 = 1;
 
 contract("Whole rundown", async (accounts) => {
-  let testToken1, testToken2, testToken3, testToken4, testToken5, testToken6;
+  let testToken1,
+    testToken2,
+    testToken3,
+    testToken4,
+    testToken5,
+    testToken6,
+    weth;
   let currBlockNum, currBlock, currTime, vestingCliff, vestingDuration;
   let depositContractInstance;
   let admin = accounts[0];
@@ -25,12 +32,12 @@ contract("Whole rundown", async (accounts) => {
     [accounts[6], accounts[7]],
     [accounts[8], accounts[9]],
   ];
-  const METADATA1 = "0x";
-  const METADATA2 = "0x1";
+  const METADATA1 = formatBytes32String("Uad8AA2CFPaVdyxa805p");
+  const METADATA2 = formatBytes32String("pnthglKd0wFHOK6Bn78C");
 
   let outsider = accounts[10];
 
-  let baseContractInstance;
+  let dealManagerInstance;
   let tokenSwapInstance;
 
   let snapshot;
@@ -45,12 +52,19 @@ contract("Whole rundown", async (accounts) => {
     testToken4 = await testERC20.new({ from: admin });
     testToken5 = await testERC20.new({ from: admin });
     testToken6 = await testERC20.new({ from: admin });
+    weth = await testERC20.new({ from: admin });
 
     depositContractInstance = await daoDepositManager.new({
       from: admin,
     });
 
-    baseContractInstance = await dealManager.new({ from: admin });
+    dealManagerInstance = await dealManager.new(
+      depositContractInstance.address,
+      weth.address,
+      {
+        from: admin,
+      }
+    );
   });
 
   afterEach(async () => {
@@ -59,49 +73,46 @@ contract("Whole rundown", async (accounts) => {
 
   it("deposit check", async () => {
     await expectRevert(
-      baseContractInstance.setDaoDepositManagerImplementation(
+      dealManagerInstance.setDaoDepositManagerImplementation(
         depositContractInstance.address,
         { from: outsider }
       ),
       "Ownable: caller is not the owner"
     );
 
-    await baseContractInstance.setDaoDepositManagerImplementation(
+    await dealManagerInstance.setDaoDepositManagerImplementation(
       depositContractInstance.address,
       { from: admin }
     );
 
     assert.equal(
-      await baseContractInstance.daoDepositManager(daos[0]),
+      await dealManagerInstance.daoDepositManager(daos[0]),
       "0x0000000000000000000000000000000000000000"
     );
 
-    await baseContractInstance.createDaoDepositManager(daos[0], {
+    await dealManagerInstance.createDaoDepositManager(daos[0], {
       from: outsider,
     });
 
     assert.notEqual(
-      await baseContractInstance.daoDepositManager(daos[0]),
+      await dealManagerInstance.daoDepositManager(daos[0]),
       "0x0000000000000000000000000000000000000000"
     );
 
-    tokenSwapInstance = await tokenSwapModule.new(
-      baseContractInstance.address,
-      {
-        from: admin,
-      }
-    );
+    tokenSwapInstance = await tokenSwapModule.new(dealManagerInstance.address, {
+      from: admin,
+    });
 
-    await baseContractInstance.activateModule(tokenSwapInstance.address, {
+    await dealManagerInstance.activateModule(tokenSwapInstance.address, {
       from: admin,
     });
 
     assert.equal(
-      await baseContractInstance.addressIsModule(tokenSwapInstance.address),
+      await dealManagerInstance.addressIsModule(tokenSwapInstance.address),
       true
     );
 
-    let depositAddrDao1 = await baseContractInstance.daoDepositManager(daos[0]);
+    let depositAddrDao1 = await dealManagerInstance.daoDepositManager(daos[0]);
 
     let depositContractDAO1 = await daoDepositManager.at(depositAddrDao1);
 
@@ -197,19 +208,19 @@ contract("Whole rundown", async (accounts) => {
 
     // Test SWAP
 
-    await baseContractInstance.createDaoDepositManager(daos[1], {
+    await dealManagerInstance.createDaoDepositManager(daos[1], {
       from: outsider,
     });
 
-    let depositAddrDao2 = await baseContractInstance.daoDepositManager(daos[1]);
+    let depositAddrDao2 = await dealManagerInstance.daoDepositManager(daos[1]);
 
     let depositContractDAO2 = await daoDepositManager.at(depositAddrDao2);
 
-    await baseContractInstance.createDaoDepositManager(daos[2], {
+    await dealManagerInstance.createDaoDepositManager(daos[2], {
       from: outsider,
     });
 
-    let depositAddrDao3 = await baseContractInstance.daoDepositManager(daos[2]);
+    let depositAddrDao3 = await dealManagerInstance.daoDepositManager(daos[2]);
 
     let depositContractDAO3 = await daoDepositManager.at(depositAddrDao3);
 
@@ -498,21 +509,18 @@ contract("Whole rundown", async (accounts) => {
   });
   it("claimDealVesting check", async () => {
     // Set up contract instances
-    await baseContractInstance.setDaoDepositManagerImplementation(
+    await dealManagerInstance.setDaoDepositManagerImplementation(
       depositContractInstance.address,
       { from: admin }
     );
-    tokenSwapInstance = await tokenSwapModule.new(
-      baseContractInstance.address,
-      {
-        from: admin,
-      }
-    );
-    await baseContractInstance.activateModule(tokenSwapInstance.address, {
+    tokenSwapInstance = await tokenSwapModule.new(dealManagerInstance.address, {
+      from: admin,
+    });
+    await dealManagerInstance.activateModule(tokenSwapInstance.address, {
       from: admin,
     });
     assert.equal(
-      await baseContractInstance.addressIsModule(tokenSwapInstance.address),
+      await dealManagerInstance.addressIsModule(tokenSwapInstance.address),
       true
     );
 
@@ -660,22 +668,25 @@ contract("Whole rundown", async (accounts) => {
     assert.equal(await tokenSwapInstance.checkExecutability(SWAP1), false);
 
     // Get deposit contracts instances
-    let depostContractAddressDAO1 =
-      await baseContractInstance.daoDepositManager(daos[0]);
+    let depostContractAddressDAO1 = await dealManagerInstance.daoDepositManager(
+      daos[0]
+    );
     let depositContractDAO1Instance = await daoDepositManager.at(
       depostContractAddressDAO1
     );
     assert.equal(await depositContractDAO1Instance.dao(), daos[0]);
 
-    let depostContractAddressDAO2 =
-      await baseContractInstance.daoDepositManager(daos[1]);
+    let depostContractAddressDAO2 = await dealManagerInstance.daoDepositManager(
+      daos[1]
+    );
     let depositContractDAO2Instance = await daoDepositManager.at(
       depostContractAddressDAO2
     );
     assert.equal(await depositContractDAO2Instance.dao(), daos[1]);
 
-    let depostContractAddressDAO3 =
-      await baseContractInstance.daoDepositManager(daos[2]);
+    let depostContractAddressDAO3 = await dealManagerInstance.daoDepositManager(
+      daos[2]
+    );
     let depositContractDAO3Instance = await daoDepositManager.at(
       depostContractAddressDAO3
     );
