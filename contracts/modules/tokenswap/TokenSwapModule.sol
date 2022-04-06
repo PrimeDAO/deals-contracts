@@ -149,7 +149,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         emit TokenSwapCreated(
             address(this),
             dealId,
-            ts.metadata,
+            _metadata,
             _daos,
             _tokens,
             _pathFrom,

@@ -2,6 +2,8 @@
 pragma solidity ^0.8.9;
 
 interface IDaoDepositManager {
+    function dealManager() external returns (address);
+
     function initialize(address _dao) external;
 
     function migrateBaseContract(address _newDaoDepositManager) external;

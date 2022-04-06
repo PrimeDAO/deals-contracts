@@ -77,12 +77,12 @@ describe("> Contract: DealManager", () => {
       await expect(
         baseContractInstance
           .connect(dao1)
-          .registerModule(tokenSwapModuleInstance.address)
+          .activateModule(tokenSwapModuleInstance.address)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
     it("» should fail on parsing zero address", async () => {
       await expect(
-        baseContractInstance.registerModule(ZERO_ADDRESS)
+        baseContractInstance.activateModule(ZERO_ADDRESS)
       ).to.be.revertedWith("BASECONTRACT-INVALID-MODULE-ADDRESS");
     });
     it("» should fail on invalid mdule setup", async () => {
@@ -94,7 +94,7 @@ describe("> Contract: DealManager", () => {
       );
 
       await expect(
-        baseContractInstance.registerModule(tokenswapModuleInstance2.address)
+        baseContractInstance.activateModule(tokenswapModuleInstance2.address)
       ).to.be.revertedWith("BASECONTRACT-MODULE-SETUP-INVALID");
     });
     it("» should have succeeded on registering the module", async () => {

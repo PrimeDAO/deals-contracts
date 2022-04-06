@@ -52,16 +52,11 @@ contract DealManager is Ownable {
     }
 
     // Registers a new module
-    function registerModule(address _moduleAddress) external onlyOwner {
+    function activateModule(address _moduleAddress) external onlyOwner {
         // solhint-disable-next-line reason-string
         require(
             _moduleAddress != address(0),
             "BASECONTRACT-INVALID-MODULE-ADDRESS"
-        );
-        // solhint-disable-next-line reason-string
-        require(
-            !isModule[_moduleAddress],
-            "BASECONTRACT-MODULE-ALREADY-REGISTERED"
         );
         // solhint-disable-next-line reason-string
         require(
@@ -98,12 +93,16 @@ contract DealManager is Ownable {
         );
         address newContract = Clones.clone(daoDepositManagerImplementation);
         IDaoDepositManager(newContract).initialize(_dao);
+        require(
+            IDaoDepositManager(newContract).dealManager() == address(this),
+            "BASECONTRACT-INVALID-INITALIZE"
+        );
         daoDepositManager[_dao] = newContract;
         emit DaoDepositManagerCreated(_dao, newContract);
     }
 
     // Returns whether a DAO already has a deposit contract
-    function hasDaoDepositManager(address _dao) public view returns (bool) {
+    function hasDaoDepositManager(address _dao) external view returns (bool) {
         return getDaoDepositManager(_dao) != address(0) ? true : false;
     }
 
@@ -112,16 +111,7 @@ contract DealManager is Ownable {
         return daoDepositManager[_dao];
     }
 
-    function addressIsModule(address _address) public view returns (bool) {
+    function addressIsModule(address _address) external view returns (bool) {
         return isModule[_address];
-    }
-
-    modifier onlyModule() {
-        // solhint-disable-next-line reason-string
-        require(
-            addressIsModule(msg.sender),
-            "BASECONTRACT-CAN-ONLY-BE-CALLED-BY-MODULE"
-        );
-        _;
     }
 }

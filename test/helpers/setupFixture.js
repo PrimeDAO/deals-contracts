@@ -50,7 +50,7 @@ const setupFixture = deployments.createFixture(
     await tokenSwapModuleInstance.setFee(30);
 
     // Register TokenSwapModule in DealManager
-    await baseContractInstance.registerModule(tokenSwapModuleInstance.address);
+    await baseContractInstance.activateModule(tokenSwapModuleInstance.address);
 
     // Return contract instances
     const contractInstances = {

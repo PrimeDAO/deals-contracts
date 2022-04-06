@@ -101,12 +101,17 @@ contract DaoDepositManager {
         external
         onlyDealManager
     {
+        require(
+            _newDaoDepositManager != address(0),
+            "D2D-INVALID-MANAGER-ADDRESS"
+        );
         dealManager = IDealManager(_newDaoDepositManager);
     }
 
     /**
      * @dev                     Transfers the token amount to the DaoDepositManager and
-     *                          stores the parameters in a Deposit structure
+     *                          stores the parameters in a Deposit structure.
+     *                          Note: if ETH is deposited, the token address should be ZERO
      * @param _module           The address of the module for which is being deposited
      * @param _dealId           The dealId to which this deposit is part of
      * @param _token            The address of the token that is deposited

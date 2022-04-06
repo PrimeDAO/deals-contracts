@@ -94,7 +94,7 @@ task(
   )
   .setAction(async ({ address }, { ethers }) => {
     const dealMangerInstance = await ethers.getContract("DealManager");
-    await dealMangerInstance.registerModule(address);
+    await dealMangerInstance.activateModule(address);
     console.log(
       `Module with address ${address} has been successfully registered`
     );
@@ -109,7 +109,7 @@ task("deactivateModule", "will deactive a module in the DealManager contract ")
   )
   .setAction(async ({ address }, { ethers }) => {
     const dealMangerInstance = await ethers.getContract("DealManager");
-    await dealMangerInstance.registerModule(address);
+    await dealMangerInstance.activateModule(address);
     console.log(
       `Module with address ${address} has been successfully deactived`
     );

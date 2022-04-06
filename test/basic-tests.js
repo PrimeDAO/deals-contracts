@@ -92,7 +92,7 @@ contract("Whole rundown", async (accounts) => {
       }
     );
 
-    await baseContractInstance.registerModule(tokenSwapInstance.address, {
+    await baseContractInstance.activateModule(tokenSwapInstance.address, {
       from: admin,
     });
 
@@ -508,7 +508,7 @@ contract("Whole rundown", async (accounts) => {
         from: admin,
       }
     );
-    await baseContractInstance.registerModule(tokenSwapInstance.address, {
+    await baseContractInstance.activateModule(tokenSwapInstance.address, {
       from: admin,
     });
     assert.equal(
