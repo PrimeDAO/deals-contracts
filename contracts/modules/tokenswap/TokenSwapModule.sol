@@ -68,7 +68,11 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint32 deadline
     );
 
-    event TokenSwapExecuted(address indexed module, uint32 indexed dealId);
+    event TokenSwapExecuted(
+        address indexed module,
+        uint32 indexed dealId,
+        bytes32 indexed metadata
+    );
 
     constructor(address _dealManager) ModuleBaseWithFee(_dealManager) {}
 
@@ -283,7 +287,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
         ts.status = Status.DONE;
         ts.executionDate = uint32(block.timestamp);
-        emit TokenSwapExecuted(address(this), _dealId);
+        emit TokenSwapExecuted(address(this), _dealId, ts.metadata);
     }
 
     /**
