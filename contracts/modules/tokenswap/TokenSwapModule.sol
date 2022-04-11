@@ -45,7 +45,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256[][] pathFrom;
         /// The token flow from the module to the DAO, see above
         uint256[][] pathTo;
-        /// Unix timestamp of the deadline
+        /// Amount of time in seconds the token swap can be executed
         uint32 deadline;
         /// Unix timestamp of the execution
         uint32 executionDate;
@@ -66,7 +66,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
                             DAOs into the module
      * @param pathTo        Two-dimensional array containing the tokens flowing from the
                             module to the DAOs
-     * @param deadline      Time until which the token swap can be executed (unix timestamp)
+     * @param deadline      The amount of time between the creation of the swap and the time when
+                            it can no longer be executed, in seconds
      */
     event TokenSwapCreated(
         address indexed module,
@@ -130,6 +131,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         );
         require(_daos.length >= 2, "TokenSwapModule: Error 204");
         require(_tokens.length != 0, "TokenSwapModule: Error 205");
+        require(_deadline > 0, "TokenSwapModule: Error 101");
 
         // Check outer arrays
         uint256 pathFromLen = _pathFrom.length;
@@ -148,15 +150,13 @@ contract TokenSwapModule is ModuleBaseWithFee {
             );
         }
 
-        // solhint-disable-next-line not-rely-on-time
-        require(_deadline > block.timestamp, "TokenSwapModule: Error 206");
-
         TokenSwap memory ts = TokenSwap(
             _daos,
             _tokens,
             _pathFrom,
             _pathTo,
-            _deadline,
+            // solhint-disable-next-line not-rely-on-time
+            uint32(block.timestamp) + _deadline,
             0,
             _metadata,
             Status.ACTIVE
@@ -374,7 +374,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         require(
             dealId != 0 ||
                 (tokenSwaps[dealId].metadata == _metadata && _metadata != ""),
-            "TokenSwapModule: Error 207"
+            "TokenSwapModule: Error 206"
         );
         return tokenSwaps[metadataToDealId[_metadata]];
     }
@@ -401,7 +401,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
     }
 
     modifier validDealId(uint32 _dealId) {
-        require(_dealId < tokenSwaps.length, "TokenSwapModule: Error 208");
+        require(_dealId < tokenSwaps.length, "TokenSwapModule: Error 207");
         _;
     }
 
