@@ -6,20 +6,20 @@ import "../interfaces/IDaoDepositManager.sol";
 import "../interfaces/IDealManager.sol";
 
 /**
- * @title PrimeDeals Module Base
- * @dev   Smart contract to serve as the
-          basis for each module
+ * @title                   PrimeDeals Module Base
+ * @notice                  Smart contract to serve as the
+                            basis for each module
  */
 contract ModuleBase {
-    // Address of the DealManager implementation
+    /// Address of the DealManager implementation
     IDealManager public immutable dealManager;
 
     /**
-     * @dev         Struct for managing the status of a deal
-     * NULL         Uninitialized deal
-     * ACTIVE       Deal has been created and is ready to be funded
-     * CANCELLED    Deal has been canceld and is no longer valid
-     * DONE         Deal has been executed
+     * @notice              Struct for managing the status of a deal
+     * NULL                 Uninitialized deal
+     * ACTIVE               Deal has been created and is ready to be funded
+     * CANCELLED            Deal has been canceld and is no longer valid
+     * DONE                 Deal has been executed
      */
     enum Status {
         NULL,
@@ -29,8 +29,8 @@ contract ModuleBase {
     }
 
     /**
-     * @notice                         Constructor
-     * @param _dealManager             The address of DealManager implementation
+     * @notice              Constructor
+     * @param _dealManager  The address of DealManager implementation
      */
     constructor(address _dealManager) {
         require(_dealManager != address(0), "ModuleBase: Error 100");
@@ -38,7 +38,7 @@ contract ModuleBase {
     }
 
     /**
-      * @dev                Sends tokens from a DAO deposit manager to the module
+      * @notice             Sends tokens from a DAO deposit manager to the module
       * @param _dealId      ID of the action this is related to
       * @param _daos        Array containing the DAOs that are involed in this action
       * @param _tokens      Array containing the tokens that are involed in this action
@@ -70,10 +70,10 @@ contract ModuleBase {
     }
 
     /**
-     * @dev            Calls the approval function of a token
-     * @param _token   Address of the token
-     * @param _to      Target of the approval
-     * @param _amount  Amount to be approved
+     * @notice              Calls the approval function of a token
+     * @param _token        Address of the token
+     * @param _to           Target of the approval
+     * @param _amount       Amount to be approved
      */
     function _approveToken(
         address _token,
@@ -84,11 +84,11 @@ contract ModuleBase {
     }
 
     /**
-     * @dev            Calls the approval function of a token
-                       for the deposit manager of a DAO
-     * @param _token   Address of the token
-     * @param _dao     DAO whose deposit manager is the target
-     * @param _amount  Amount to be approved
+     * @notice              Calls the approval function of a token
+                            for the deposit manager of a DAO
+     * @param _token        Address of the token
+     * @param _dao          DAO whose deposit manager is the target
+     * @param _amount       Amount to be approved
      */
     function _approveDaoDepositManager(
         address _token,
@@ -99,10 +99,10 @@ contract ModuleBase {
     }
 
     /**
-     * @dev            Transfers an amount of tokens
-     * @param _token   Address of the token
-     * @param _to      Target of the transfer
-     * @param _amount  Amount to be sent
+     * @notice              Transfers an amount of tokens
+     * @param _token        Address of the token
+     * @param _to           Target of the transfer
+     * @param _amount       Amount to be sent
      */
     function _transfer(
         address _token,
@@ -123,11 +123,11 @@ contract ModuleBase {
     }
 
     /**
-     * @dev            Transfers an amount of tokens from an address
-     * @param _token   Address of the token
-     * @param _from    Source of the transfer
-     * @param _to      Target of the transfer
-     * @param _amount  Amount to be sent
+     * @notice              Transfers an amount of tokens from an address
+     * @param _token        Address of the token
+     * @param _from         Source of the transfer
+     * @param _to           Target of the transfer
+     * @param _amount       Amount to be sent
      */
     function _transferFrom(
         address _token,
@@ -146,6 +146,11 @@ contract ModuleBase {
         }
     }
 
+    /**
+     * @notice              Checks if the deal has been expired
+     * @param _dealId       The dealId of the action (position in the array)
+     * @return bool         A bool flag indiciating whether deal has expired
+     */
     function hasDealExpired(uint32 _dealId)
         public
         view
