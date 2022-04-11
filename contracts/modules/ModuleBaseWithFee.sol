@@ -21,7 +21,7 @@ contract ModuleBaseWithFee is ModuleBase {
 
     // Percentage precision to calculate the fee
     // solhint-disable-next-line var-name-mixedcase
-    uint256 public immutable PBS = 10000;
+    uint256 public immutable BPS = 10000;
 
     /**
      * @dev                        Constructor
@@ -93,7 +93,7 @@ contract ModuleBaseWithFee is ModuleBase {
         returns (uint256)
     {
         if (feeWallet != address(0) && feeInBasisPoints > 0) {
-            uint256 fee = (_amount * feeInBasisPoints) / PBS;
+            uint256 fee = (_amount * feeInBasisPoints) / BPS;
             _transfer(_token, feeWallet, fee);
 
             return _amount - fee;
