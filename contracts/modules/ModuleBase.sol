@@ -14,11 +14,13 @@ contract ModuleBase {
     // Address of the DealManager implementation
     IDealManager public immutable dealManager;
 
-    // @notics      Status of a deal
-    // NULL         Uninitialized deal
-    // ACTIVE       Deal has been created and is ready to be funded
-    // CANCELLED    Deal has been canceld and is no longer valid
-    // DONE         Deal has been executed
+    /**
+     * @dev         Struct for managing the status of a deal
+     * NULL         Uninitialized deal
+     * ACTIVE       Deal has been created and is ready to be funded
+     * CANCELLED    Deal has been canceld and is no longer valid
+     * DONE         Deal has been executed
+     */
     enum Status {
         NULL,
         ACTIVE,
@@ -27,7 +29,7 @@ contract ModuleBase {
     }
 
     /**
-     * @dev                            Constructor
+     * @notice                         Constructor
      * @param _dealManager             The address of DealManager implementation
      */
     constructor(address _dealManager) {

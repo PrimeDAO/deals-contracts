@@ -5,11 +5,13 @@ import "../ModuleBaseWithFee.sol";
 
 /**
  * @title PrimeDeals Token Swap Module
- * @dev   Smart contract to handle token swap
+ * @notice   Smart contract to handle token swap
  *        interactions for PrimeDeals
  */
 contract TokenSwapModule is ModuleBaseWithFee {
+    /// Array of token swaps where the index == dealId
     TokenSwap[] public tokenSwaps;
+    /// Metadata => deal ID
     mapping(bytes32 => uint32) public metadataToDealId;
 
     /**
@@ -21,11 +23,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
      * token -> DAO -> amount
      * [[123, 0, 123], [0, 123, 0]]
      * token 1: DAO 1 sends 123, DAO 2 sends 0, DAO 3 sends 123, etc.
-     */
-
-    /**
-     * @dev
-     * pathTo:
+     *
+     * pathTo Description:
      * Used for storing how many tokens does each DAO receive from the module
      * includes vesting. For each DAO there is a tuple of four values:
      * instant amount, vested amount, vesting cliff, vesting duration.
@@ -37,26 +36,38 @@ contract TokenSwapModule is ModuleBaseWithFee {
      * [[instantAmount_dao1, vestedAmount_dao1, vestingCliff_dao1,
      * vestingDuration_dao1, instantAmount_dao2, ...], [...]]
      */
-
     struct TokenSwap {
-        // The participating DAOs
+        /// The participating DAOs
         address[] daos;
-        // The tokens involved in the swap
+        /// The tokens involved in the swap
         address[] tokens;
-        // the token flow from the DAOs to the module
+        /// The token flow from the DAOs to the module, see above
         uint256[][] pathFrom;
-        // the token flow from the module to the DAO
+        /// The token flow from the module to the DAO, see above
         uint256[][] pathTo;
-        // unix timestamp of the deadline
+        /// Unix timestamp of the deadline
         uint32 deadline;
-        // unix timestamp of the execution
+        /// Unix timestamp of the execution
         uint32 executionDate;
-        // hash of the deal information.
+        /// Hash of the deal information.
         bytes32 metadata;
-        // status of the deal
+        /// Status of the deal
         Status status;
     }
 
+    /**
+     * @notice              This event is emitted when a token swap is created
+     * @param module        Address of this module
+     * @param dealId        Deal id for the created token swap
+     * @param metadata      Unique ID that is generated throught the Prime Deals frontend
+     * @param daos          Array containing the DAOs that are involed in creating the token swap
+     * @param tokens        Array containing the tokens that are involed in creating the token swap
+     * @param pathFrom      Two-dimensional array containing the tokens flowing from the
+                            DAOs into the module
+     * @param pathTo        Two-dimensional array containing the tokens flowing from the
+                            module to the DAOs
+     * @param deadline      Time until which the token swap can be executed (unix timestamp)
+     */
     event TokenSwapCreated(
         address indexed module,
         uint32 indexed dealId,
@@ -68,6 +79,12 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint32 deadline
     );
 
+    /**
+     * @notice               This event is emitted when a token swap gets executed
+     * @param module         Address of this module
+     * @param dealId         Deal id for the executed token swap
+     * @param metadata       Unique ID that is generated throught the Prime Deals frontend
+     */
     event TokenSwapExecuted(
         address indexed module,
         uint32 indexed dealId,
@@ -78,26 +95,25 @@ contract TokenSwapModule is ModuleBaseWithFee {
     constructor(address _dealManager) ModuleBaseWithFee(_dealManager) {}
 
     /**
-      * @dev                Create a new token swap action
+      * @notice             Creates a new token swap action
       * @param _daos        Array containing the DAOs that are involed in this action
       * @param _tokens      Array containing the tokens that are involed in this action
       * @param _pathFrom    Two-dimensional array containing the tokens flowing from the
                             DAOs into the module:
                               - First array level is for each token
                               - Second array level is for each dao
-                              - Contains absolute numbers of tokens
+                              - Detailed overview on how to configure the array can be found at the
+                                TokenSwap struct description
       * @param _pathTo      Two-dimensional array containing the tokens flowing from the
                             module to the DAOs:
                               - First array level is for each token
                               - Second array level is for each dao
-                              - Contains a tuple(4) consisting of instant amount, vested 
-                                amount, vesting start, vesting end which then makes this 
-                                array look like:
-                                [[instantAmount_dao1, vestedAmount_dao1, vestingStart_dao1,
-                                vestingEnd_dao1, instantAmount_dao2, ...], [...]]
-      *@param _metadata     Unique ID that is generated throught the Prime Deals frontend
-      * @param _deadline    Time until which this action can be executed (unix timestamp)
-      * @return             The dealId of the new action
+                              - Detailed overview on how to configure the array can be found at the
+                                TokenSwap struct description
+      * @param _metadata    Unique ID that is generated throught the Prime Deals frontend
+      * @param _deadline    The amount of time between the creation of the swap and the time when
+                            it can no longer be executed, in seconds
+      * @return uint32      The dealId of the new token swap
     */
     function _createSwap(
         address[] memory _daos,
@@ -165,7 +181,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
     }
 
     /**
-      * @dev                Create a new token swap action and automatically
+      * @notice             Create a new token swap action and automatically
                             creates Dao Deposit Manager for each DAO that does not have one
       * @param _daos        Array containing the DAOs that are involed in this action
       * @param _tokens      Array containing the tokens that are involed in this action
@@ -173,18 +189,18 @@ contract TokenSwapModule is ModuleBaseWithFee {
                             DAOs into the module:
                               - First array level is for each token
                               - Second array level is for each dao
-                              - Contains absolute numbers of tokens
+                              - Detailed overview on how to configure the array can be found at the
+                                TokenSwap struct description
       * @param _pathTo      Two-dimensional array containing the tokens flowing from the
                             module to the DAOs:
                               - First array level is for each token
                               - Second array level is for each dao
-                              - Contains a tuple(4) consisting of instant amount, vested 
-                                amount, vesting start, vesting end which then makes this 
-                                array look like:
-                                [[instantAmount_dao1, vestedAmount_dao1, vestingStart_dao1,
-                                vestingEnd_dao1, instantAmount_dao2, ...], [...]]
-      *@param _metadata     Unique ID that is generated throught the Prime Deals frontend
-      * @param _deadline    Time until which this action can be executed (unix timestamp)
+                              - Detailed overview on how to configure the array can be found at the
+                                TokenSwap struct description
+      * @param _metadata    Unique ID that is generated throught the Prime Deals frontend
+      * @param _deadline    The amount of time between the creation of the swap and the time when
+                            it can no longer be executed, in seconds
+      * @return uin32       The dealId of the new token swap
     */
     function createSwap(
         address[] calldata _daos,
@@ -213,10 +229,10 @@ contract TokenSwapModule is ModuleBaseWithFee {
     }
 
     /**
-      * @dev            Checks whether a token swap action can be executed
-                        (which is the case if all DAOs have deposited)
-      * @param _dealId  The dealId of the action (position in the array)
-      * @return         A bool flag indiciating whether the action can be executed
+      * @notice             Checks whether a token swap action can be executed
+                            (which is the case if all DAOs have deposited)
+      * @param _dealId      The dealId of the action (position in the array)
+      * @return bool        A bool flag indiciating whether the action can be executed
     */
     function checkExecutability(uint32 _dealId)
         public
@@ -252,8 +268,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
     }
 
     /**
-     * @dev            Executes a token swap action
-     * @param _dealId  The dealId of the action (position in the array)
+     * @notice              Executes a token swap action
+     * @param _dealId       The dealId of the action (position in the array)
      */
     function executeSwap(uint32 _dealId)
         external
@@ -292,7 +308,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
     }
 
     /**
-      * @dev                Distributes the tokens based on the supplied
+      * @notice             Distributes the tokens based on the supplied
                             information to the DAOs or their vesting contracts
       * @param _ts          TokenSwap object containing all the information
                             of the action
@@ -345,6 +361,10 @@ contract TokenSwapModule is ModuleBaseWithFee {
         }
     }
 
+    /**
+     * @notice                   Returns the TokenSwap struct associated with the metadata
+     * @param _metadata       Unique ID that is generated throught the Prime Deals frontend
+     */
     function getTokenswapFromMetadata(bytes32 _metadata)
         public
         view
