@@ -31,10 +31,7 @@ contract ModuleBase {
      * @param _dealManager             The address of DealManager implementation
      */
     constructor(address _dealManager) {
-        require(
-            _dealManager != address(0),
-            "Module: invalid base contract address"
-        );
+        require(_dealManager != address(0), "ModuleBase: Error 100");
         dealManager = IDealManager(_dealManager);
     }
 
@@ -54,13 +51,10 @@ contract ModuleBase {
         uint256[][] memory _path
     ) internal returns (uint256[] memory amountsIn) {
         amountsIn = new uint256[](_tokens.length);
-        require(_path.length == _tokens.length, "Module: length mismatch");
+        require(_path.length == _tokens.length, "ModuleBase: Error 102");
         for (uint256 i; i < _tokens.length; ++i) {
             uint256[] memory tokenPath = _path[i];
-            require(
-                tokenPath.length == _daos.length,
-                "Module: length mismatch"
-            );
+            require(tokenPath.length == _daos.length, "ModuleBase: Error 102");
             for (uint256 j; j < tokenPath.length; ++j) {
                 uint256 daoAmount = tokenPath[j];
                 if (daoAmount > 0) {
@@ -84,7 +78,7 @@ contract ModuleBase {
         address _to,
         uint256 _amount
     ) internal {
-        require(IERC20(_token).approve(_to, _amount), "Module: approve failed");
+        require(IERC20(_token).approve(_to, _amount), "ModuleBase: Error 243");
     }
 
     /**
@@ -115,13 +109,14 @@ contract ModuleBase {
     ) internal {
         if (_token != address(0)) {
             try IERC20(_token).transfer(_to, _amount) returns (bool success) {
-                require(success, "Module: erc20 transfer was not successful");
+                require(success, "ModuleBase: Error 241");
             } catch {
-                revert("Module: erc20 transfer failed");
+                revert("ModuleBase: Error 241");
             }
         } else {
+            // solhint-disable-next-line avoid-low-level-calls
             (bool sent, ) = _to.call{value: _amount}("");
-            require(sent, "Module: eth transfer failed");
+            require(sent, "ModuleBase: Error 242");
         }
     }
 
@@ -138,14 +133,14 @@ contract ModuleBase {
         address _to,
         uint256 _amount
     ) internal {
-        require(_token != address(0), "Module: transferFrom only for ERC20s");
+        require(_token != address(0), "ModuleBase: Error 263");
 
         try IERC20(_token).transferFrom(_from, _to, _amount) returns (
             bool success
         ) {
-            require(success, "Module: transferFrom was not successful");
+            require(success, "ModuleBase: Error 241");
         } catch {
-            revert("Module: transferFrom failed");
+            revert("ModuleBase: Error 241");
         }
     }
 
@@ -154,5 +149,8 @@ contract ModuleBase {
         view
         virtual
         returns (bool)
-    {}
+    // solhint-disable-next-line no-empty-blocks
+    {
+
+    }
 }

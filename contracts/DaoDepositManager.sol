@@ -87,8 +87,11 @@ contract DaoDepositManager {
      * @param _dao              The DAO address to which this contract belongs
      */
     function initialize(address _dao) external {
-        require(dao == address(0), "D2D-DEPOSIT-ALREADY-INITIALIZED");
-        require(_dao != address(0), "D2D-DEPOSIT-INVALID-DAO-ADDRESS");
+        require(dao == address(0), "DaoDepositManager: Error 001");
+        require(
+            _dao != address(0) && _dao != address(this),
+            "DaoDepositManager: Error 100"
+        );
         dao = _dao;
         dealManager = IDealManager(msg.sender);
     }
@@ -102,8 +105,9 @@ contract DaoDepositManager {
         onlyDealManager
     {
         require(
-            _newDaoDepositManager != address(0),
-            "D2D-INVALID-MANAGER-ADDRESS"
+            _newDaoDepositManager != address(0) &&
+                _newDaoDepositManager != address(this),
+            "DaoDepositManager: Error 100"
         );
         dealManager = IDealManager(_newDaoDepositManager);
     }
@@ -123,18 +127,18 @@ contract DaoDepositManager {
         address _token,
         uint256 _amount
     ) public payable {
-        require(_amount > 0, "D2D-DEPOSIT-INVALID-AMOUNT");
+        require(_amount > 0, "DaoDepositManager: Error 101");
         if (_token != address(0)) {
             _transferFrom(_token, msg.sender, address(this), _amount);
         } else {
-            require(_amount == msg.value, "D2D-DEPOSIT-INVALID-ETH-VALUE");
+            require(_amount == msg.value, "DaoDepositManager: 202");
         }
 
         tokenBalances[_token] += _amount;
         availableDealBalances[_token][_module][_dealId] += _amount;
         verifyBalance(_token);
-        // solhint-disable-next-line not-rely-on-time
         deposits[_module][_dealId].push(
+            // solhint-disable-next-line not-rely-on-time
             Deposit(msg.sender, _token, _amount, 0, uint32(block.timestamp))
         );
 
@@ -154,10 +158,9 @@ contract DaoDepositManager {
         address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external payable {
-        // solhint-disable-next-line reason-string
         require(
             _tokens.length == _amounts.length,
-            "D2D-DEPOSIT-ARRAY-LENGTH-MISMATCH"
+            "DaoDepositManager: Error 102"
         );
         for (uint256 i; i < _tokens.length; ++i) {
             deposit(_module, _dealId, _tokens[i], _amounts[i]);
@@ -176,6 +179,7 @@ contract DaoDepositManager {
             tokenBalances[_token] = currentBalance;
             availableDealBalances[_token][_module][_dealId] += amount;
             deposits[_module][_dealId].push(
+                // solhint-disable-next-line not-rely-on-time
                 Deposit(dao, _token, amount, 0, uint32(block.timestamp))
             );
             emit Deposited(
@@ -214,7 +218,7 @@ contract DaoDepositManager {
     {
         require(
             deposits[_module][_dealId].length > _depositId,
-            "D2D-DEPOSIT-INVALID-DEPOSIT-ID"
+            "DaoDepositManager: Error 200"
         );
         Deposit storage d = deposits[_module][_dealId][_depositId];
 
@@ -226,12 +230,12 @@ contract DaoDepositManager {
             d.depositor == msg.sender ||
                 (d.depositor == dao &&
                     IModuleBase(_module).hasDealExpired(_dealId)),
-            "D2D-WITHDRAW-NOT-AUTHORIZED"
+            "DaoDepositManager: Error 222"
         );
 
         uint256 freeAmount = d.amount - d.used;
         // Deposit can't be used by a module or withdrawn already
-        require(freeAmount > 0, "D2D-DEPOSIT-NOT-WITHDRAWABLE");
+        require(freeAmount > 0, "DaoDepositManager: Error 240");
         d.used = d.amount;
         availableDealBalances[d.token][_module][_dealId] -= freeAmount;
         tokenBalances[d.token] -= freeAmount;
@@ -276,7 +280,7 @@ contract DaoDepositManager {
                 }
             }
         }
-        require(amountLeft == 0, "D2D-DEPOSIT-NOT-ENOUGH-SENT-TO-MODULE");
+        require(amountLeft == 0, "DaoDepositManager: Error 262");
     }
 
     function startVesting(
@@ -286,18 +290,16 @@ contract DaoDepositManager {
         uint32 _vestingCliff,
         uint32 _vestingDuration
     ) external payable onlyModule {
-        // solhint-disable-next-line reason-string
-        require(_amount > 0, "D2D-DEPOSIT-VESTING-INVALID-AMOUNT");
-        // solhint-disable-next-line reason-string
+        require(_amount > 0, "DaoDepositManager: Error 101");
         require(
             _vestingCliff < _vestingDuration,
-            "D2D-DEPOSIT-VESTINGCLIFF-BIGGER-THAN-DURATION"
+            "DaoDepositManager: Error 201"
         );
 
         if (_token != address(0)) {
             _transferFrom(_token, msg.sender, address(this), _amount);
         } else {
-            require(_amount == msg.value, "D2D-DEPOSIT-VALUE-INVALID");
+            require(_amount == msg.value, "DaoDepositManager: Error 202");
         }
         // no else path, since ETH will be sent by the module,
         // which is verified by the verifyBalance() call after
@@ -314,6 +316,7 @@ contract DaoDepositManager {
                 _token,
                 _amount,
                 0,
+                // solhint-disable-next-line not-rely-on-time
                 uint32(block.timestamp),
                 _vestingCliff,
                 _vestingDuration
@@ -335,6 +338,7 @@ contract DaoDepositManager {
         emit VestingStarted(
             msg.sender,
             _dealId,
+            // solhint-disable-next-line not-rely-on-time
             uint32(block.timestamp),
             _vestingCliff,
             _vestingDuration,
@@ -393,6 +397,7 @@ contract DaoDepositManager {
     {
         if (vesting.totalClaimed < vesting.totalVested) {
             // Check cliff was reached
+            // solhint-disable-next-line not-rely-on-time
             uint32 elapsedSeconds = uint32(block.timestamp) - vesting.startTime;
 
             if (elapsedSeconds < vesting.cliff) {
@@ -433,10 +438,9 @@ contract DaoDepositManager {
                 }
             }
 
-            // solhint-disable-next-line reason-string
             require(
                 vesting.totalClaimed <= vesting.totalVested,
-                "D2D-VESTING-CLAIM-AMOUNT-MISMATCH"
+                "DaoDepositManager: Error 244"
             );
             vestedBalances[token] -= amount;
             _transfer(token, dao, amount);
@@ -455,7 +459,7 @@ contract DaoDepositManager {
         require(
             getBalance(_token) >=
                 tokenBalances[_token] + vestedBalances[_token],
-            "D2D-DEPOSIT-BALANCE-INVALID"
+            "DaoDepositManager: Error 245"
         );
     }
 
@@ -567,13 +571,14 @@ contract DaoDepositManager {
     ) internal {
         if (_token != address(0)) {
             try IERC20(_token).transfer(_to, _amount) returns (bool success) {
-                require(success, "D2D-TOKEN-TRANSFER-UNSUCCESSFUL");
+                require(success, "DaoDepositManager: Error 241");
             } catch {
-                revert("D2D-TOKEN-TRANSFER-FAILED");
+                revert("DaoDepositManager: Error 241");
             }
         } else {
+            // solhint-disable-next-line avoid-low-level-calls
             (bool sent, ) = _to.call{value: _amount}("");
-            require(sent, "D2D-ETH-TRANSFER-FAILED");
+            require(sent, "DaoDepositManager: Error 242");
         }
     }
 
@@ -586,27 +591,30 @@ contract DaoDepositManager {
         try IERC20(_token).transferFrom(_from, _to, _amount) returns (
             bool success
         ) {
-            require(success, "D2D-TOKEN-TRANSFER-FROM-UNSUCCESSFUL");
+            require(success, "DaoDepositManager: Error 241");
         } catch {
-            revert("D2D-TOKEN-TRANSFER-FROM-FAILED");
+            revert("DaoDepositManager: Error 241");
         }
     }
 
     modifier onlyDealManager() {
-        // solhint-disable-next-line reason-string
         require(
             msg.sender == address(dealManager),
-            "D2D-DEPOSIT-ONLY-BASE-CONTRACT-CAN-ACCESS"
+            "DaoDepositManager: Error 221"
         );
         _;
     }
 
     modifier onlyModule() {
-        require(dealManager.addressIsModule(msg.sender), "D2D-NOT-MODULE");
+        require(
+            dealManager.addressIsModule(msg.sender),
+            "DaoDepositManager: Error 220"
+        );
         _;
     }
 
     fallback() external payable {}
 
+    // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 }

@@ -14,15 +14,20 @@ contract ModuleBaseWithFee is ModuleBase {
 
     // Fee in basis points (100% = 10000)
     uint32 public feeInBasisPoints;
+
     // Max fee 20%
+    // solhint-disable-next-line var-name-mixedcase
     uint32 public MAX_FEE = 2000;
+
     // Percentage precision to calculate the fee
+    // solhint-disable-next-line var-name-mixedcase
     uint256 public PERCENTAGE = 10000;
 
     /**
      * @dev                        Constructor
      * @param _dealManager         The address of Dealmanager implementation
      */
+    // solhint-disable-next-line no-empty-blocks
     constructor(address _dealManager) ModuleBase(_dealManager) {}
 
     /**
@@ -54,7 +59,7 @@ contract ModuleBaseWithFee is ModuleBase {
     {
         require(
             _feeWallet != address(0) && _feeWallet != address(this),
-            "Fee: invalid fee wallet address"
+            "ModuleBaseWithFee: Error 100"
         );
         if (feeWallet != _feeWallet) {
             feeWallet = _feeWallet;
@@ -70,7 +75,7 @@ contract ModuleBaseWithFee is ModuleBase {
         external
         onlyDealManagerOwner(msg.sender)
     {
-        require(_feeInBasisPoints <= MAX_FEE, "Fee: can't be more than 20%");
+        require(_feeInBasisPoints <= MAX_FEE, "ModuleBaseWithFee: Error 264");
         if (feeInBasisPoints != _feeInBasisPoints) {
             feeInBasisPoints = _feeInBasisPoints;
             emit FeeChanged(feeInBasisPoints, _feeInBasisPoints);
@@ -138,7 +143,7 @@ contract ModuleBaseWithFee is ModuleBase {
     }
 
     modifier onlyDealManagerOwner(address _sender) {
-        require(_sender == dealManager.owner(), "Fee: not authorized");
+        require(_sender == dealManager.owner(), "ModuleBaseWithFee: Error 221");
         _;
     }
 }
