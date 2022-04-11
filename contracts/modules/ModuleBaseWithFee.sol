@@ -15,10 +15,19 @@ contract ModuleBaseWithFee is ModuleBase {
     // Fee in basis points (100% = 10000)
     uint32 public feeInBasisPoints;
 
+    // Max fee 20%
+    // solhint-disable-next-line var-name-mixedcase
+    uint32 public immutable MAX_FEE = 2000;
+
+    // Percentage precision to calculate the fee
+    // solhint-disable-next-line var-name-mixedcase
+    uint256 public immutable BPS = 10000;
+
     /**
      * @dev                        Constructor
      * @param _dealManager         The address of Dealmanager implementation
      */
+    // solhint-disable-next-line no-empty-blocks
     constructor(address _dealManager) ModuleBase(_dealManager) {}
 
     /**
@@ -44,25 +53,33 @@ contract ModuleBaseWithFee is ModuleBase {
      * @notice              The fee system will be inactive if the feeWallet
      *                      is set to a zero-address
      */
-    function setFeeWallet(address _feeWallet) external {
-        require(msg.sender == dealManager.owner(), "Fee: not authorized");
+    function setFeeWallet(address _feeWallet)
+        external
+        onlyDealManagerOwner(msg.sender)
+    {
+        require(
+            _feeWallet != address(0) && _feeWallet != address(this),
+            "ModuleBaseWithFee: Error 100"
+        );
         if (feeWallet != _feeWallet) {
+            feeWallet = _feeWallet;
             emit FeeWalletChanged(feeWallet, _feeWallet);
         }
-        feeWallet = _feeWallet;
     }
 
     /**
      * @dev                         Sets a new fee
      * @param _feeInBasisPoints     Fee amount in basis points (1% = 100)
      */
-    function setFee(uint32 _feeInBasisPoints) external {
-        require(msg.sender == dealManager.owner(), "Fee: not authorized");
-        require(_feeInBasisPoints <= 2000, "Fee: can't be more than 20%");
+    function setFee(uint32 _feeInBasisPoints)
+        external
+        onlyDealManagerOwner(msg.sender)
+    {
+        require(_feeInBasisPoints <= MAX_FEE, "ModuleBaseWithFee: Error 264");
         if (feeInBasisPoints != _feeInBasisPoints) {
+            feeInBasisPoints = _feeInBasisPoints;
             emit FeeChanged(feeInBasisPoints, _feeInBasisPoints);
         }
-        feeInBasisPoints = _feeInBasisPoints;
     }
 
     /**
@@ -76,7 +93,7 @@ contract ModuleBaseWithFee is ModuleBase {
         returns (uint256)
     {
         if (feeWallet != address(0) && feeInBasisPoints > 0) {
-            uint256 fee = (_amount * feeInBasisPoints) / 10000;
+            uint256 fee = (_amount * feeInBasisPoints) / BPS;
             _transfer(_token, feeWallet, fee);
 
             return _amount - fee;
@@ -117,11 +134,16 @@ contract ModuleBaseWithFee is ModuleBase {
         // need to transfer it here, pay the fee, and then pass it on
         // if that is not the case, we can do the regular transferFrom
         if (_to != address(this)) {
-            _transferFrom(_token, _from, _to, _amount);
+            _transferFrom(_token, _from, address(this), _amount);
             amountAfterFee = _transferWithFee(_token, _to, _amount);
         } else {
             _transferFrom(_token, _from, _to, _amount);
             amountAfterFee = _payFeeAndReturnRemainder(_token, _amount);
         }
+    }
+
+    modifier onlyDealManagerOwner(address _sender) {
+        require(_sender == dealManager.owner(), "ModuleBaseWithFee: Error 221");
+        _;
     }
 }

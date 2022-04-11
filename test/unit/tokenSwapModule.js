@@ -43,7 +43,6 @@ let createSwapParameters, createSwapParametersArray;
 let dealManagerInstance, tokenSwapModuleInstance, tokenInstances;
 let deadline1, deadline2, deadline3;
 
-const MONTH = 60 * 60 * 24 * 31;
 const DAY = 60 * 60 * 24;
 const HOUR = 60 * 60;
 const VESTING_CLIFF1 = HOUR * 2;
@@ -59,6 +58,7 @@ const INVALID_SWAP = 20;
 const METADATA1 = formatBytes32String("Uad8AA2CFPaVdyxa805p");
 const METADATA2 = formatBytes32String("pnthglKd0wFHOK6Bn78C");
 const METADATA3 = formatBytes32String("TqoScXB3Dv79eDjsSvfh");
+const EMPTY_METADATA = formatBytes32String("");
 const METADATAS = [METADATA1, METADATA2, METADATA3];
 
 describe("> Contract: TokenSwapModule", () => {
@@ -109,7 +109,7 @@ describe("> Contract: TokenSwapModule", () => {
 
         await expect(
           tokenSwapModuleInstance.createSwap(...invalidParameters)
-        ).to.be.revertedWith("BASECONTRACT-INVALID-DAO-ADDRESS");
+        ).to.be.revertedWith("DealManager: Error 100");
       });
       it("» should fail on number of DAOs has to be bigger then 1", async () => {
         const invalidParameters = [
@@ -123,7 +123,7 @@ describe("> Contract: TokenSwapModule", () => {
 
         await expect(
           tokenSwapModuleInstance.createSwap(...invalidParameters)
-        ).to.be.revertedWith("Module: at least 2 daos required");
+        ).to.be.revertedWith("TokenSwapModule: Error 204");
       });
       it("» should fail on metadata not unique", async () => {
         await tokenSwapModuleInstance.createSwap(...createSwapParameters);
@@ -140,7 +140,21 @@ describe("> Contract: TokenSwapModule", () => {
 
         await expect(
           tokenSwapModuleInstance.createSwap(...createSwapParameters)
-        ).to.be.revertedWith("Module: metadata already exists");
+        ).to.be.revertedWith("TokenSwapModule: Error 203");
+      });
+      it("» should fail on metadata being empty", async () => {
+        const createSwapParameters1 = [
+          [daosDeal2[0].address, daosDeal2[1].address, daosDeal2[2].address],
+          createSwapParameters[1],
+          createSwapParameters[2],
+          createSwapParameters[3],
+          EMPTY_METADATA,
+          createSwapParameters[5],
+        ];
+
+        await expect(
+          tokenSwapModuleInstance.createSwap(...createSwapParameters1)
+        ).to.be.revertedWith("TokenSwapModule: Error 101");
       });
       it("» should fail on number of tokens is 0", async () => {
         const invalidParameters = [
@@ -154,7 +168,7 @@ describe("> Contract: TokenSwapModule", () => {
 
         await expect(
           tokenSwapModuleInstance.createSwap(...invalidParameters)
-        ).to.be.revertedWith("Module: at least 1 token required");
+        ).to.be.revertedWith("TokenSwapModule: Error 205");
       });
       it("» should fail on input array lengths don't match", async () => {
         const mismatchLengthTokensAndPathFrom = [
@@ -202,19 +216,19 @@ describe("> Contract: TokenSwapModule", () => {
 
         await expect(
           tokenSwapModuleInstance.createSwap(...mismatchLengthTokensAndPathFrom)
-        ).to.be.revertedWith("Module: invalid outer array lengths");
+        ).to.be.revertedWith("TokenSwapModule: Error 102");
 
         await expect(
           tokenSwapModuleInstance.createSwap(...invalidLengthTokensAndPathTo)
-        ).to.be.revertedWith("Module: invalid outer array lengths");
+        ).to.be.revertedWith("TokenSwapModule: Error 102");
 
         await expect(
           tokenSwapModuleInstance.createSwap(...invalidPathFromLength)
-        ).to.be.revertedWith("Module: invalid inner array lengths");
+        ).to.be.revertedWith("TokenSwapModule: Error 102");
 
         await expect(
           tokenSwapModuleInstance.createSwap(...invalidPathToLength)
-        ).to.be.revertedWith("Module: invalid inner array lengths");
+        ).to.be.revertedWith("TokenSwapModule: Error 102");
       });
     });
     describe("# when initializing with valid parameters", () => {
@@ -229,6 +243,10 @@ describe("> Contract: TokenSwapModule", () => {
           .be.empty;
         expect(await dealManagerInstance.daoDepositManager(dao3.address)).to.not
           .be.empty;
+
+        expect(
+          (await tokenSwapModuleInstance.tokenSwaps(SWAP1)).metadata
+        ).to.equal(METADATA1);
       });
       it("» should succeed emitting right metadata event", async () => {
         const tx = await tokenSwapModuleInstance.createSwap(
@@ -328,7 +346,7 @@ describe("> Contract: TokenSwapModule", () => {
       it("» should revert when using an invalid ID", async () => {
         await expect(
           tokenSwapModuleInstance.checkExecutability(INVALID_SWAP)
-        ).to.revertedWith("Module: dealId doesn't exist");
+        ).to.revertedWith("TokenSwapModule: Error 208");
       });
     });
     describe("# return false", () => {
@@ -410,19 +428,19 @@ describe("> Contract: TokenSwapModule", () => {
       it("» should fail on invalid ID", async () => {
         await expect(
           tokenSwapModuleInstance.executeSwap(INVALID_SWAP)
-        ).to.revertedWith("Module: dealId doesn't exist");
+        ).to.revertedWith("TokenSwapModule: Error 208");
       });
       it("» should fail on DepositContracts not funded", async () => {
         await expect(
           tokenSwapModuleInstance.executeSwap(SWAP1)
-        ).to.revertedWith("Module: swap not executable");
+        ).to.revertedWith("TokenSwapModule: Error 265");
       });
       it("» should fail on deadline exeeded", async () => {
         await time.increase(DAY * 10);
 
         await expect(
           tokenSwapModuleInstance.executeSwap(SWAP1)
-        ).to.revertedWith("Module: swap expired");
+        ).to.revertedWith("TokenSwapModule: Error 265");
       });
       it("» should fail on not ACTIVE status", async () => {
         const createNewSwapParameters = initializeParameters(
@@ -451,7 +469,7 @@ describe("> Contract: TokenSwapModule", () => {
         await tokenSwapModuleInstance.executeSwap(SWAP1);
         await expect(
           tokenSwapModuleInstance.executeSwap(SWAP1)
-        ).to.revertedWith("Module: dealId not active");
+        ).to.revertedWith("TokenSwapModule: Error 266");
       });
     });
     describe("# when able to execute", () => {
@@ -778,7 +796,7 @@ describe("> Contract: TokenSwapModule", () => {
       it("» should fail with invalid metadata", async () => {
         await expect(
           tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA2)
-        ).to.revertedWith("Module: metadata does not exist");
+        ).to.revertedWith("TokenSwapModule: Error 207");
       });
     });
     describe("# when able to execute", () => {

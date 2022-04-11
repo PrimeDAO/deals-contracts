@@ -18,7 +18,7 @@ contract DealManager is Ownable {
     address public daoDepositManagerImplementation;
 
     // Address of the ETH wrapping contract
-    address public weth;
+    address public immutable weth;
 
     // Address DAO => address dao deposit manager of the DAO
     mapping(address => address) public daoDepositManager;
@@ -31,6 +31,20 @@ contract DealManager is Ownable {
         address indexed daoDepositManager
     );
 
+    constructor(address _daoDepositManager, address _weth) {
+        require(
+            _daoDepositManager != address(0) &&
+                _daoDepositManager != address(this),
+            "DealManager: Error 100"
+        );
+        require(
+            _weth != address(0) && _weth != address(this),
+            "DealManager: Error 100"
+        );
+        daoDepositManagerImplementation = _daoDepositManager;
+        weth = _weth;
+    }
+
     // Sets a new address for the deposit contract implementation
     function setDaoDepositManagerImplementation(address _newImplementation)
         external
@@ -38,35 +52,22 @@ contract DealManager is Ownable {
     {
         // solhint-disable-next-line reason-string
         require(
-            _newImplementation != address(0),
-            "BASECONTRACT-INVALID-IMPLEMENTATION-ADDRESS"
+            _newImplementation != address(0) &&
+                _newImplementation != address(this),
+            "DealManager: Error 100"
         );
         daoDepositManagerImplementation = _newImplementation;
     }
 
-    // Sets a new address for the weth contract
-    function setWETHAddress(address _newWETH) external onlyOwner {
-        // solhint-disable-next-line reason-string
-        require(_newWETH != address(0), "BASECONTRACT-INVALID-WETH-ADDRESS");
-        weth = _newWETH;
-    }
-
     // Registers a new module
-    function registerModule(address _moduleAddress) external onlyOwner {
-        // solhint-disable-next-line reason-string
+    function activateModule(address _moduleAddress) external onlyOwner {
         require(
-            _moduleAddress != address(0),
-            "BASECONTRACT-INVALID-MODULE-ADDRESS"
+            _moduleAddress != address(0) && _moduleAddress != address(this),
+            "DealManager: Error 100"
         );
-        // solhint-disable-next-line reason-string
-        require(
-            !isModule[_moduleAddress],
-            "BASECONTRACT-MODULE-ALREADY-REGISTERED"
-        );
-        // solhint-disable-next-line reason-string
         require(
             IModuleBase(_moduleAddress).dealManager() == address(this),
-            "BASECONTRACT-MODULE-SETUP-INVALID"
+            "DealManager: Error 260"
         );
 
         isModule[_moduleAddress] = true;
@@ -74,10 +75,9 @@ contract DealManager is Ownable {
 
     // Deactivates a module
     function deactivateModule(address _moduleAddress) external onlyOwner {
-        // solhint-disable-next-line reason-string
         require(
-            _moduleAddress != address(0),
-            "BASECONTRACT-INVALID-MODULE-ADDRESS"
+            _moduleAddress != address(0) && _moduleAddress != address(this),
+            "DealManager: Error 100"
         );
 
         isModule[_moduleAddress] = false;
@@ -85,25 +85,30 @@ contract DealManager is Ownable {
 
     // Creates a deposit contract for a DAO
     function createDaoDepositManager(address _dao) public {
-        require(_dao != address(0), "BASECONTRACT-INVALID-DAO-ADDRESS");
-        // solhint-disable-next-line reason-string
+        require(
+            _dao != address(0) && _dao != address(this),
+            "DealManager: Error 100"
+        );
         require(
             daoDepositManager[_dao] == address(0),
-            "BASECONTRACT-DEPOSIT-CONTRACT-ALREADY-EXISTS"
+            "DealManager: Error 001"
         );
-        // solhint-disable-next-line reason-string
         require(
             daoDepositManagerImplementation != address(0),
-            "BASECONTRACT-DEPOSIT-CONTRACT-IMPLEMENTATION-IS-NOT-SET"
+            "DealManager: Error 261"
         );
         address newContract = Clones.clone(daoDepositManagerImplementation);
         IDaoDepositManager(newContract).initialize(_dao);
+        require(
+            IDaoDepositManager(newContract).dealManager() == address(this),
+            "DealManager: Error 260"
+        );
         daoDepositManager[_dao] = newContract;
         emit DaoDepositManagerCreated(_dao, newContract);
     }
 
     // Returns whether a DAO already has a deposit contract
-    function hasDaoDepositManager(address _dao) public view returns (bool) {
+    function hasDaoDepositManager(address _dao) external view returns (bool) {
         return getDaoDepositManager(_dao) != address(0) ? true : false;
     }
 
@@ -112,7 +117,7 @@ contract DealManager is Ownable {
         return daoDepositManager[_dao];
     }
 
-    function addressIsModule(address _address) public view returns (bool) {
+    function addressIsModule(address _address) external view returns (bool) {
         return isModule[_address];
     }
 }
