@@ -137,7 +137,7 @@ describe("> Contract: DaoDepositManager", () => {
       it("» should fail on invalid DAO address", async () => {
         await expect(
           daoDepositManagerInstance.initialize(ZERO_ADDRESS)
-        ).to.be.revertedWith("D2D-DEPOSIT-INVALID-DAO-ADDRESS");
+        ).to.be.revertedWith("DaoDepositManager: Error 100");
       });
     });
     describe("# When initializing again", () => {
@@ -145,7 +145,7 @@ describe("> Contract: DaoDepositManager", () => {
         await daoDepositManagerInstance.initialize(dao1.address);
         await expect(
           daoDepositManagerInstance.initialize(dao1.address)
-        ).to.be.revertedWith("D2D-DEPOSIT-ALREADY-INITIALIZED");
+        ).to.be.revertedWith("DaoDepositManager: Error 001");
       });
     });
     describe("# When updating the DealManager contract", () => {
@@ -160,7 +160,7 @@ describe("> Contract: DaoDepositManager", () => {
           daoDepositManagerInstance
             .connect(dao2)
             .setDealManagerImplementation(dao2.address)
-        ).to.be.revertedWith("");
+        ).to.be.revertedWith("DaoDepositManager: Error 221");
 
         await expect(await daoDepositManagerInstance.dealManager()).to.equal(
           dao1.address
@@ -205,7 +205,7 @@ describe("> Contract: DaoDepositManager", () => {
         ];
         await expect(
           daoDepositManagerDao1.connect(depositer1).deposit(...depositParam)
-        ).to.revertedWith("D2D-DEPOSIT-INVALID-ETH-VALUE");
+        ).to.revertedWith("DaoDepositManager: 202");
       });
       it("» should fail on token address being ZERO and amount = 0", async () => {
         const depositParam = [
@@ -216,7 +216,7 @@ describe("> Contract: DaoDepositManager", () => {
         ];
         await expect(
           daoDepositManagerDao1.connect(depositer1).deposit(...depositParam)
-        ).to.revertedWith("D2D-DEPOSIT-INVALID-AMOUNT");
+        ).to.revertedWith("DaoDepositManager: Error 101");
       });
       it("» should fail on token not being ZERO and amount = 0", async () => {
         const depositParam = [
@@ -227,7 +227,7 @@ describe("> Contract: DaoDepositManager", () => {
         ];
         await expect(
           daoDepositManagerDao1.connect(depositer1).deposit(...depositParam)
-        ).to.revertedWith("D2D-DEPOSIT-INVALID-AMOUNT");
+        ).to.revertedWith("DaoDepositManager: Error 101");
       });
       it("» should succeed in depositing token", async () => {
         const token = tokenInstances[0];
@@ -337,7 +337,7 @@ describe("> Contract: DaoDepositManager", () => {
           daoDepositManagerDao1
             .connect(depositer1)
             .multipleDeposits(...depositParam)
-        ).to.be.revertedWith("D2D-DEPOSIT-ARRAY-LENGTH-MISMATCH");
+        ).to.be.revertedWith("DaoDepositManager: Error 102");
       });
       it("» should succeed on depositing multiple tokens", async () => {
         const token1 = tokenInstances[0];
@@ -603,29 +603,28 @@ describe("> Contract: DaoDepositManager", () => {
         const params = [tokenSwapModuleInstance.address, SWAP1, SWAP2];
         await expect(
           daoDepositManagerDao1.withdraw(...params)
-        ).to.be.revertedWith("D2D-DEPOSIT-INVALID-DEPOSIT-ID");
+        ).to.be.revertedWith("DaoDepositManager: Error 200");
       });
       it("» should fail on invalid msg.sender", async () => {
         const params = [tokenSwapModuleInstance.address, SWAP1, SWAP1];
         await expect(
           daoDepositManagerDao1.connect(dao4).withdraw(...params)
-        ).to.be.revertedWith("D2D-WITHDRAW-NOT-AUTHORIZED");
+        ).to.be.revertedWith("DaoDepositManager: Error 222");
       });
       it("» should fail on call by dao, but not expired", async () => {
         const params = [tokenSwapModuleInstance.address, SWAP1, SWAP1];
         // Deal has not expired
-        await expect(await tokenSwapModuleInstance.hasDealExpired(SWAP1)).to.be
-          .false;
+        expect(await tokenSwapModuleInstance.hasDealExpired(SWAP1)).to.be.false;
 
         // Called by the dao
         await expect(
           daoDepositManagerDao1.connect(dao1).withdraw(...params)
-        ).to.be.revertedWith("D2D-WITHDRAW-NOT-AUTHORIZED");
+        ).to.be.revertedWith("DaoDepositManager: Error 222");
       });
       it("» should fail on freeAmount not available", async () => {
         const params = [tokenSwapModuleInstance.address, SWAP1, SWAP1];
-        await expect(await tokenSwapModuleInstance.checkExecutability(SWAP1)).to
-          .be.true;
+        expect(await tokenSwapModuleInstance.checkExecutability(SWAP1)).to.be
+          .true;
 
         await expect(tokenSwapModuleInstance.executeSwap(SWAP1))
           .to.emit(tokenSwapModuleInstance, "TokenSwapExecuted")
@@ -633,7 +632,7 @@ describe("> Contract: DaoDepositManager", () => {
 
         await expect(
           daoDepositManagerDao1.connect(depositer1).withdraw(...params)
-        ).to.be.revertedWith("D2D-DEPOSIT-NOT-WITHDRAWABLE");
+        ).to.be.revertedWith("DaoDepositManager: Error 240");
       });
       it("» should succeed on withdrawing tokens", async () => {
         const params = [tokenSwapModuleInstance.address, SWAP1, SWAP1];
@@ -654,7 +653,7 @@ describe("> Contract: DaoDepositManager", () => {
 
         await expect(
           daoDepositManagerDao1.connect(depositer1).withdraw(...params)
-        ).to.be.revertedWith("D2D-DEPOSIT-NOT-WITHDRAWABLE");
+        ).to.be.revertedWith("DaoDepositManager: Error 240");
       });
       it("» should succeed on withdrawing ETH", async () => {
         const token = ZERO_ADDRESS;
@@ -698,7 +697,7 @@ describe("> Contract: DaoDepositManager", () => {
 
         await expect(
           daoDepositManagerDao1.connect(depositer1).withdraw(...params)
-        ).to.be.revertedWith("D2D-DEPOSIT-NOT-WITHDRAWABLE");
+        ).to.be.revertedWith("DaoDepositManager: Error 240");
       });
     });
     describe("# claimVesting ", async () => {

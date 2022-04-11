@@ -40,14 +40,14 @@ describe("> Contract: DealManager", () => {
       const deployArgs = [ZERO_ADDRESS, wethInstance.address];
       const DealManagerFactory = await ethers.getContractFactory("DealManager");
       await expect(DealManagerFactory.deploy(...deployArgs)).to.be.revertedWith(
-        "BASECONTRACT-INVALID-IMPLEMENTATION-ADDRESS"
+        "DealManager: Error 100"
       );
     });
     it("» should fail on weth zero address", async () => {
       const deployArgs = [daoDepositManagerInstance.address, ZERO_ADDRESS];
       const DealManagerFactory = await ethers.getContractFactory("DealManager");
       await expect(DealManagerFactory.deploy(...deployArgs)).to.be.revertedWith(
-        "BASECONTRACT-INVALID-WETH-ADDRESS"
+        "DealManager: Error 100"
       );
     });
   });
@@ -62,7 +62,7 @@ describe("> Contract: DealManager", () => {
     it("» should fail on parsing zero address", async () => {
       await expect(
         dealManagerInstance.setDaoDepositManagerImplementation(ZERO_ADDRESS)
-      ).to.be.revertedWith("BASECONTRACT-INVALID-IMPLEMENTATION-ADDRESS");
+      ).to.be.revertedWith("DealManager: Error 100");
     });
     it("» should succeed on setting DaoDepositManager", async () => {
       await dealManagerInstance.setDaoDepositManagerImplementation(
@@ -84,7 +84,7 @@ describe("> Contract: DealManager", () => {
     it("» should fail on parsing zero address", async () => {
       await expect(
         dealManagerInstance.activateModule(ZERO_ADDRESS)
-      ).to.be.revertedWith("BASECONTRACT-INVALID-MODULE-ADDRESS");
+      ).to.be.revertedWith("DealManager: Error 100");
     });
     it("» should fail on invalid mdule setup", async () => {
       const TokenSwapModuleFactory = await ethers.getContractFactory(
@@ -96,7 +96,7 @@ describe("> Contract: DealManager", () => {
 
       await expect(
         dealManagerInstance.activateModule(tokenswapModuleInstance2.address)
-      ).to.be.revertedWith("BASECONTRACT-MODULE-SETUP-INVALID");
+      ).to.be.revertedWith("DealManager: Error 260");
     });
     it("» should have succeeded on registering the module", async () => {
       expect(
@@ -117,7 +117,7 @@ describe("> Contract: DealManager", () => {
     it("» should fail on parsing zero address", async () => {
       await expect(
         dealManagerInstance.deactivateModule(ZERO_ADDRESS)
-      ).to.be.revertedWith("BASECONTRACT-INVALID-MODULE-ADDRESS");
+      ).to.be.revertedWith("DealManager: Error 100");
     });
     it("» should succeed on rigister module", async () => {
       expect(
@@ -140,7 +140,7 @@ describe("> Contract: DealManager", () => {
     it("» should fail on DAO address is zero", async () => {
       await expect(
         dealManagerInstance.createDaoDepositManager(ZERO_ADDRESS)
-      ).to.be.revertedWith("BASECONTRACT-INVALID-DAO-ADDRESS");
+      ).to.be.revertedWith("DealManager: Error 100");
     });
     it("» should fail on Dao Deposit Manager already exist for DAO", async () => {
       await dealManagerInstance.setDaoDepositManagerImplementation(
@@ -150,7 +150,7 @@ describe("> Contract: DealManager", () => {
 
       await expect(
         dealManagerInstance.createDaoDepositManager(dao1.address)
-      ).to.be.revertedWith("BASECONTRACT-DEPOSIT-CONTRACT-ALREADY-EXISTS");
+      ).to.be.revertedWith("DealManager: Error 001");
     });
     it("» should succeed in creating Dao Deposit Manager", async () => {
       await dealManagerInstance.setDaoDepositManagerImplementation(

@@ -124,7 +124,7 @@ contract("Whole rundown", async (accounts) => {
         web3.utils.toWei("1", "ether"),
         { from: admin }
       ),
-      "D2D-TOKEN-TRANSFER-FROM-FAILED"
+      "DaoDepositManager: Error 241"
     );
 
     await testToken1.approve(
@@ -190,7 +190,7 @@ contract("Whole rundown", async (accounts) => {
       depositContractDAO1.withdraw(tokenSwapInstance.address, 0, [0], {
         from: outsider,
       }),
-      "D2D-WITHDRAW-NOT-AUTHORIZED"
+      "DaoDepositManager: Error 222"
     );
 
     await depositContractDAO1.withdraw(tokenSwapInstance.address, 0, [0], {
@@ -461,7 +461,7 @@ contract("Whole rundown", async (accounts) => {
       depositContractDAO1.withdraw(tokenSwapInstance.address, 0, 0, {
         from: admin,
       }),
-      "D2D-DEPOSIT-NOT-WITHDRAWABLE"
+      "DaoDepositManager: Error 240"
     );
 
     assert.equal(
