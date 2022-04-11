@@ -4,9 +4,9 @@ pragma solidity ^0.8.9;
 import "../ModuleBaseWithFee.sol";
 
 /**
- * @title PrimeDeals Token Swap Module
- * @notice   Smart contract to handle token swap
- *        interactions for PrimeDeals
+ * @title                   PrimeDeals Token Swap Module
+ * @notice                  Smart contract to handle token swap
+                            interactions for PrimeDeals
  */
 contract TokenSwapModule is ModuleBaseWithFee {
     /// Array of token swaps where the index == dealId
@@ -81,10 +81,10 @@ contract TokenSwapModule is ModuleBaseWithFee {
     );
 
     /**
-     * @notice               This event is emitted when a token swap gets executed
-     * @param module         Address of this module
-     * @param dealId         Deal id for the executed token swap
-     * @param metadata       Unique ID that is generated throught the Prime Deals frontend
+     * @notice              This event is emitted when a token swap is executed
+     * @param module        Address of this module
+     * @param dealId        Deal id for the executed token swap
+     * @param metadata      Unique ID that is generated throught the Prime Deals frontend
      */
     event TokenSwapExecuted(
         address indexed module,
@@ -362,8 +362,9 @@ contract TokenSwapModule is ModuleBaseWithFee {
     }
 
     /**
-     * @notice                   Returns the TokenSwap struct associated with the metadata
-     * @param _metadata       Unique ID that is generated throught the Prime Deals frontend
+     * @notice              Returns the TokenSwap struct associated with the metadata
+     * @param _metadata     Unique ID that is generated throught the Prime Deals frontend
+     * @return swap         Token swap struct associated with the metadata
      */
     function getTokenswapFromMetadata(bytes32 _metadata)
         public
@@ -379,6 +380,11 @@ contract TokenSwapModule is ModuleBaseWithFee {
         return tokenSwaps[metadataToDealId[_metadata]];
     }
 
+    /**
+     * @notice              Checks if the deal has been expired
+     * @param _dealId       The dealId of the action (position in the array)
+     * @return bool         A bool flag indiciating whether token swap has expired
+     */
     function hasDealExpired(uint32 _dealId)
         public
         view
@@ -391,6 +397,11 @@ contract TokenSwapModule is ModuleBaseWithFee {
             tokenSwaps[_dealId].deadline < uint32(block.timestamp);
     }
 
+    /**
+     * @notice              Checks if the given metadata is Unique, and not already used
+     * @param _metadata     Unique ID that is generated throught the Prime Deals frontend
+     * @return bool         A bool flag indiciating whether the metadata is unique
+     */
     function _metadataDoesNotExist(bytes32 _metadata)
         internal
         view
@@ -400,11 +411,19 @@ contract TokenSwapModule is ModuleBaseWithFee {
         return (dealId == 0 && tokenSwaps[dealId].metadata != _metadata);
     }
 
+    /**
+     * @notice              Modifier that validates if the given deal ID is valid
+     * @param _dealId       The dealId of the action (position in the array)
+     */
     modifier validDealId(uint32 _dealId) {
         require(_dealId < tokenSwaps.length, "TokenSwapModule: Error 207");
         _;
     }
 
+    /**
+     * @notice              Modifier that validates if token swap status is ACTIVE
+     * @param _dealId       The dealId of the action (position in the array)
+     */
     modifier activeStatus(uint32 _dealId) {
         require(
             tokenSwaps[_dealId].status == Status.ACTIVE,
