@@ -51,7 +51,7 @@ contract DaoDepositManager {
         address dealModule;
         /// The ID for a specific deal, that is stored in the module
         uint32 dealId;
-        /// The address of the ERC20 token or ETH (ZERO address), that is vested
+        /// The address of the ERC20 token or ETH (ZERO address)
         address token;
         /// The total amount being vested
         uint256 totalVested;
@@ -73,8 +73,7 @@ contract DaoDepositManager {
                                 deposit is made
      * @param depositor         The address of the depositor
      * @param depositId         The ID of the deposit action (position in array)
-     * @param token             The address of the ERC20 token or ETH (ZERO address), that is
-                                deposited
+     * @param token             The address of the ERC20 token or ETH (ZERO address)deposited
      * @param amount            The amount that is deposited
      */
     event Deposited(
@@ -93,8 +92,7 @@ contract DaoDepositManager {
                                 withdraw is made
      * @param depositor         The address of the depositor of the funds that are withdrawn
      * @param depositId         The ID of the deposit action (position in array)
-     * @param token             The address of the ERC20 token or ETH (ZERO address), that is
-                                withdrawn
+     * @param token             The address of the ERC20 token or ETH (ZERO address) withdrawn
      * @param amount            The amount that is withdrawn
      */
     event Withdrawn(
@@ -114,8 +112,7 @@ contract DaoDepositManager {
      * @param vestingStart      The Unix timestamp of when the vesting has been initiated
      * @param vestingCliff      The vesting cliff, after which tokens can be claimed
      * @param vestingDuration   The duration the tokens are vested, in seconds
-     * @param token             The address of the ERC20 token or ETH (ZERO address), for which
-                                the vesting starts
+     * @param token             The address of the ERC20 token or ETH (ZERO address)
      * @param amount            The amount that is being vested
      */
     event VestingStarted(
@@ -128,12 +125,12 @@ contract DaoDepositManager {
         uint256 amount
     );
     /**
-     * @notice              This event is emitted when a vesting is started
+     * @notice              This event is emitted when a vesting is claimed
      * @param dealModule    The module address of which the dealId is part off
      * @param dealId        A specific deal, that is part of the dealModule, for which a
                             vesting is claimed
      * @param dao           The address of the DAO, to which the claimed vesting is sent
-     * @param token         The address of the ERC20 token or ETH (ZERO address), that is claimed
+     * @param token         The address of the ERC20 token or ETH (ZERO address)
      * @param claimed       The amount that is being claimed
      */
     event VestingClaimed(
@@ -180,7 +177,7 @@ contract DaoDepositManager {
      * @dev                 Note: if ETH is deposited, the token address should be ZERO (0)
      * @param _module       The address of the module for which is being deposited
      * @param _dealId       The dealId to which this deposit is part of
-     * @param _token        The address of the ERC20 token or ETH (ZERO address), that is deposited
+     * @param _token        The address of the ERC20 token or ETH (ZERO address)
      * @param _amount       The amount that is deposited
      */
     function deposit(
@@ -222,8 +219,7 @@ contract DaoDepositManager {
                             deposit, meaning only 1  of the token addresses can be a ZERO address     
      * @param _module       The address of the module for which is being deposited
      * @param _dealId       The dealId to which the deposits are part of
-     * @param _tokens       Array of addresses of the ERC20 tokens or ETH (ZERO address),
-                            that are deposited
+     * @param _tokens       Array of addresses of the ERC20 tokens or ETH (ZERO address)
      * @param _amounts      Array of amounts that are deposited
      */
     function multipleDeposits(
@@ -249,8 +245,7 @@ contract DaoDepositManager {
                             should be ZERO (0)
      * @param _module       The address of the module for which is being deposited
      * @param _dealId       The dealId to which this deposit is part of
-     * @param _token        The address of the ERC20 token or ETH (ZERO address),
-                            that is registered
+     * @param _token        The address of the ERC20 token or ETH (ZERO address)
      */
     function registerDeposit(
         address _module,
@@ -289,7 +284,7 @@ contract DaoDepositManager {
      * @param _module       The address of the module for which is being deposited
      * @param _dealId       The dealId to which this deposit is part of
      * @param _tokens       An array of ERC20 token address and/or
-                            ZERO address, symbolizing an ETH deposit, that should be registered
+                            ZERO address, symbolizing an ETH deposit
      */
     function registerDeposits(
         address _module,
@@ -365,8 +360,7 @@ contract DaoDepositManager {
     /**
      * @notice              Sends the token and amount associated with the dealId into the Deal
                             module
-     * @param _token        The address of the ERC20 token or ETH (ZERO address), that is sent
-                            to the module
+     * @param _token        The address of the ERC20 token or ETH (ZERO address)
      * @param _amount       The amount that is sent to the module
      */
     function sendToModule(
@@ -403,8 +397,7 @@ contract DaoDepositManager {
     /**
      * @notice                  Starts the vesting periode for a given token plus amount,
                                 associated to a dealId
-     * @param _token            The address of the ERC20 token or ETH (ZERO address), for which
-                                the vesting starts
+     * @param _token            The address of the ERC20 token or ETH (ZERO address)
      * @param _amount           The total amount being vested
      * @param _vestingCliff     The duration after which tokens can be claimed starting from the
                                 vesting start, in seconds
@@ -479,8 +472,7 @@ contract DaoDepositManager {
                             part of this DaoDepositManager
      * @dev                 This function can be called to retrieve the claimable amounts,
                             to show in the frontend for example
-     * @return tokens       Array of addresses of the claimed tokens, in the same order as the
-                            amounts array
+     * @return tokens       Array of addresses of the claimed tokens
      * @return amounts      Array of amounts claimed, in the same order as the tokens array
      */
     function claimVestings()
@@ -611,8 +603,7 @@ contract DaoDepositManager {
 
     /**
      * @notice              Verifies if the DaoDepositContract holds the balance as expected
-     * @param _token        Address of the ERC20 token or ETH (ZERO address), for which
-                            to verify the balance
+     * @param _token        Address of the ERC20 token or ETH (ZERO address)
      */
     function verifyBalance(address _token) public view {
         require(
@@ -713,8 +704,7 @@ contract DaoDepositManager {
      * @notice              Returns the stored amount of an ERC20 token or ETH, for a given deal
      * @param _module       The address of the module to which the dealId is part of
      * @param _dealId       The dealId that relates to the ERC20 token or ETH balance
-     * @param _token        The address of the ERC20 token or ETH (ZERO address), for which the
-                            balance is retrieved
+     * @param _token        The address of the ERC20 token or ETH (ZERO address)
      * @return uint256      The balance amount of the ERC20 token or ETH, specific to the dealId
      */
     function getAvailableDealBalance(
@@ -748,8 +738,7 @@ contract DaoDepositManager {
                             for withdrawable amounts
      * @param _depositor    The address of the depositor that is able to withdraw,
                             deposited amounts
-     * @param _token        The address of the ERC20 token or ETH (ZERO address),
-                            for which the withdrawable amount is returned
+     * @param _token        The address of the ERC20 token or ETH (ZERO address)
      * @return uint256      The available amount that can be withdrawn by the depositor
      */
     function getWithdrawableAmountOfDepositor(
@@ -774,8 +763,7 @@ contract DaoDepositManager {
     /**
      * @notice              Returns the balance the DaoDepositContract holds, for a given
                             ERC20 token or ETH (ZERO address)
-     * @param _token        The address of the ERC20 token or ETH (ZERO address),
-                            for which the balance is returned
+     * @param _token        The address of the ERC20 token or ETH (ZERO address)
      * @return uint256      The balance the contracts holds for the _token parameter
      */
     function getBalance(address _token) public view returns (uint256) {
@@ -788,8 +776,7 @@ contract DaoDepositManager {
     /**
      * @notice              Returns the vested balance the DaoDepositContract holds,
                             for a given ERC20 token or ETH (ZERO address)
-     * @param _token        The address of the ERC20 token or ETH (ZERO address),
-                            for which the vested balance is returned
+     * @param _token        The address of the ERC20 token or ETH (ZERO address)
      * @return uint256      The vested balance the contracts holds for the _token parameter
      */
     function getVestedBalance(address _token) external view returns (uint256) {
@@ -798,8 +785,7 @@ contract DaoDepositManager {
 
     /**
      * @notice              Transfers the ERC20 token or ETH (ZERO address), to the _to address
-     * @param _token        The address of the ERC20 token or ETH (ZERO address),
-                            which is to be transferred to the _to address
+     * @param _token        The address of the ERC20 token or ETH (ZERO address)
      * @param _to           Receiver address of the _amount of _token
      * @param _amount       The amount to be transferred to the _to address
      */
@@ -824,8 +810,7 @@ contract DaoDepositManager {
     /**
      * @notice              Transfers the ERC20 token or ETH (ZERO address),
                             from the _from address to the _to address
-     * @param _token        The address of the ERC20 token or ETH (ZERO address),
-                            which is to be transferred
+     * @param _token        The address of the ERC20 token or ETH (ZERO address)
      * @param _from         The address on behalve of which the contract transfers the _token
      * @param _to           Receiver address of the _amount of _token
      * @param _amount       The amount to be transferred to the _to address
