@@ -116,8 +116,7 @@ contract ModuleBaseWithFee is ModuleBase {
     }
 
     /**
-     * @notice                  Transfers a token amount from someone with 
-                                automated fee payment
+     * @notice                  Transfers a token amount from someone with automated fee payment
      * @param _token            Token in which the transfer happens
      * @param _from             Source of the transfer
      * @param _to               Target of the transfer

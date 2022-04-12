@@ -229,8 +229,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
     }
 
     /**
-      * @notice             Checks whether a token swap action can be executed
-                            (which is the case if all DAOs have deposited)
+      * @notice             Checks whether a token swap action can be executed, which is the case
+                            if all DAOs have deposited
       * @param _dealId      The dealId of the action (position in the array)
       * @return bool        A bool flag indiciating whether the action can be executed
     */
@@ -308,10 +308,9 @@ contract TokenSwapModule is ModuleBaseWithFee {
     }
 
     /**
-      * @notice             Distributes the tokens based on the supplied
-                            information to the DAOs or their vesting contracts
-      * @param _ts          TokenSwap object containing all the information
-                            of the action
+      * @notice             Distributes the tokens based on the supplied information to the DAOs
+                            or their vesting contracts
+      * @param _ts          TokenSwap object containing all the information of the action
       * @param _dealId      The dealId of the action (position in the array)
       * @return amountsOut  The two min values for the token amounts _ts
     */
