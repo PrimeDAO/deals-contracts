@@ -21,14 +21,6 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
     args: [daoDepositManagerInstance.address, WETHAddress],
     log: true,
   });
-
-  const dealManagerInstance = await ethers.getContract("DealManager");
-
-  await dealManagerInstance.setDaoDepositManagerImplementation(
-    daoDepositManagerInstance.address
-  );
-
-  await dealManagerInstance.setWETHAddress(WETHAddress);
 };
 
 module.exports = deployFunction;

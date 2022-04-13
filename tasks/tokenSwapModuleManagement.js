@@ -81,36 +81,3 @@ task("createTokenSwap", "creates a Token Swap Deal")
 
     console.log("Deal creation has been succesfull");
   });
-
-task(
-  "registerNewModule",
-  "will register a new module in the DealManager contract "
-)
-  .addParam(
-    "address",
-    "address of the new module to be registered",
-    undefined,
-    types.string
-  )
-  .setAction(async ({ address }, { ethers }) => {
-    const dealMangerInstance = await ethers.getContract("DealManager");
-    await dealMangerInstance.activateModule(address);
-    console.log(
-      `Module with address ${address} has been successfully registered`
-    );
-  });
-
-task("deactivateModule", "will deactive a module in the DealManager contract ")
-  .addParam(
-    "address",
-    "address of the module to be deactived",
-    undefined,
-    types.string
-  )
-  .setAction(async ({ address }, { ethers }) => {
-    const dealMangerInstance = await ethers.getContract("DealManager");
-    await dealMangerInstance.deactivateModule(address);
-    console.log(
-      `Module with address ${address} has been successfully deactivated`
-    );
-  });
