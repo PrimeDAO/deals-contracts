@@ -16,9 +16,8 @@
 - `203` : `Invalid metadata, it already exists`
 - `204` : `Invalid amount of DAOs, at least 2 are required`
 - `205` : `Invalid amount of tokens, at least 1 is required`
-- `206` : `Deadline cannot be smaller than current time`
-- `207` : `Invalid metadata`
-- `208` : `Invalid deal ID`
+- `206` : `Invalid metadata`
+- `207` : `Invalid deal ID`
  ### Permissions (220 - 239)
 - `220` : `Can only be called by a Deals module contract`
 - `221` : `Can only be called by the DealManager contract`

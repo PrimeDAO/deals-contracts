@@ -91,7 +91,7 @@ interface IDaoDepositManager {
         view
         returns (uint256);
 
-    function getWithdrawableAmountOfUser(
+    function getWithdrawableAmountOfDepositor(
         address _dealModule,
         uint32 _dealId,
         address _user,
