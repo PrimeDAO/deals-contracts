@@ -237,7 +237,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
     function executeLiquidityAction(uint32 _dealId)
         external
         validId(_dealId)
-        notExecuted(_dealId)
+        isNotExecuted(_dealId)
     {
         LiquidityAction memory la = liquidityActions[_dealId];
 
@@ -398,7 +398,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         _;
     }
 
-    modifier notExecuted(uint32 _dealId) {
+    modifier isNotExecuted(uint32 _dealId) {
         require(
             !liquidityActions[_dealId].isExecuted,
             "Module: id has been executed"

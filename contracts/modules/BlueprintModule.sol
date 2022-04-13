@@ -91,7 +91,11 @@ contract BlueprintModule is ModuleBase {
         return true;
     }
 
-    function executeAction(uint256 _id) external validId(_id) notExecuted(_id) {
+    function executeAction(uint256 _id)
+        external
+        validId(_id)
+        isNotExecuted(_id)
+    {
         Blueprint memory blueprint = blueprints[_id];
 
         require(
@@ -109,7 +113,7 @@ contract BlueprintModule is ModuleBase {
         _;
     }
 
-    modifier notExecuted(uint256 _id) {
+    modifier isNotExecuted(uint256 _id) {
         require(!blueprints[_id].isExecuted, "Module: has been executed");
         _;
     }

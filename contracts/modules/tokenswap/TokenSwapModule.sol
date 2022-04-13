@@ -274,7 +274,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
     function executeSwap(uint32 _dealId)
         external
         validDealId(_dealId)
-        notExecuted(_dealId)
+        isNotExecuted(_dealId)
     {
         TokenSwap storage ts = tokenSwaps[_dealId];
 
@@ -419,7 +419,11 @@ contract TokenSwapModule is ModuleBaseWithFee {
         _;
     }
 
-    modifier notExecuted(uint32 _dealId) {
+    /**
+     * @notice              Modifier that validates if token swap has not been executed
+     * @param _dealId       The dealId of the action (position in the array)
+     */
+    modifier isNotExecuted(uint32 _dealId) {
         require(!tokenSwaps[_dealId].isExecuted, "TokenSwapModule: Error 266");
         _;
     }

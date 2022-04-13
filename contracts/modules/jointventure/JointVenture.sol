@@ -227,7 +227,7 @@ contract JointVentureModule is ModuleBase {
     function executeJointVentureAction(uint32 _dealId)
         external
         validId(_dealId)
-        notExecuted(_dealId)
+        isNotExecuted(_dealId)
     {
         JointVenture memory jv = jointVentures[_dealId];
 
@@ -313,7 +313,7 @@ contract JointVentureModule is ModuleBase {
         _;
     }
 
-    modifier notExecuted(uint32 _dealId) {
+    modifier isNotExecuted(uint32 _dealId) {
         require(
             !jointVentures[_dealId].isExecuted,
             "Module: id has been executed"
