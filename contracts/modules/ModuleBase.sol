@@ -18,7 +18,7 @@ contract ModuleBase {
      * @notice              Struct for managing the status of a deal
      * NULL                 Uninitialized deal
      * ACTIVE               Deal has been created and is ready to be funded
-     * CANCELLED            Deal has been canceld and is no longer valid
+     * CANCELLED            Deal has been canceled and is no longer valid
      * DONE                 Deal has been executed
      */
     enum Status {
