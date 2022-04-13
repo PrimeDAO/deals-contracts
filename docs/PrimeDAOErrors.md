@@ -36,6 +36,6 @@
 - `263` : `Function call only available for ERC20 tokens`
 - `264` : `Fee cannot be more then 20%`
 - `265` : `Swap is not executable`
-- `266` : `Deal status is not ACTIVE`
+- `266` : `Deal has already been executed`
 ## Launch (300 - 399)
 

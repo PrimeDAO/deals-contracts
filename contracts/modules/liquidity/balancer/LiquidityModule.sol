@@ -34,7 +34,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         // unix timestamp of the execution
         uint32 executionDate;
         // status of the deal
-        Status status;
+        bool isExecuted;
     }
 
     // pathFrom:
@@ -129,7 +129,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
             _maxDiff,
             _deadline,
             0,
-            Status.ACTIVE
+            false
         );
         liquidityActions.push(la);
         uint32 dealId = uint32(liquidityActions.length - 1);
@@ -204,7 +204,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         returns (bool)
     {
         LiquidityAction memory la = liquidityActions[_dealId];
-        if (la.status != Status.ACTIVE) {
+        if (la.isExecuted) {
             return false;
         }
 
@@ -237,7 +237,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
     function executeLiquidityAction(uint32 _dealId)
         external
         validId(_dealId)
-        activeStatus(_dealId)
+        isNotExecuted(_dealId)
     {
         LiquidityAction memory la = liquidityActions[_dealId];
 
@@ -282,7 +282,7 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
 
         // TODO: add logic for balancer v2
 
-        la.status = Status.DONE;
+        la.isExecuted = true;
         la.executionDate = uint32(block.timestamp);
         emit LiquidityActionExecuted(_dealId);
     }
@@ -398,10 +398,10 @@ contract LiquidityModule_Balancer is ModuleBaseWithFee {
         _;
     }
 
-    modifier activeStatus(uint32 _dealId) {
+    modifier isNotExecuted(uint32 _dealId) {
         require(
-            liquidityActions[_dealId].status == Status.ACTIVE,
-            "Module: id not active"
+            !liquidityActions[_dealId].isExecuted,
+            "Module: id has been executed"
         );
         _;
     }

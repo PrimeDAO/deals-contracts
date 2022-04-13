@@ -51,8 +51,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint32 executionDate;
         /// Hash of the deal information.
         bytes32 metadata;
-        /// Status of the deal
-        Status status;
+        // boolean to check if the deal has been executed
+        bool isExecuted;
     }
 
     /**
@@ -159,7 +159,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
             uint32(block.timestamp) + _deadline,
             0,
             _metadata,
-            Status.ACTIVE
+            false
         );
         tokenSwaps.push(ts);
 
@@ -274,7 +274,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
     function executeSwap(uint32 _dealId)
         external
         validDealId(_dealId)
-        activeStatus(_dealId)
+        isNotExecuted(_dealId)
     {
         TokenSwap storage ts = tokenSwaps[_dealId];
 
@@ -301,7 +301,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
             );
         }
 
-        ts.status = Status.DONE;
+        ts.isExecuted = true;
         // solhint-disable-next-line not-rely-on-time
         ts.executionDate = uint32(block.timestamp);
         emit TokenSwapExecuted(address(this), _dealId, ts.metadata);
@@ -391,7 +391,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         returns (bool)
     {
         return
-            tokenSwaps[_dealId].status != Status.ACTIVE ||
+            tokenSwaps[_dealId].isExecuted ||
             // solhint-disable-next-line not-rely-on-time
             tokenSwaps[_dealId].deadline < uint32(block.timestamp);
     }
@@ -420,14 +420,11 @@ contract TokenSwapModule is ModuleBaseWithFee {
     }
 
     /**
-     * @notice              Modifier that validates if token swap status is ACTIVE
+     * @notice              Modifier that validates if token swap has not been executed
      * @param _dealId       The dealId of the action (position in the array)
      */
-    modifier activeStatus(uint32 _dealId) {
-        require(
-            tokenSwaps[_dealId].status == Status.ACTIVE,
-            "TokenSwapModule: Error 266"
-        );
+    modifier isNotExecuted(uint32 _dealId) {
+        require(!tokenSwaps[_dealId].isExecuted, "TokenSwapModule: Error 266");
         _;
     }
 

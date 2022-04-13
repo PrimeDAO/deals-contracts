@@ -382,7 +382,7 @@ describe("> Contract: TokenSwapModule", () => {
           await tokenSwapModuleInstance.checkExecutability(SWAP1)
         ).to.equal(false);
       });
-      it("» should be false when status not ACTIVE", async () => {
+      it("» should be false when the deal has already been executed", async () => {
         const createNewSwapParameters = initializeParameters(
           [dao1.address, dao2.address, dao3.address],
           [
@@ -456,7 +456,7 @@ describe("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.executeSwap(SWAP1)
         ).to.revertedWith("TokenSwapModule: Error 265");
       });
-      it("» should fail on not ACTIVE status", async () => {
+      it("» should fail on the deal already been executed", async () => {
         const createNewSwapParameters = initializeParameters(
           [dao1.address, dao2.address, dao3.address],
           [
@@ -517,6 +517,10 @@ describe("> Contract: TokenSwapModule", () => {
         await expect(tokenSwapModuleInstance.executeSwap(SWAP1))
           .to.emit(tokenSwapModuleInstance, "TokenSwapExecuted")
           .withArgs(tokenSwapModuleInstance.address, SWAP1, METADATA1);
+
+        const tokenSwap1 =
+          await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA1);
+        expect(tokenSwap1.isExecuted).to.equal(true);
 
         // Balance after swap
 
@@ -837,7 +841,7 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParametersArray[0][5] + currentTime,
           delta
         );
-        expect(tokenSwap1.status).to.equal(1);
+        expect(tokenSwap1.isExecuted).to.equal(false);
       });
       it("» should succeed with valid metadata2", async () => {
         const currentTime = (await time.latest()).toNumber();
@@ -852,7 +856,7 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParametersArray[1][5] + currentTime,
           delta
         );
-        expect(tokenSwap2.status).to.equal(1);
+        expect(tokenSwap2.isExecuted).to.equal(false);
       });
       it("» should succeed with valid metadata3", async () => {
         const currentTime = (await time.latest()).toNumber();
@@ -867,7 +871,7 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParametersArray[2][5] + currentTime,
           delta
         );
-        expect(tokenSwap3.status).to.equal(1);
+        expect(tokenSwap3.isExecuted).to.equal(false);
       });
     });
   });

@@ -15,20 +15,6 @@ contract ModuleBase {
     IDealManager public immutable dealManager;
 
     /**
-     * @notice              Struct for managing the status of a deal
-     * NULL                 Uninitialized deal
-     * ACTIVE               Deal has been created and is ready to be funded
-     * CANCELLED            Deal has been canceled and is no longer valid
-     * DONE                 Deal has been executed
-     */
-    enum Status {
-        NULL,
-        ACTIVE,
-        CANCELLED,
-        DONE
-    }
-
-    /**
      * @notice              Constructor
      * @param _dealManager  The address of DealManager implementation
      */
