@@ -124,6 +124,7 @@ contract DaoDepositManager {
         address token,
         uint256 amount
     );
+
     /**
      * @notice              This event is emitted when a vesting is claimed
      * @param dealModule    The module address of which the dealId is part off
