@@ -25,6 +25,7 @@ if (PK) {
 }
 
 require("./tasks/tokenSwapModuleManagement");
+require("./tasks/dealManagerManagement");
 
 module.exports = {
   paths: {
