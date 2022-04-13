@@ -13,7 +13,7 @@ contract BlueprintModule is ModuleBase {
         address value2;
         string value3;
         uint256 executionDate;
-        Status status;
+        bool isExecuted;
     }
 
     event ActionCreated(
@@ -54,7 +54,7 @@ contract BlueprintModule is ModuleBase {
             _value2,
             _value3,
             0,
-            Status.ACTIVE
+            false
         );
         blueprints.push(newBlueprint);
         uint32 id = uint32(blueprints.length - 1);
@@ -84,18 +84,14 @@ contract BlueprintModule is ModuleBase {
         returns (bool)
     {
         Blueprint storage blueprint = blueprints[_id];
-        if (blueprint.status != Status.ACTIVE) {
+        if (blueprint.isExecuted) {
             return false;
         }
 
         return true;
     }
 
-    function executeAction(uint256 _id)
-        external
-        validId(_id)
-        activeStatus(_id)
-    {
+    function executeAction(uint256 _id) external validId(_id) notExecuted(_id) {
         Blueprint memory blueprint = blueprints[_id];
 
         require(
@@ -103,7 +99,7 @@ contract BlueprintModule is ModuleBase {
             "Module: execution conditions not met"
         );
 
-        blueprint.status = Status.DONE;
+        blueprint.isExecuted = true;
         blueprint.executionDate = block.timestamp;
         emit ActionExecuted(_id);
     }
@@ -113,11 +109,8 @@ contract BlueprintModule is ModuleBase {
         _;
     }
 
-    modifier activeStatus(uint256 _id) {
-        require(
-            blueprints[_id].status == Status.ACTIVE,
-            "Module: id not active"
-        );
+    modifier notExecuted(uint256 _id) {
+        require(!blueprints[_id].isExecuted, "Module: has been executed");
         _;
     }
 }

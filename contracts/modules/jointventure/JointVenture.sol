@@ -34,7 +34,7 @@ contract JointVentureModule is ModuleBase {
         // unix timestamp of the execution
         uint32 executionDate;
         // status of the deal
-        Status status;
+        bool isExecuted;
     }
 
     // pathFrom:
@@ -118,7 +118,7 @@ contract JointVentureModule is ModuleBase {
             _pathFrom,
             _deadline,
             0,
-            Status.ACTIVE
+            false
         );
         jointVentures.push(jv);
         uint32 dealId = uint32(jointVentures.length - 1);
@@ -190,7 +190,7 @@ contract JointVentureModule is ModuleBase {
     {
         JointVenture storage jv = jointVentures[_dealId];
 
-        if (jv.status != Status.ACTIVE) {
+        if (jv.isExecuted) {
             return false;
         }
 
@@ -227,7 +227,7 @@ contract JointVentureModule is ModuleBase {
     function executeJointVentureAction(uint32 _dealId)
         external
         validId(_dealId)
-        activeStatus(_dealId)
+        notExecuted(_dealId)
     {
         JointVenture memory jv = jointVentures[_dealId];
 
@@ -247,7 +247,7 @@ contract JointVentureModule is ModuleBase {
         // send the collected funds to thew new safe
         _sendFundsToSafe(safe, jv.tokens, tokenAmountsIn);
 
-        jv.status = Status.DONE;
+        jv.isExecuted = true;
         jv.executionDate = uint32(block.timestamp);
         emit JointVentureActionExecuted(_dealId);
     }
@@ -313,10 +313,10 @@ contract JointVentureModule is ModuleBase {
         _;
     }
 
-    modifier activeStatus(uint32 _dealId) {
+    modifier notExecuted(uint32 _dealId) {
         require(
-            jointVentures[_dealId].status == Status.ACTIVE,
-            "Module: id not active"
+            !jointVentures[_dealId].isExecuted,
+            "Module: id has been executed"
         );
         _;
     }

@@ -36,7 +36,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         // unix timestamp of the execution
         uint32 executionDate;
         // status of the deal
-        Status status;
+        bool isExecuted;
     }
 
     // pathFrom:
@@ -132,7 +132,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
             _maxDiff,
             _deadline,
             0,
-            Status.ACTIVE
+            false
         );
         liquidityActions.push(la);
 
@@ -208,7 +208,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         returns (bool)
     {
         LiquidityAction memory la = liquidityActions[_dealId];
-        if (la.status != Status.ACTIVE) {
+        if (la.isExecuted) {
             return false;
         }
 
@@ -244,7 +244,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
     function executeLiquidityAction(uint32 _dealId)
         external
         validId(_dealId)
-        activeStatus(_dealId)
+        notExecuted(_dealId)
     {
         LiquidityAction memory la = liquidityActions[_dealId];
 
@@ -313,7 +313,7 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
             tokenAmountsIn
         );
 
-        la.status = Status.DONE;
+        la.isExecuted = true;
         la.executionDate = uint32(block.timestamp);
         emit LiquidityActionExecuted(_dealId);
     }
@@ -494,10 +494,10 @@ contract LiquidityModule_Uniswap is ModuleBaseWithFee {
         _;
     }
 
-    modifier activeStatus(uint32 _dealId) {
+    modifier notExecuted(uint32 _dealId) {
         require(
-            liquidityActions[_dealId].status == Status.ACTIVE,
-            "Module: id not active"
+            !liquidityActions[_dealId].isExecuted,
+            "Module: id has been executed"
         );
         _;
     }

@@ -53,8 +53,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint32 executionDate;
         // hash of the deal information.
         bytes32 metadata;
-        // status of the deal
-        Status status;
+        // boolean to check if the deal has been executed
+        bool isExecuted;
     }
 
     event TokenSwapCreated(
@@ -143,7 +143,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
             _deadline,
             0,
             _metadata,
-            Status.ACTIVE
+            false
         );
         tokenSwaps.push(ts);
 
@@ -258,7 +258,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
     function executeSwap(uint32 _dealId)
         external
         validDealId(_dealId)
-        activeStatus(_dealId)
+        notExecuted(_dealId)
     {
         TokenSwap storage ts = tokenSwaps[_dealId];
 
@@ -285,7 +285,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
             );
         }
 
-        ts.status = Status.DONE;
+        ts.isExecuted = true;
         // solhint-disable-next-line not-rely-on-time
         ts.executionDate = uint32(block.timestamp);
         emit TokenSwapExecuted(address(this), _dealId, ts.metadata);
@@ -366,7 +366,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         returns (bool)
     {
         return
-            tokenSwaps[_dealId].status != Status.ACTIVE ||
+            tokenSwaps[_dealId].isExecuted ||
             // solhint-disable-next-line not-rely-on-time
             tokenSwaps[_dealId].deadline < uint32(block.timestamp);
     }
@@ -385,11 +385,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
         _;
     }
 
-    modifier activeStatus(uint32 _dealId) {
-        require(
-            tokenSwaps[_dealId].status == Status.ACTIVE,
-            "TokenSwapModule: Error 266"
-        );
+    modifier notExecuted(uint32 _dealId) {
+        require(!tokenSwaps[_dealId].isExecuted, "TokenSwapModule: Error 266");
         _;
     }
 
