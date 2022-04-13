@@ -4,17 +4,15 @@ pragma solidity ^0.8.9;
 import "./ModuleBase.sol";
 
 /**
- * @title PrimeDeals Module Base Fee Extension
- * @dev   Smart contract to extend the module
-          base with a fee mechanim
+ * @title                   PrimeDeals Module Base Fee Extension
+ * @notice                  Smart contract to extend the module
+                            base with a fee mechanim
  */
 contract ModuleBaseWithFee is ModuleBase {
-    // Wallet that is receiving the fees
+    /// Wallet that is receiving the fees
     address public feeWallet;
-
-    // Fee in basis points (100% = 10000)
+    /// Fee in basis points (100% = 10000)
     uint32 public feeInBasisPoints;
-
     // Max fee 20%
     // solhint-disable-next-line var-name-mixedcase
     uint32 public immutable MAX_FEE = 2000;
@@ -24,16 +22,16 @@ contract ModuleBaseWithFee is ModuleBase {
     uint256 public immutable BPS = 10000;
 
     /**
-     * @dev                        Constructor
-     * @param _dealManager         The address of Dealmanager implementation
+     * @notice              Constructor
+     * @param _dealManager  The address of Dealmanager implementation
      */
     // solhint-disable-next-line no-empty-blocks
     constructor(address _dealManager) ModuleBase(_dealManager) {}
 
     /**
-     * @notice                  This event is emitted when the fee wallet address is updated
-     * @param oldFeeWallet      Address of the old fee wallet
-     * @param newFeeWallet      Address of the new fee wallet
+     * @notice              This event is emitted when the fee wallet address is updated
+     * @param oldFeeWallet  Address of the old fee wallet
+     * @param newFeeWallet  Address of the new fee wallet
      */
     event FeeWalletChanged(
         address indexed oldFeeWallet,
@@ -41,17 +39,17 @@ contract ModuleBaseWithFee is ModuleBase {
     );
 
     /**
-     * @notice                  This event is emitted when the fee is updated
-     * @param oldFee            Old fee amount in basis points (1% = 100)
-     * @param newFee            New fee in basis points (1% = 100) that is updated
+     * @notice              This event is emitted when the fee is updated
+     * @param oldFee        Old fee amount in basis points (1% = 100)
+     * @param newFee        New fee in basis points (1% = 100) that is updated
      */
     event FeeChanged(uint32 indexed oldFee, uint32 indexed newFee);
 
     /**
-     * @dev                 Sets a new fee wallet
+     * @notice              Sets a new fee wallet
      * @param _feeWallet    Address of the new fee wallet
-     * @notice              The fee system will be inactive if the feeWallet
-     *                      is set to a zero-address
+     * @dev                 The fee system will be inactive if the feeWallet
+                            is set to a zero-address
      */
     function setFeeWallet(address _feeWallet)
         external
@@ -68,7 +66,7 @@ contract ModuleBaseWithFee is ModuleBase {
     }
 
     /**
-     * @dev                         Sets a new fee
+     * @notice                      Sets a new fee
      * @param _feeInBasisPoints     Fee amount in basis points (1% = 100)
      */
     function setFee(uint32 _feeInBasisPoints)
@@ -83,10 +81,10 @@ contract ModuleBaseWithFee is ModuleBase {
     }
 
     /**
-     * @dev             Pays the fee in a token and returns the remainder
-     * @param _token    Token in which the transfer happens
-     * @param _amount   Amount of the transfer
-     * @return          Remaining amount after the fee payment
+     * @notice              Pays the fee in a token and returns the remainder
+     * @param _token        Token in which the transfer happens
+     * @param _amount       Amount of the transfer
+     * @return uint256      Remaining amount after the fee payment
      */
     function _payFeeAndReturnRemainder(address _token, uint256 _amount)
         internal
@@ -102,10 +100,11 @@ contract ModuleBaseWithFee is ModuleBase {
     }
 
     /**
-     * @dev             Transfers a token amount with automated fee payment
-     * @param _token    Token in which the transfer happens
-     * @param _to       Target of the transfer
-     * @param _amount   Amount of the transfer
+     * @notice                  Transfers a token amount with automated fee payment
+     * @param _token            Token in which the transfer happens
+     * @param _to               Target of the transfer
+     * @param _amount           Amount of the transfer
+     * @return amountAfterFee   The amount minus the fee
      */
     function _transferWithFee(
         address _token,
@@ -117,12 +116,12 @@ contract ModuleBaseWithFee is ModuleBase {
     }
 
     /**
-     * @dev             Transfers a token amount from someone with 
-                        automated fee payment
-     * @param _token    Token in which the transfer happens
-     * @param _from     Source of the transfer
-     * @param _to       Target of the transfer
-     * @param _amount   Amount of the transfer
+     * @notice                  Transfers a token amount from someone with automated fee payment
+     * @param _token            Token in which the transfer happens
+     * @param _from             Source of the transfer
+     * @param _to               Target of the transfer
+     * @param _amount           Amount of the transfer
+     * @return amountAfterFee   The amount minus the fee
      */
     function _transferFromWithFee(
         address _token,
@@ -142,6 +141,11 @@ contract ModuleBaseWithFee is ModuleBase {
         }
     }
 
+    /**
+     * @notice              Modifier that validates that the msg.sender
+                            is the DealManager contract
+     * @param _sender       Msg.sender of the function that is called
+     */
     modifier onlyDealManagerOwner(address _sender) {
         require(_sender == dealManager.owner(), "ModuleBaseWithFee: Error 221");
         _;

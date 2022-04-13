@@ -142,7 +142,7 @@ contract("Whole rundown", async (accounts) => {
     );
 
     assert.equal(
-      await depositContractDAO1.getWithdrawableAmountOfUser(
+      await depositContractDAO1.getWithdrawableAmountOfDepositor(
         tokenSwapInstance.address,
         0,
         admin,
@@ -168,7 +168,7 @@ contract("Whole rundown", async (accounts) => {
     );
 
     assert.equal(
-      await depositContractDAO1.getWithdrawableAmountOfUser(
+      await depositContractDAO1.getWithdrawableAmountOfDepositor(
         tokenSwapInstance.address,
         0,
         admin,
@@ -443,7 +443,7 @@ contract("Whole rundown", async (accounts) => {
     );
 
     assert.equal(
-      await depositContractDAO1.getWithdrawableAmountOfUser(
+      await depositContractDAO1.getWithdrawableAmountOfDepositor(
         tokenSwapInstance.address,
         0,
         daos[0],
