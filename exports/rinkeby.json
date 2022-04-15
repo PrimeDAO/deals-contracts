@@ -3,7 +3,7 @@
   "chainId": "4",
   "contracts": {
     "DaoDepositManager": {
-      "address": "0x0CCf4031398367514B4169AB78ccC10949606DD8",
+      "address": "0xbA834D780c4c736df23e345DFddEfC146f162697",
       "abi": [
         {
           "anonymous": false,
@@ -28,9 +28,9 @@
             },
             {
               "indexed": false,
-              "internalType": "uint256",
+              "internalType": "uint32",
               "name": "depositId",
-              "type": "uint256"
+              "type": "uint32"
             },
             {
               "indexed": false,
