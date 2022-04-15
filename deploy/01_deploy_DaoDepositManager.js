@@ -5,23 +5,11 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
 
-  const WETHAddress = WETH[network.name];
-
   await deploy("DaoDepositManager", {
     from: root,
-    log: true,
-  });
-
-  const daoDepositManagerInstance = await ethers.getContract(
-    "DaoDepositManager"
-  );
-
-  await deploy("DealManager", {
-    from: root,
-    args: [daoDepositManagerInstance.address, WETHAddress],
     log: true,
   });
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["DealManager"];
+module.exports.tags = ["DaoDepositManager"];

@@ -32,3 +32,18 @@ task("deactivateModule", "will deactive a module in the DealManager contract ")
       `Module with address ${address} has been successfully deactivated`
     );
   });
+
+task("setDaoDepositManager", "will set a new DaoDepositManager implementation")
+  .addParam(
+    "address",
+    "address of the new DaoDepositManager implementation",
+    undefined,
+    types.string
+  )
+  .setAction(async ({ address }, { ethers }) => {
+    const dealMangerInstance = await ethers.getContract("DealManager");
+    await dealMangerInstance.setDaoDepositManagerImplementation(address);
+    console.log(
+      `New DaoDepositManager implementation with address ${address} has been set `
+    );
+  });

@@ -80,7 +80,7 @@ contract DaoDepositManager {
         address indexed dealModule,
         uint32 indexed dealId,
         address indexed depositor,
-        uint256 depositId,
+        uint32 depositId,
         address token,
         uint256 amount
     );
@@ -206,7 +206,7 @@ contract DaoDepositManager {
             _module,
             _dealId,
             msg.sender,
-            deposits[_module][_dealId].length - 1,
+            uint32(deposits[_module][_dealId].length - 1),
             _token,
             _amount
         );
@@ -267,7 +267,7 @@ contract DaoDepositManager {
                 _module,
                 _dealId,
                 dao,
-                deposits[_module][_dealId].length - 1,
+                uint32(deposits[_module][_dealId].length - 1),
                 _token,
                 amount
             );
