@@ -12,8 +12,8 @@ const { formatBytes32String } = ethers.utils;
 const MONTH = 60 * 60 * 24 * 31;
 const DAY = 60 * 60 * 24;
 const HOUR = 60 * 60;
-const SWAP1 = 0;
-const SWAP2 = 1;
+const SWAP1 = 1;
+const SWAP2 = 2;
 
 contract("Whole rundown", async (accounts) => {
   let testToken1,
@@ -119,7 +119,7 @@ contract("Whole rundown", async (accounts) => {
     await expectRevert(
       depositContractDAO1.deposit(
         "0x0000000000000000000000000000000000000000",
-        0,
+        SWAP1,
         testToken1.address,
         web3.utils.toWei("1", "ether"),
         { from: admin }
@@ -136,7 +136,7 @@ contract("Whole rundown", async (accounts) => {
     assert.equal(
       await depositContractDAO1.getTotalDepositCount(
         tokenSwapInstance.address,
-        0
+        SWAP1
       ),
       "0"
     );
@@ -144,7 +144,7 @@ contract("Whole rundown", async (accounts) => {
     assert.equal(
       await depositContractDAO1.getWithdrawableAmountOfDepositor(
         tokenSwapInstance.address,
-        0,
+        SWAP1,
         admin,
         testToken1.address
       ),
@@ -153,7 +153,7 @@ contract("Whole rundown", async (accounts) => {
 
     await depositContractDAO1.deposit(
       tokenSwapInstance.address,
-      0,
+      SWAP1,
       testToken1.address,
       web3.utils.toWei("1", "ether"),
       { from: admin }
@@ -162,7 +162,7 @@ contract("Whole rundown", async (accounts) => {
     assert.equal(
       await depositContractDAO1.getTotalDepositCount(
         tokenSwapInstance.address,
-        0
+        SWAP1
       ),
       "1"
     );
@@ -170,7 +170,7 @@ contract("Whole rundown", async (accounts) => {
     assert.equal(
       await depositContractDAO1.getWithdrawableAmountOfDepositor(
         tokenSwapInstance.address,
-        0,
+        SWAP1,
         admin,
         testToken1.address
       ),
@@ -180,27 +180,27 @@ contract("Whole rundown", async (accounts) => {
     assert.equal(
       await depositContractDAO1.getAvailableDealBalance(
         tokenSwapInstance.address,
-        0,
+        SWAP1,
         testToken1.address
       ),
       web3.utils.toWei("1", "ether")
     );
 
     await expectRevert(
-      depositContractDAO1.withdraw(tokenSwapInstance.address, 0, [0], {
+      depositContractDAO1.withdraw(tokenSwapInstance.address, SWAP1, [0], {
         from: outsider,
       }),
       "DaoDepositManager: Error 222"
     );
 
-    await depositContractDAO1.withdraw(tokenSwapInstance.address, 0, [0], {
+    await depositContractDAO1.withdraw(tokenSwapInstance.address, SWAP1, [0], {
       from: admin,
     });
 
     assert.equal(
       await depositContractDAO1.getAvailableDealBalance(
         tokenSwapInstance.address,
-        0,
+        SWAP1,
         testToken1.address
       ),
       web3.utils.toWei("0", "ether")
@@ -356,7 +356,7 @@ contract("Whole rundown", async (accounts) => {
 
     await depositContractDAO1.deposit(
       tokenSwapInstance.address,
-      0,
+      SWAP1,
       testToken1.address,
       web3.utils.toWei("7", "ether"),
       { from: daos[0] }
@@ -374,7 +374,7 @@ contract("Whole rundown", async (accounts) => {
 
     await depositContractDAO2.deposit(
       tokenSwapInstance.address,
-      0,
+      SWAP1,
       testToken2.address,
       web3.utils.toWei("6", "ether"),
       { from: daos[1] }
@@ -387,7 +387,7 @@ contract("Whole rundown", async (accounts) => {
 
     await depositContractDAO3.deposit(
       tokenSwapInstance.address,
-      0,
+      SWAP1,
       testToken3.address,
       web3.utils.toWei("6", "ether"),
       { from: daos[2] }
@@ -395,7 +395,7 @@ contract("Whole rundown", async (accounts) => {
 
     await depositContractDAO3.deposit(
       tokenSwapInstance.address,
-      0,
+      SWAP1,
       testToken4.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[2] }
@@ -413,7 +413,7 @@ contract("Whole rundown", async (accounts) => {
       web3.utils.toWei("0", "ether")
     );
 
-    await tokenSwapInstance.executeSwap(0, {
+    await tokenSwapInstance.executeSwap(SWAP1, {
       from: daos[0],
     });
 
@@ -445,7 +445,7 @@ contract("Whole rundown", async (accounts) => {
     assert.equal(
       await depositContractDAO1.getWithdrawableAmountOfDepositor(
         tokenSwapInstance.address,
-        0,
+        SWAP1,
         daos[0],
         testToken1.address
       ),
@@ -458,7 +458,7 @@ contract("Whole rundown", async (accounts) => {
     );
 
     await expectRevert(
-      depositContractDAO1.withdraw(tokenSwapInstance.address, 0, 0, {
+      depositContractDAO1.withdraw(tokenSwapInstance.address, SWAP1, 0, {
         from: admin,
       }),
       "DaoDepositManager: Error 240"
@@ -712,7 +712,7 @@ contract("Whole rundown", async (accounts) => {
     );
     await depositContractDAO1Instance.deposit(
       tokenSwapInstance.address,
-      0,
+      SWAP1,
       testToken1.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[0] }
@@ -725,7 +725,7 @@ contract("Whole rundown", async (accounts) => {
     );
     await depositContractDAO2Instance.deposit(
       tokenSwapInstance.address,
-      0,
+      SWAP1,
       testToken2.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[1] }
@@ -738,7 +738,7 @@ contract("Whole rundown", async (accounts) => {
     );
     await depositContractDAO3Instance.deposit(
       tokenSwapInstance.address,
-      0,
+      SWAP1,
       testToken3.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[2] }
@@ -756,7 +756,7 @@ contract("Whole rundown", async (accounts) => {
     );
     await depositContractDAO1Instance.deposit(
       tokenSwapInstance.address,
-      1,
+      SWAP2,
       testToken4.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[0] }
@@ -769,7 +769,7 @@ contract("Whole rundown", async (accounts) => {
     );
     await depositContractDAO2Instance.deposit(
       tokenSwapInstance.address,
-      1,
+      SWAP2,
       testToken5.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[1] }
@@ -782,7 +782,7 @@ contract("Whole rundown", async (accounts) => {
     );
     await depositContractDAO3Instance.deposit(
       tokenSwapInstance.address,
-      1,
+      SWAP2,
       testToken6.address,
       web3.utils.toWei("10", "ether"),
       { from: daos[2] }
@@ -907,21 +907,21 @@ contract("Whole rundown", async (accounts) => {
     // Claim vesting for Swap 1
     await depositContractDAO1Instance.claimDealVestings(
       tokenSwapInstance.address,
-      0,
+      SWAP1,
       {
         from: admin,
       }
     );
     await depositContractDAO2Instance.claimDealVestings(
       tokenSwapInstance.address,
-      0,
+      SWAP1,
       {
         from: admin,
       }
     );
     await depositContractDAO3Instance.claimDealVestings(
       tokenSwapInstance.address,
-      0,
+      SWAP1,
       {
         from: admin,
       }
@@ -992,21 +992,21 @@ contract("Whole rundown", async (accounts) => {
     // Claim vesting for Swap 2
     await depositContractDAO1Instance.claimDealVestings(
       tokenSwapInstance.address,
-      1,
+      SWAP2,
       {
         from: admin,
       }
     );
     await depositContractDAO2Instance.claimDealVestings(
       tokenSwapInstance.address,
-      1,
+      SWAP2,
       {
         from: admin,
       }
     );
     await depositContractDAO3Instance.claimDealVestings(
       tokenSwapInstance.address,
-      1,
+      SWAP2,
       {
         from: admin,
       }

@@ -402,7 +402,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         returns (bool)
     {
         TokenSwap memory ts = getTokenswapFromMetadata(_metadata);
-        return ts.metadata != 0;
+        return ts.metadata == 0;
     }
 
     /**
