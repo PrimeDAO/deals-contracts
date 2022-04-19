@@ -518,14 +518,19 @@ contract DaoDepositManager {
         returns (address[] memory tokens, uint256[] memory amounts)
     {
         uint256 amountOfTokens = tokensPerDeal[_module][_dealId];
+
         tokens = new address[](amountOfTokens);
         amounts = new uint256[](amountOfTokens);
         uint256 counter;
-        for (uint256 i; i < vestings.length; ++i) {
-            Vesting storage v = vestings[i];
-            if (v.dealModule == _module && v.dealId == _dealId) {
-                (tokens[counter], amounts[counter]) = sendReleasableClaim(v);
-                ++counter;
+        if (amountOfTokens != 0) {
+            for (uint256 i; i < vestings.length; ++i) {
+                Vesting storage v = vestings[i];
+                if (v.dealModule == _module && v.dealId == _dealId) {
+                    (tokens[counter], amounts[counter]) = sendReleasableClaim(
+                        v
+                    );
+                    ++counter;
+                }
             }
         }
         return (tokens, amounts);
@@ -538,7 +543,7 @@ contract DaoDepositManager {
      * @return token        Addresses of the claimed token
      * @return amount       Amount of the claimable token
      */
-    function sendReleasableClaim(Vesting memory vesting)
+    function sendReleasableClaim(Vesting storage vesting)
         private
         returns (address token, uint256 amount)
     {
