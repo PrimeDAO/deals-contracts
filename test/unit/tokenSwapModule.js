@@ -45,6 +45,8 @@ let deadline1, deadline2, deadline3;
 
 const DAY = 60 * 60 * 24;
 const HOUR = 60 * 60;
+const MONTH = 30 * DAY;
+const YEAR = 12 * MONTH;
 const VESTING_CLIFF1 = HOUR * 2;
 const VESTING_CLIFF2 = HOUR * 4;
 const VESTING_CLIFF3 = HOUR * 6;
@@ -628,6 +630,42 @@ describe("> Contract: TokenSwapModule", () => {
           )
         ).to.equal(0);
       });
+    });
+  });
+  describe("$ Frontend values test", () => {
+    beforeEach(async () => {
+      const primaryDao = dao1.address;
+      const partneredDao = dao2.address;
+      const dealTokens = [tokenAddresses[0], tokenAddresses[1]];
+      const dealPathFrom = [
+        [parseEther("1500"), 0],
+        [0, parseEther("4000")],
+      ];
+      const dealPathTo = [
+        [0, 0, 0, 0, 0, parseEther("1500"), 6 * MONTH, 3 * YEAR],
+        [parseEther("4000"), 0, 0, 0, 0, 0, 0, 0],
+      ];
+      const fundingDeadline = 2 * DAY;
+      const createNewSwapParameters = initializeParameters(
+        [primaryDao, partneredDao],
+        dealTokens,
+        dealPathFrom,
+        dealPathTo,
+        METADATA1,
+        fundingDeadline
+      );
+      ({ tokenInstancesSubset, tokenSwapModuleInstance } =
+        await setupExecuteSwapStateSingleDeal(
+          contractInstances,
+          daosDeal1,
+          createNewSwapParameters,
+          tokenInstances,
+          depositer1,
+          SWAP1
+        ));
+    });
+    it("» should be able to execute the swap", async () => {
+      await tokenSwapModuleInstance.executeSwap(SWAP1);
     });
   });
   describe("$ Function: executeSwap with ETH", () => {
