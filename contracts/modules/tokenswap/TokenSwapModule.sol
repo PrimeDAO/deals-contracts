@@ -401,7 +401,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
         view
         returns (bool)
     {
-        return getTokenswapFromMetadata(_metadata) == 0;
+        TokenSwap memory ts = getTokenswapFromMetadata(_metadata);
+        return ts.metadata != 0;
     }
 
     /**
@@ -409,7 +410,10 @@ contract TokenSwapModule is ModuleBaseWithFee {
      * @param _dealId       The dealId of the action (key to the mapping)
      */
     modifier validDealId(uint32 _dealId) {
-        require(tokenSwaps[_dealId] != 0, "TokenSwapModule: Error 207");
+        require(
+            tokenSwaps[_dealId].metadata != 0,
+            "TokenSwapModule: Error 207"
+        );
         _;
     }
 
