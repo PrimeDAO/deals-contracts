@@ -59,9 +59,11 @@ const VESTING_CLIFF3 = HOUR * 6;
 const VESTING_DURATION1 = DAY;
 const VESTING_DURATION2 = DAY * 2;
 const VESTING_DURATION3 = DAY * 3;
-const SWAP1 = 0;
-const SWAP2 = 1;
-const SWAP3 = 2;
+const DEPOSIT1 = 0;
+const DEPOSIT2 = 1;
+const SWAP1 = 1;
+const SWAP2 = 2;
+const SWAP3 = 3;
 const SWAPS_ARRAY = [SWAP1, SWAP2, SWAP3];
 const INVALID_SWAP = 20;
 const METADATA1 = formatBytes32String("hello");
@@ -606,13 +608,13 @@ describe("> Contract: DaoDepositManager", () => {
         ).to.be.revertedWith("DaoDepositManager: Error 200");
       });
       it("» should fail on invalid msg.sender", async () => {
-        const params = [tokenSwapModuleInstance.address, SWAP1, SWAP1];
+        const params = [tokenSwapModuleInstance.address, SWAP1, DEPOSIT1];
         await expect(
           daoDepositManagerDao1.connect(dao4).withdraw(...params)
         ).to.be.revertedWith("DaoDepositManager: Error 222");
       });
       it("» should fail on call by dao, but not expired", async () => {
-        const params = [tokenSwapModuleInstance.address, SWAP1, SWAP1];
+        const params = [tokenSwapModuleInstance.address, SWAP1, DEPOSIT1];
         // Deal has not expired
         expect(await tokenSwapModuleInstance.hasDealExpired(SWAP1)).to.be.false;
 
@@ -622,7 +624,7 @@ describe("> Contract: DaoDepositManager", () => {
         ).to.be.revertedWith("DaoDepositManager: Error 222");
       });
       it("» should fail on freeAmount not available", async () => {
-        const params = [tokenSwapModuleInstance.address, SWAP1, SWAP1];
+        const params = [tokenSwapModuleInstance.address, SWAP1, DEPOSIT1];
         expect(await tokenSwapModuleInstance.checkExecutability(SWAP1)).to.be
           .true;
 
@@ -635,7 +637,7 @@ describe("> Contract: DaoDepositManager", () => {
         ).to.be.revertedWith("DaoDepositManager: Error 240");
       });
       it("» should succeed on withdrawing tokens", async () => {
-        const params = [tokenSwapModuleInstance.address, SWAP1, SWAP1];
+        const params = [tokenSwapModuleInstance.address, SWAP1, DEPOSIT1];
 
         // Called by the right address
         await expect(
@@ -646,7 +648,7 @@ describe("> Contract: DaoDepositManager", () => {
             tokenSwapModuleInstance.address,
             SWAP1,
             depositer1.address,
-            SWAP1,
+            DEPOSIT1,
             tokenInstances[0].address,
             parseEther("6")
           );

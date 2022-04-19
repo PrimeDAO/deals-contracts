@@ -53,9 +53,9 @@ const VESTING_CLIFF3 = HOUR * 6;
 const VESTING_DURATION1 = DAY;
 const VESTING_DURATION2 = DAY * 2;
 const VESTING_DURATION3 = DAY * 3;
-const SWAP1 = 0;
-const SWAP2 = 1;
-const SWAP3 = 2;
+const SWAP1 = 1;
+const SWAP2 = 2;
+const SWAP3 = 3;
 const INVALID_SWAP = 20;
 const METADATA1 = formatBytes32String("Uad8AA2CFPaVdyxa805p");
 const METADATA2 = formatBytes32String("pnthglKd0wFHOK6Bn78C");
@@ -850,9 +850,10 @@ describe("> Contract: TokenSwapModule", () => {
         ));
       });
       it("» should fail with invalid metadata", async () => {
-        await expect(
-          tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA2)
-        ).to.revertedWith("TokenSwapModule: Error 206");
+        expect(
+          (await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA2))
+            .metadata
+        ).to.equal(formatBytes32String(""));
       });
     });
     describe("# when able to execute", () => {

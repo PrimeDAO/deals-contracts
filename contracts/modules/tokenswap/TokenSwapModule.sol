@@ -9,8 +9,9 @@ import "../ModuleBaseWithFee.sol";
                             interactions for PrimeDeals
  */
 contract TokenSwapModule is ModuleBaseWithFee {
-    /// Array of token swaps where the index == dealId
-    TokenSwap[] public tokenSwaps;
+    uint32 lastDealId;
+    // mapping of token swaps where the key is a dealId
+    mapping(uint32 => TokenSwap) public tokenSwaps;
     /// Metadata => deal ID
     mapping(bytes32 => uint32) public metadataToDealId;
 
@@ -125,10 +126,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint32 _deadline
     ) internal returns (uint32) {
         require(_metadata != "", "TokenSwapModule: Error 101");
-        require(
-            tokenSwaps.length == 0 || _metadataDoesNotExist(_metadata),
-            "TokenSwapModule: Error 203"
-        );
+        require(_metadataDoesNotExist(_metadata), "TokenSwapModule: Error 203");
         require(_daos.length >= 2, "TokenSwapModule: Error 204");
         require(_tokens.length != 0, "TokenSwapModule: Error 205");
         require(_deadline > 0, "TokenSwapModule: Error 101");
@@ -161,15 +159,16 @@ contract TokenSwapModule is ModuleBaseWithFee {
             _metadata,
             false
         );
-        tokenSwaps.push(ts);
 
-        uint32 dealId = uint32(tokenSwaps.length - 1);
+        lastDealId = lastDealId + 1;
 
-        metadataToDealId[_metadata] = dealId;
+        tokenSwaps[lastDealId] = ts;
+
+        metadataToDealId[_metadata] = lastDealId;
 
         emit TokenSwapCreated(
             address(this),
-            dealId,
+            lastDealId,
             _metadata,
             _daos,
             _tokens,
@@ -177,7 +176,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
             _pathTo,
             _deadline
         );
-        return dealId;
+        return lastDealId;
     }
 
     /**
@@ -231,7 +230,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
     /**
       * @notice             Checks whether a token swap action can be executed, which is the case
                             if all DAOs have deposited
-      * @param _dealId      The dealId of the action (position in the array)
+      * @param _dealId      The dealId of the action (key to the mapping)
       * @return bool        A bool flag indiciating whether the action can be executed
     */
     function checkExecutability(uint32 _dealId)
@@ -269,7 +268,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
     /**
      * @notice              Executes a token swap action
-     * @param _dealId       The dealId of the action (position in the array)
+     * @param _dealId       The dealId of the action (key to the mapping)
      */
     function executeSwap(uint32 _dealId)
         external
@@ -311,7 +310,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
       * @notice             Distributes the tokens based on the supplied information to the DAOs
                             or their vesting contracts
       * @param _ts          TokenSwap object containing all the information of the action
-      * @param _dealId      The dealId of the action (position in the array)
+      * @param _dealId      The dealId of the action (key to the mapping)
       * @return amountsOut  The two min values for the token amounts _ts
     */
     function _distributeTokens(TokenSwap memory _ts, uint32 _dealId)
@@ -370,30 +369,26 @@ contract TokenSwapModule is ModuleBaseWithFee {
         view
         returns (TokenSwap memory swap)
     {
-        uint256 dealId = metadataToDealId[_metadata];
-        require(
-            dealId != 0 ||
-                (tokenSwaps[dealId].metadata == _metadata && _metadata != ""),
-            "TokenSwapModule: Error 206"
-        );
         return tokenSwaps[metadataToDealId[_metadata]];
     }
 
     /**
      * @notice              Checks if the deal has been expired
-     * @param _dealId       The dealId of the action (position in the array)
+     * @param _dealId       The dealId of the action (key to the mapping)
      * @return bool         A bool flag indiciating whether token swap has expired
      */
     function hasDealExpired(uint32 _dealId)
         public
         view
         override
+        validDealId(_dealId)
         returns (bool)
     {
+        TokenSwap memory swap = tokenSwaps[_dealId];
         return
-            tokenSwaps[_dealId].isExecuted ||
+            swap.isExecuted ||
             // solhint-disable-next-line not-rely-on-time
-            tokenSwaps[_dealId].deadline < uint32(block.timestamp);
+            swap.deadline < uint32(block.timestamp);
     }
 
     /**
@@ -406,22 +401,25 @@ contract TokenSwapModule is ModuleBaseWithFee {
         view
         returns (bool)
     {
-        uint256 dealId = metadataToDealId[_metadata];
-        return (dealId == 0 && tokenSwaps[dealId].metadata != _metadata);
+        TokenSwap memory ts = getTokenswapFromMetadata(_metadata);
+        return ts.metadata == 0;
     }
 
     /**
      * @notice              Modifier that validates if the given deal ID is valid
-     * @param _dealId       The dealId of the action (position in the array)
+     * @param _dealId       The dealId of the action (key to the mapping)
      */
     modifier validDealId(uint32 _dealId) {
-        require(_dealId < tokenSwaps.length, "TokenSwapModule: Error 207");
+        require(
+            tokenSwaps[_dealId].metadata != 0,
+            "TokenSwapModule: Error 207"
+        );
         _;
     }
 
     /**
      * @notice              Modifier that validates if token swap has not been executed
-     * @param _dealId       The dealId of the action (position in the array)
+     * @param _dealId       The dealId of the action (key to the mapping)
      */
     modifier isNotExecuted(uint32 _dealId) {
         require(!tokenSwaps[_dealId].isExecuted, "TokenSwapModule: Error 266");
