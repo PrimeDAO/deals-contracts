@@ -563,6 +563,7 @@ contract DaoDepositManager {
                 amount =
                     (vesting.totalVested * uint256(elapsedSeconds)) /
                     uint256(vesting.duration);
+                amount -= vesting.totalClaimed;
                 vesting.totalClaimed += amount;
             }
 
