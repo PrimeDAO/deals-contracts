@@ -351,8 +351,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
                         _dealId,
                         token,
                         amount, // amount
-                        uint32(pt[(k << 2) + 2]), // start
-                        uint32(pt[(k << 2) + 3]) // end
+                        uint32(pt[(k << 2) + 2]), // cliff
+                        uint32(pt[(k << 2) + 3]) // duration
                     );
                 }
             }
