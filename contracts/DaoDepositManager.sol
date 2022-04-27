@@ -413,7 +413,7 @@ contract DaoDepositManager {
     ) external payable onlyModule {
         require(_amount > 0, "DaoDepositManager: Error 101");
         require(
-            _vestingCliff < _vestingDuration,
+            _vestingCliff <= _vestingDuration,
             "DaoDepositManager: Error 201"
         );
 
