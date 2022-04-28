@@ -13,7 +13,7 @@ import "./interfaces/IModuleBase.sol";
 contract DaoDepositManager {
     /// DAO address to which this DaoDepositContract is linked
     address public dao;
-    /// Address of the DealManager implementation
+    /// Address of the DealManager
     IDealManager public dealManager;
     /// token address => balance
     mapping(address => uint256) public tokenBalances;
@@ -157,19 +157,15 @@ contract DaoDepositManager {
     }
 
     /**
-     * @notice                      Sets a new address for the DealManager implementation
-     * @param _newDaoDepositManager The address of the new DealManager
+     * @notice                  Sets a new address for the DealManager
+     * @param _newDealManager   The address of the new DealManager
      */
-    function setDealManagerImplementation(address _newDaoDepositManager)
-        external
-        onlyDealManager
-    {
+    function setDealManager(address _newDealManager) external onlyDealManager {
         require(
-            _newDaoDepositManager != address(0) &&
-                _newDaoDepositManager != address(this),
+            _newDealManager != address(0) && _newDealManager != address(this),
             "DaoDepositManager: Error 100"
         );
-        dealManager = IDealManager(_newDaoDepositManager);
+        dealManager = IDealManager(_newDealManager);
     }
 
     /**

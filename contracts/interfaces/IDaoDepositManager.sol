@@ -8,6 +8,8 @@ interface IDaoDepositManager {
 
     function migrateBaseContract(address _newDaoDepositManager) external;
 
+    function setDealManager(address _newDealManager) external;
+
     function deposit(
         address _dealModule,
         uint32 _dealId,
