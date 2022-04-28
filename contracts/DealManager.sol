@@ -68,6 +68,17 @@ contract DealManager is Ownable {
         daoDepositManagerImplementation = _newImplementation;
     }
 
+    function setDealManagerInModule(address _newDealManager, address _module)
+        external
+        onlyOwner
+    {
+        require(
+            _newDealManager != address(0) && _newDealManager != address(this),
+            "DealManager: Error 100"
+        );
+        IDaoDepositManager(_module).setDealManager(_newDealManager);
+    }
+
     /**
      * @notice                  Activates a new Deals module
      * @param _moduleAddress    The address of a Deals module
