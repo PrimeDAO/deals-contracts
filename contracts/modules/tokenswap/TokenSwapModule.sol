@@ -9,7 +9,7 @@ import "../ModuleBaseWithFee.sol";
                             interactions for PrimeDeals
  */
 contract TokenSwapModule is ModuleBaseWithFee {
-    uint32 lastDealId;
+    uint32 public lastDealId;
     // mapping of token swaps where the key is a dealId
     mapping(uint32 => TokenSwap) public tokenSwaps;
     /// Metadata => deal ID
