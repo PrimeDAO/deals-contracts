@@ -855,7 +855,7 @@ contract DaoDepositManager {
      */
     modifier onlyModule() {
         require(
-            dealManager.addressIsModule(msg.sender),
+            dealManager.isModule(msg.sender),
             "DaoDepositManager: Error 220"
         );
         _;

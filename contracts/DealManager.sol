@@ -142,13 +142,4 @@ contract DealManager is Ownable {
     function getDaoDepositManager(address _dao) public view returns (address) {
         return daoDepositManager[_dao];
     }
-
-    /**
-     * @notice              Returns if the address is a Deals module
-     * @param _address      Address to check if it is a Deals module
-     * @return bool         A bool flag indicating whether the _address is a Deals module
-     */
-    function addressIsModule(address _address) external view returns (bool) {
-        return isModule[_address];
-    }
 }

@@ -12,5 +12,5 @@ interface IDealManager {
 
     function weth() external view returns (address);
 
-    function addressIsModule(address _address) external view returns (bool);
+    function isModule(address who) external view returns (bool);
 }
