@@ -191,7 +191,7 @@ contract DaoDepositManager {
         if (_token != address(0)) {
             _transferFrom(_token, msg.sender, address(this), _amount);
         } else {
-            require(_amount == msg.value, "DaoDepositManager: 202");
+            require(_amount == msg.value, "DaoDepositManager: Error 202");
         }
 
         tokenBalances[_token] += _amount;
