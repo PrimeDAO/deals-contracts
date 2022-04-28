@@ -345,8 +345,9 @@ contract TokenSwapModule is ModuleBaseWithFee {
                         _approveDaoDepositManager(token, _ts.daos[k], amount);
                     }
 
+                    uint256 callValue = token == address(0) ? amount : 0;
                     IDaoDepositManager(daoDepositManager).startVesting{
-                        value: token == address(0) ? amount : 0
+                        value: callValue
                     }(
                         _dealId,
                         token,
