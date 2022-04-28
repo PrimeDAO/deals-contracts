@@ -160,7 +160,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
             false
         );
 
-        lastDealId = lastDealId + 1;
+        ++lastDealId;
 
         tokenSwaps[lastDealId] = ts;
 
