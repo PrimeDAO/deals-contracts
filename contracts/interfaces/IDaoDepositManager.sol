@@ -6,8 +6,6 @@ interface IDaoDepositManager {
 
     function initialize(address _dao) external;
 
-    function migrateBaseContract(address _newDaoDepositManager) external;
-
     function setDealManager(address _newDealManager) external;
 
     function deposit(
