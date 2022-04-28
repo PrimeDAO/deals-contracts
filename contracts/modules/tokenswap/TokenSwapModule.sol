@@ -279,6 +279,12 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
         require(checkExecutability(_dealId), "TokenSwapModule: Error 265");
 
+        // set to true directly before we touch any tokens
+        // to prevent any reentrancies from happening
+        ts.isExecuted = true;
+        // solhint-disable-next-line not-rely-on-time
+        ts.executionDate = uint32(block.timestamp);
+
         // transfer the tokens from the deposit manager of the DAOs
         // into this module
         uint256[] memory amountsIn = _pullTokensIntoModule(
@@ -300,9 +306,6 @@ contract TokenSwapModule is ModuleBaseWithFee {
             );
         }
 
-        ts.isExecuted = true;
-        // solhint-disable-next-line not-rely-on-time
-        ts.executionDate = uint32(block.timestamp);
         emit TokenSwapExecuted(address(this), _dealId, ts.metadata);
     }
 
