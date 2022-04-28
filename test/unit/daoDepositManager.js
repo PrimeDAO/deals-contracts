@@ -159,9 +159,7 @@ describe("> Contract: DaoDepositManager", () => {
         );
 
         await expect(
-          daoDepositManagerInstance
-            .connect(dao2)
-            .setDealManagerImplementation(dao2.address)
+          daoDepositManagerInstance.connect(dao2).setDealManager(dao2.address)
         ).to.be.revertedWith("DaoDepositManager: Error 221");
 
         await expect(await daoDepositManagerInstance.dealManager()).to.equal(
@@ -177,7 +175,7 @@ describe("> Contract: DaoDepositManager", () => {
 
         await daoDepositManagerInstance
           .connect(dao1)
-          .setDealManagerImplementation(dao2.address);
+          .setDealManager(dao2.address);
 
         await expect(await daoDepositManagerInstance.dealManager()).to.equal(
           dao2.address
@@ -207,7 +205,7 @@ describe("> Contract: DaoDepositManager", () => {
         ];
         await expect(
           daoDepositManagerDao1.connect(depositer1).deposit(...depositParam)
-        ).to.revertedWith("DaoDepositManager: 202");
+        ).to.revertedWith("DaoDepositManager: Error 202");
       });
       it("» should fail on token address being ZERO and amount = 0", async () => {
         const depositParam = [

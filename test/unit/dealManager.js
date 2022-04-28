@@ -100,9 +100,7 @@ describe("> Contract: DealManager", () => {
     });
     it("» should have succeeded on registering the module", async () => {
       expect(
-        await dealManagerInstance.addressIsModule(
-          tokenSwapModuleInstance.address
-        )
+        await dealManagerInstance.isModule(tokenSwapModuleInstance.address)
       ).to.be.true;
     });
   });
@@ -121,18 +119,14 @@ describe("> Contract: DealManager", () => {
     });
     it("» should succeed on rigister module", async () => {
       expect(
-        await dealManagerInstance.addressIsModule(
-          tokenSwapModuleInstance.address
-        )
+        await dealManagerInstance.isModule(tokenSwapModuleInstance.address)
       ).to.be.true;
 
       await dealManagerInstance.deactivateModule(
         tokenSwapModuleInstance.address
       );
       expect(
-        await dealManagerInstance.addressIsModule(
-          tokenSwapModuleInstance.address
-        )
+        await dealManagerInstance.isModule(tokenSwapModuleInstance.address)
       ).to.be.false;
     });
   });
