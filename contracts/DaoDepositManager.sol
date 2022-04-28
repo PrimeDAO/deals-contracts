@@ -418,9 +418,6 @@ contract DaoDepositManager {
         } else {
             require(_amount == msg.value, "DaoDepositManager: Error 202");
         }
-        // no else path, since ETH will be sent by the module,
-        // which is verified by the verifyBalance() call after
-        // updating the vestedBalances
 
         vestedBalances[_token] += _amount;
 
