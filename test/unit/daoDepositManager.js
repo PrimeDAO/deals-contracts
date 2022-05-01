@@ -733,7 +733,7 @@ describe("> Contract: DaoDepositManager", () => {
         expect(
           Math.round(
             formatUnits(
-              await daoDepositManagerDao1.getVestedBalance(
+              await daoDepositManagerDao1.vestedBalances(
                 tokenInstancesAllDeals[0][1].address
               ),
               "ether"
@@ -772,7 +772,7 @@ describe("> Contract: DaoDepositManager", () => {
         expect(
           Math.round(
             formatUnits(
-              await daoDepositManagerDao1.getVestedBalance(
+              await daoDepositManagerDao1.vestedBalances(
                 tokenInstancesAllDeals[0][1].address
               ),
               "ether"

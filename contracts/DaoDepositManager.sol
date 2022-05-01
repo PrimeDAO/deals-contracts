@@ -774,16 +774,6 @@ contract DaoDepositManager {
     }
 
     /**
-     * @notice              Returns the vested balance the DaoDepositContract holds,
-                            for a given ERC20 token or ETH (ZERO address)
-     * @param _token        The address of the ERC20 token or ETH (ZERO address)
-     * @return uint256      The vested balance the contracts holds for the _token parameter
-     */
-    function getVestedBalance(address _token) external view returns (uint256) {
-        return vestedBalances[_token];
-    }
-
-    /**
      * @notice              Transfers the ERC20 token or ETH (ZERO address), to the _to address
      * @param _token        The address of the ERC20 token or ETH (ZERO address)
      * @param _to           Receiver address of the _amount of _token
