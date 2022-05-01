@@ -186,6 +186,25 @@ describe("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...invalidParameters)
         ).to.be.revertedWith("TokenSwapModule: Error 205");
       });
+      it("» should fail on dubplicates in token", async () => {
+        const invalidParameters = [
+          createSwapParameters[0],
+          [
+            tokenAddresses[0],
+            tokenAddresses[1],
+            tokenAddresses[1],
+            tokenAddresses[3],
+          ],
+          createSwapParameters[2],
+          createSwapParameters[3],
+          createSwapParameters[4],
+          createSwapParameters[5],
+        ];
+
+        await expect(
+          tokenSwapModuleInstance.createSwap(...invalidParameters)
+        ).to.be.revertedWith("TokenSwapModule: Error 104");
+      });
       it("» should fail on input array lengths don't match", async () => {
         const mismatchLengthTokensAndPathFrom = [
           createSwapParameters[0],

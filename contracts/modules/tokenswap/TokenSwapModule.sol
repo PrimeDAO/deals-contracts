@@ -138,6 +138,12 @@ contract TokenSwapModule is ModuleBaseWithFee {
             "TokenSwapModule: Error 102"
         );
 
+        // Check duplicate token addresses
+        for (uint256 i; i < _tokens.length; ++i) {
+            for (uint256 j = i + 1; j < _tokens.length; ++j)
+                require(_tokens[i] != _tokens[j], "TokenSwapModule: Error 104");
+        }
+
         // Check inner arrays
         uint256 daosLen = _daos.length;
         for (uint256 i; i < pathFromLen; ++i) {
