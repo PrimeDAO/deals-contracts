@@ -40,10 +40,12 @@ contract ModuleBase {
     ) internal returns (uint256[] memory amountsIn) {
         amountsIn = new uint256[](_tokens.length);
         require(_path.length == _tokens.length, "ModuleBase: Error 102");
-        for (uint256 i; i < _tokens.length; ++i) {
+        uint256 tokenArrayLength = _tokens.length;
+        for (uint256 i; i < tokenArrayLength; ++i) {
             uint256[] memory tokenPath = _path[i];
             require(tokenPath.length == _daos.length, "ModuleBase: Error 102");
-            for (uint256 j; j < tokenPath.length; ++j) {
+            uint256 tokenPathArrayLength = tokenPath.length;
+            for (uint256 j; j < tokenPathArrayLength; ++j) {
                 uint256 daoAmount = tokenPath[j];
                 if (daoAmount > 0) {
                     amountsIn[i] += daoAmount;

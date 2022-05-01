@@ -183,7 +183,7 @@ contract DaoDepositManager {
         address _token,
         uint256 _amount
     ) public payable {
-        require(_amount > 0, "DaoDepositManager: Error 101");
+        require(_amount != 0, "DaoDepositManager: Error 101");
         if (_token != address(0)) {
             _transferFrom(_token, msg.sender, address(this), _amount);
         } else {
@@ -229,7 +229,8 @@ contract DaoDepositManager {
             _tokens.length == _amounts.length,
             "DaoDepositManager: Error 102"
         );
-        for (uint256 i; i < _tokens.length; ++i) {
+        uint256 tokenArrayLength = _tokens.length;
+        for (uint256 i; i < tokenArrayLength; ++i) {
             deposit(_module, _dealId, _tokens[i], _amounts[i]);
         }
     }
@@ -288,7 +289,8 @@ contract DaoDepositManager {
         uint32 _dealId,
         address[] calldata _tokens
     ) external {
-        for (uint256 i; i < _tokens.length; ++i) {
+        uint256 tokenArrayLength = _tokens.length;
+        for (uint256 i; i < tokenArrayLength; ++i) {
             registerDeposit(_module, _dealId, _tokens[i]);
         }
     }
@@ -337,7 +339,7 @@ contract DaoDepositManager {
 
         uint256 freeAmount = d.amount - d.used;
         // Deposit can't be used by a module or withdrawn already
-        require(freeAmount > 0, "DaoDepositManager: Error 240");
+        require(freeAmount != 0, "DaoDepositManager: Error 240");
         d.used = d.amount;
         availableDealBalances[d.token][_module][_dealId] -= freeAmount;
         tokenBalances[d.token] -= freeAmount;
@@ -366,7 +368,8 @@ contract DaoDepositManager {
         uint256 _amount
     ) external onlyModule {
         uint256 amountLeft = _amount;
-        for (uint256 i; i < deposits[msg.sender][_dealId].length; ++i) {
+        uint256 depositArrayLength = deposits[msg.sender][_dealId].length;
+        for (uint256 i; i < depositArrayLength; ++i) {
             Deposit storage d = deposits[msg.sender][_dealId][i];
             if (d.token == _token) {
                 uint256 freeAmount = d.amount - d.used;
@@ -407,7 +410,7 @@ contract DaoDepositManager {
         uint32 _vestingCliff,
         uint32 _vestingDuration
     ) external payable onlyModule {
-        require(_amount > 0, "DaoDepositManager: Error 101");
+        require(_amount != 0, "DaoDepositManager: Error 101");
         require(
             _vestingCliff <= _vestingDuration,
             "DaoDepositManager: Error 201"
@@ -484,7 +487,8 @@ contract DaoDepositManager {
             tokens[i] = vestedTokenAddresses[i];
         }
 
-        for (uint256 i; i < vestings.length; ++i) {
+        uint256 vestingArrayLength = vestings.length;
+        for (uint256 i; i < vestingArrayLength; ++i) {
             (address token, uint256 amount) = sendReleasableClaim(vestings[i]);
             for (uint256 j; j < vestingCount; ++j) {
                 if (token == tokens[j]) {
@@ -686,7 +690,7 @@ contract DaoDepositManager {
         amounts = new uint256[](range);
         usedAmounts = new uint256[](range);
         times = new uint256[](range);
-        uint256 index = 0; // needed since the ids can start at > 0
+        uint256 index; // needed since the ids can start at > 0
         for (uint32 i = _fromDepositId; i <= _toDepositId; ++i) {
             (
                 depositors[index],
