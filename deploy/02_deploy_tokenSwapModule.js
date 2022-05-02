@@ -22,4 +22,4 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["TokenSwap"];
+module.exports.tags = ["TokenSwapModule"];
