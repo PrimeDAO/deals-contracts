@@ -238,9 +238,6 @@ contract DaoDepositManager {
     /**
      * @notice              Sends the token and amount, stored in the Deposit associated with the
                             depositId to the depositor
-     * @dev                 Note: if the deposit has been registered through the function
-                            registerDeposit(), withdrawing can only happen after the periode for
-                            funding deal has been expired
      * @param _module       The address of the module to which the dealId is part of
      * @param _dealId       The dealId to for which the deposit has been made, that is being
                             withdrawn
@@ -267,15 +264,7 @@ contract DaoDepositManager {
         );
         Deposit storage d = deposits[_module][_dealId][_depositId];
 
-        // Either the caller did the deposit or it's a dao deposit
-        // and the caller facilitates the withdraw for the dao
-        // (which is only possible after the deal expired)
-        require(
-            d.depositor == msg.sender ||
-                (d.depositor == dao &&
-                    IModuleBase(_module).hasDealExpired(_dealId)),
-            "DaoDepositManager: Error 222"
-        );
+        require(d.depositor == msg.sender, "DaoDepositManager: Error 222");
 
         uint256 freeAmount = d.amount - d.used;
         // Deposit can't be used by a module or withdrawn already
