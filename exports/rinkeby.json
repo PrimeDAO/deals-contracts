@@ -3,7 +3,7 @@
   "chainId": "4",
   "contracts": {
     "DaoDepositManager": {
-      "address": "0x001430c94Eaced0C942a6B2A1faF0c9ecA665DB5",
+      "address": "0x02A199c9bA41ae58572F581CcCde15f3DB570EBe",
       "abi": [
         {
           "anonymous": false,
@@ -613,52 +613,6 @@
         {
           "inputs": [
             {
-              "internalType": "address",
-              "name": "_module",
-              "type": "address"
-            },
-            {
-              "internalType": "uint32",
-              "name": "_dealId",
-              "type": "uint32"
-            },
-            {
-              "internalType": "address",
-              "name": "_token",
-              "type": "address"
-            }
-          ],
-          "name": "registerDeposit",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "_module",
-              "type": "address"
-            },
-            {
-              "internalType": "uint32",
-              "name": "_dealId",
-              "type": "uint32"
-            },
-            {
-              "internalType": "address[]",
-              "name": "_tokens",
-              "type": "address[]"
-            }
-          ],
-          "name": "registerDeposits",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
               "internalType": "uint32",
               "name": "_dealId",
               "type": "uint32"
@@ -938,7 +892,7 @@
       ]
     },
     "DealManager": {
-      "address": "0x4cD0415c9488Fd0779bc4cAA991b372314E8Ce9A",
+      "address": "0xE9f2ce9Ef70Db565EaAF074E3D027d4F58C92a01",
       "abi": [
         {
           "inputs": [
