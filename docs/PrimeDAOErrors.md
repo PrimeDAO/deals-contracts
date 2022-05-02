@@ -8,6 +8,7 @@
 - `101` : `Input value cannot be empty`
 - `102` : `Input arrays length mismatch`
 - `103` : `Amounts mismatch`
+- `104` : `Input has duplicates`
 ## Deals (200 - 299)
 ### Input (200 - 219)
 - `200` : `Invalid deposit ID`

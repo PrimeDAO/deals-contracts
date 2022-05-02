@@ -108,7 +108,7 @@ contract("Whole rundown", async (accounts) => {
     });
 
     assert.equal(
-      await dealManagerInstance.addressIsModule(tokenSwapInstance.address),
+      await dealManagerInstance.isModule(tokenSwapInstance.address),
       true
     );
 
@@ -520,7 +520,7 @@ contract("Whole rundown", async (accounts) => {
       from: admin,
     });
     assert.equal(
-      await dealManagerInstance.addressIsModule(tokenSwapInstance.address),
+      await dealManagerInstance.isModule(tokenSwapInstance.address),
       true
     );
 

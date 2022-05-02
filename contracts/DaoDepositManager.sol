@@ -13,7 +13,7 @@ import "./interfaces/IModuleBase.sol";
 contract DaoDepositManager {
     /// DAO address to which this DaoDepositContract is linked
     address public dao;
-    /// Address of the DealManager implementation
+    /// Address of the DealManager
     IDealManager public dealManager;
     /// token address => balance
     mapping(address => uint256) public tokenBalances;
@@ -157,19 +157,15 @@ contract DaoDepositManager {
     }
 
     /**
-     * @notice                      Sets a new address for the DealManager implementation
-     * @param _newDaoDepositManager The address of the new DealManager
+     * @notice                  Sets a new address for the DealManager
+     * @param _newDealManager   The address of the new DealManager
      */
-    function setDealManagerImplementation(address _newDaoDepositManager)
-        external
-        onlyDealManager
-    {
+    function setDealManager(address _newDealManager) external onlyDealManager {
         require(
-            _newDaoDepositManager != address(0) &&
-                _newDaoDepositManager != address(this),
+            _newDealManager != address(0) && _newDealManager != address(this),
             "DaoDepositManager: Error 100"
         );
-        dealManager = IDealManager(_newDaoDepositManager);
+        dealManager = IDealManager(_newDealManager);
     }
 
     /**
@@ -187,11 +183,11 @@ contract DaoDepositManager {
         address _token,
         uint256 _amount
     ) public payable {
-        require(_amount > 0, "DaoDepositManager: Error 101");
+        require(_amount != 0, "DaoDepositManager: Error 101");
         if (_token != address(0)) {
             _transferFrom(_token, msg.sender, address(this), _amount);
         } else {
-            require(_amount == msg.value, "DaoDepositManager: 202");
+            require(_amount == msg.value, "DaoDepositManager: Error 202");
         }
 
         tokenBalances[_token] += _amount;
@@ -233,7 +229,8 @@ contract DaoDepositManager {
             _tokens.length == _amounts.length,
             "DaoDepositManager: Error 102"
         );
-        for (uint256 i; i < _tokens.length; ++i) {
+        uint256 tokenArrayLength = _tokens.length;
+        for (uint256 i; i < tokenArrayLength; ++i) {
             deposit(_module, _dealId, _tokens[i], _amounts[i]);
         }
     }
@@ -292,7 +289,8 @@ contract DaoDepositManager {
         uint32 _dealId,
         address[] calldata _tokens
     ) external {
-        for (uint256 i; i < _tokens.length; ++i) {
+        uint256 tokenArrayLength = _tokens.length;
+        for (uint256 i; i < tokenArrayLength; ++i) {
             registerDeposit(_module, _dealId, _tokens[i]);
         }
     }
@@ -341,7 +339,7 @@ contract DaoDepositManager {
 
         uint256 freeAmount = d.amount - d.used;
         // Deposit can't be used by a module or withdrawn already
-        require(freeAmount > 0, "DaoDepositManager: Error 240");
+        require(freeAmount != 0, "DaoDepositManager: Error 240");
         d.used = d.amount;
         availableDealBalances[d.token][_module][_dealId] -= freeAmount;
         tokenBalances[d.token] -= freeAmount;
@@ -370,7 +368,8 @@ contract DaoDepositManager {
         uint256 _amount
     ) external onlyModule {
         uint256 amountLeft = _amount;
-        for (uint256 i; i < deposits[msg.sender][_dealId].length; ++i) {
+        uint256 depositArrayLength = deposits[msg.sender][_dealId].length;
+        for (uint256 i; i < depositArrayLength; ++i) {
             Deposit storage d = deposits[msg.sender][_dealId][i];
             if (d.token == _token) {
                 uint256 freeAmount = d.amount - d.used;
@@ -411,7 +410,7 @@ contract DaoDepositManager {
         uint32 _vestingCliff,
         uint32 _vestingDuration
     ) external payable onlyModule {
-        require(_amount > 0, "DaoDepositManager: Error 101");
+        require(_amount != 0, "DaoDepositManager: Error 101");
         require(
             _vestingCliff <= _vestingDuration,
             "DaoDepositManager: Error 201"
@@ -422,9 +421,6 @@ contract DaoDepositManager {
         } else {
             require(_amount == msg.value, "DaoDepositManager: Error 202");
         }
-        // no else path, since ETH will be sent by the module,
-        // which is verified by the verifyBalance() call after
-        // updating the vestedBalances
 
         vestedBalances[_token] += _amount;
 
@@ -491,7 +487,8 @@ contract DaoDepositManager {
             tokens[i] = vestedTokenAddresses[i];
         }
 
-        for (uint256 i; i < vestings.length; ++i) {
+        uint256 vestingArrayLength = vestings.length;
+        for (uint256 i; i < vestingArrayLength; ++i) {
             (address token, uint256 amount) = sendReleasableClaim(vestings[i]);
             for (uint256 j; j < vestingCount; ++j) {
                 if (token == tokens[j]) {
@@ -693,7 +690,7 @@ contract DaoDepositManager {
         amounts = new uint256[](range);
         usedAmounts = new uint256[](range);
         times = new uint256[](range);
-        uint256 index = 0; // needed since the ids can start at > 0
+        uint256 index; // needed since the ids can start at > 0
         for (uint32 i = _fromDepositId; i <= _toDepositId; ++i) {
             (
                 depositors[index],
@@ -781,16 +778,6 @@ contract DaoDepositManager {
     }
 
     /**
-     * @notice              Returns the vested balance the DaoDepositContract holds,
-                            for a given ERC20 token or ETH (ZERO address)
-     * @param _token        The address of the ERC20 token or ETH (ZERO address)
-     * @return uint256      The vested balance the contracts holds for the _token parameter
-     */
-    function getVestedBalance(address _token) external view returns (uint256) {
-        return vestedBalances[_token];
-    }
-
-    /**
      * @notice              Transfers the ERC20 token or ETH (ZERO address), to the _to address
      * @param _token        The address of the ERC20 token or ETH (ZERO address)
      * @param _to           Receiver address of the _amount of _token
@@ -855,7 +842,7 @@ contract DaoDepositManager {
      */
     modifier onlyModule() {
         require(
-            dealManager.addressIsModule(msg.sender),
+            dealManager.isModule(msg.sender),
             "DaoDepositManager: Error 220"
         );
         _;

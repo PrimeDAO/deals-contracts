@@ -9,7 +9,7 @@ import "../ModuleBaseWithFee.sol";
                             interactions for PrimeDeals
  */
 contract TokenSwapModule is ModuleBaseWithFee {
-    uint32 lastDealId;
+    uint32 public lastDealId;
     // mapping of token swaps where the key is a dealId
     mapping(uint32 => TokenSwap) public tokenSwaps;
     /// Metadata => deal ID
@@ -129,7 +129,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
         require(_metadataDoesNotExist(_metadata), "TokenSwapModule: Error 203");
         require(_daos.length >= 2, "TokenSwapModule: Error 204");
         require(_tokens.length != 0, "TokenSwapModule: Error 205");
-        require(_deadline > 0, "TokenSwapModule: Error 101");
+        require(_deadline != 0, "TokenSwapModule: Error 101");
 
         // Check outer arrays
         uint256 pathFromLen = _pathFrom.length;
@@ -137,6 +137,12 @@ contract TokenSwapModule is ModuleBaseWithFee {
             _tokens.length == pathFromLen && pathFromLen == _pathTo.length,
             "TokenSwapModule: Error 102"
         );
+
+        // Check duplicate token addresses
+        for (uint256 i; i < _tokens.length; ++i) {
+            for (uint256 j = i + 1; j < _tokens.length; ++j)
+                require(_tokens[i] != _tokens[j], "TokenSwapModule: Error 104");
+        }
 
         // Check inner arrays
         uint256 daosLen = _daos.length;
@@ -160,7 +166,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
             false
         );
 
-        lastDealId = lastDealId + 1;
+        ++lastDealId;
 
         tokenSwaps[lastDealId] = ts;
 
@@ -245,9 +251,11 @@ contract TokenSwapModule is ModuleBaseWithFee {
         }
 
         address[] memory t = ts.tokens;
-        for (uint256 i; i < t.length; ++i) {
+        uint256 tokenArrayLength = t.length;
+        for (uint256 i; i < tokenArrayLength; ++i) {
             uint256[] memory p = ts.pathFrom[i];
-            for (uint256 j; j < p.length; ++j) {
+            uint256 pathArrayLength = p.length;
+            for (uint256 j; j < pathArrayLength; ++j) {
                 if (p[j] == 0) {
                     continue;
                 }
@@ -279,6 +287,12 @@ contract TokenSwapModule is ModuleBaseWithFee {
 
         require(checkExecutability(_dealId), "TokenSwapModule: Error 265");
 
+        // set to true directly before we touch any tokens
+        // to prevent any reentrancies from happening
+        ts.isExecuted = true;
+        // solhint-disable-next-line not-rely-on-time
+        ts.executionDate = uint32(block.timestamp);
+
         // transfer the tokens from the deposit manager of the DAOs
         // into this module
         uint256[] memory amountsIn = _pullTokensIntoModule(
@@ -293,16 +307,14 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256[] memory amountsOut = _distributeTokens(ts, _dealId);
 
         // verify whether the amounts being pulled and pushed match
-        for (uint256 i; i < ts.tokens.length; ++i) {
+        uint256 tokenArrayLength = ts.tokens.length;
+        for (uint256 i; i < tokenArrayLength; ++i) {
             require(
                 amountsIn[i] == amountsOut[i],
                 "TokenSwapModule: Error 103"
             );
         }
 
-        ts.isExecuted = true;
-        // solhint-disable-next-line not-rely-on-time
-        ts.executionDate = uint32(block.timestamp);
         emit TokenSwapExecuted(address(this), _dealId, ts.metadata);
     }
 
@@ -319,10 +331,12 @@ contract TokenSwapModule is ModuleBaseWithFee {
     {
         amountsOut = new uint256[](_ts.tokens.length);
         // Distribute tokens from the module
-        for (uint256 i; i < _ts.tokens.length; ++i) {
+        uint256 tokenArrayLength = _ts.tokens.length;
+        for (uint256 i; i < tokenArrayLength; ++i) {
             uint256[] memory pt = _ts.pathTo[i];
             address token = _ts.tokens[i];
-            for (uint256 k; k < pt.length >> 2; ++k) {
+            uint256 pathArrayLength = pt.length >> 2;
+            for (uint256 k; k < pathArrayLength; ++k) {
                 // every 4 values, the values for a new dao start
                 // value 0 = instant amount
                 // value 1 = vested amount
@@ -345,8 +359,9 @@ contract TokenSwapModule is ModuleBaseWithFee {
                         _approveDaoDepositManager(token, _ts.daos[k], amount);
                     }
 
+                    uint256 callValue = token == address(0) ? amount : 0;
                     IDaoDepositManager(daoDepositManager).startVesting{
-                        value: token == address(0) ? amount : 0
+                        value: callValue
                     }(
                         _dealId,
                         token,

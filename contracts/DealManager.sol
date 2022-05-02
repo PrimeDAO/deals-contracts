@@ -68,6 +68,17 @@ contract DealManager is Ownable {
         daoDepositManagerImplementation = _newImplementation;
     }
 
+    function setDealManagerInModule(address _newDealManager, address _module)
+        external
+        onlyOwner
+    {
+        require(
+            _newDealManager != address(0) && _newDealManager != address(this),
+            "DealManager: Error 100"
+        );
+        IDaoDepositManager(_module).setDealManager(_newDealManager);
+    }
+
     /**
      * @notice                  Activates a new Deals module
      * @param _moduleAddress    The address of a Deals module
@@ -141,14 +152,5 @@ contract DealManager is Ownable {
      */
     function getDaoDepositManager(address _dao) public view returns (address) {
         return daoDepositManager[_dao];
-    }
-
-    /**
-     * @notice              Returns if the address is a Deals module
-     * @param _address      Address to check if it is a Deals module
-     * @return bool         A bool flag indicating whether the _address is a Deals module
-     */
-    function addressIsModule(address _address) external view returns (bool) {
-        return isModule[_address];
     }
 }
