@@ -139,9 +139,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
         );
 
         // Check duplicate token addresses
-        uint256 tokenArrayLength = _tokens.length;
-        for (uint256 i; i < tokenArrayLength; ++i) {
-            for (uint256 j = i + 1; j < tokenArrayLength; ++j)
+        for (uint256 i; i < _tokens.length; ++i) {
+            for (uint256 j = i + 1; j < _tokens.length; ++j)
                 require(_tokens[i] != _tokens[j], "TokenSwapModule: Error 104");
         }
 
