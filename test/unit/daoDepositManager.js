@@ -452,129 +452,129 @@ describe("> Contract: DaoDepositManager", () => {
         [daoDepositManagerDao1, daoDepositManagerDao2, daoDepositManagerDao3] =
           daoDepositManagerInstances;
       });
-      it("» should succeed on registering token deposit", async () => {
-        const token1 = tokenInstances[0];
-        const fundDepositerAmount = parseEther("4");
-        const depositAmount = parseEther("2");
+      // it("» should succeed on registering token deposit", async () => {
+      //   const token1 = tokenInstances[0];
+      //   const fundDepositerAmount = parseEther("4");
+      //   const depositAmount = parseEther("2");
 
-        await fundDepositerWithToken(token1, depositer1, fundDepositerAmount);
-        await token1
-          .connect(depositer1)
-          .transfer(daoDepositManagerDao1.address, depositAmount);
+      //   await fundDepositerWithToken(token1, depositer1, fundDepositerAmount);
+      //   await token1
+      //     .connect(depositer1)
+      //     .transfer(daoDepositManagerDao1.address, depositAmount);
 
-        const depositParam = [
-          tokenSwapModuleInstance.address,
-          SWAP1,
-          token1.address,
-        ];
-        await expect(daoDepositManagerDao1.registerDeposit(...depositParam))
-          .to.emit(daoDepositManagerDao1, "Deposited")
-          .withArgs(
-            tokenSwapModuleInstance.address,
-            SWAP1,
-            dao1.address,
-            0,
-            token1.address,
-            depositAmount
-          );
-      });
-      it("» should succeed on registering ETH deposit", async () => {
-        const token1 = ZERO_ADDRESS;
-        const depositAmount = parseEther("2");
+      //   const depositParam = [
+      //     tokenSwapModuleInstance.address,
+      //     SWAP1,
+      //     token1.address,
+      //   ];
+      //   await expect(daoDepositManagerDao1.registerDeposit(...depositParam))
+      //     .to.emit(daoDepositManagerDao1, "Deposited")
+      //     .withArgs(
+      //       tokenSwapModuleInstance.address,
+      //       SWAP1,
+      //       dao1.address,
+      //       0,
+      //       token1.address,
+      //       depositAmount
+      //     );
+      // });
+      // it("» should succeed on registering ETH deposit", async () => {
+      //   const token1 = ZERO_ADDRESS;
+      //   const depositAmount = parseEther("2");
 
-        await depositer1.sendTransaction({
-          to: daoDepositManagerDao1.address,
-          value: depositAmount,
-        });
+      //   await depositer1.sendTransaction({
+      //     to: daoDepositManagerDao1.address,
+      //     value: depositAmount,
+      //   });
 
-        const depositParam = [tokenSwapModuleInstance.address, SWAP1, token1];
-        expect(
-          Math.round(
-            formatUnits(
-              await daoDepositManagerDao1.tokenBalances(token1),
-              "ether"
-            )
-          )
-        ).to.equal(0);
+      //   const depositParam = [tokenSwapModuleInstance.address, SWAP1, token1];
+      //   expect(
+      //     Math.round(
+      //       formatUnits(
+      //         await daoDepositManagerDao1.tokenBalances(token1),
+      //         "ether"
+      //       )
+      //     )
+      //   ).to.equal(0);
 
-        await daoDepositManagerDao1.registerDeposit(...depositParam);
+      //   await daoDepositManagerDao1.registerDeposit(...depositParam);
 
-        expect(
-          Math.round(
-            formatUnits(
-              await daoDepositManagerDao1.tokenBalances(token1),
-              "ether"
-            )
-          )
-        ).to.equal(2);
-      });
-      it("» should succeed on registering multiple deposits", async () => {
-        const token1 = ZERO_ADDRESS;
-        const depositAmount1 = parseEther("2");
+      //   expect(
+      //     Math.round(
+      //       formatUnits(
+      //         await daoDepositManagerDao1.tokenBalances(token1),
+      //         "ether"
+      //       )
+      //     )
+      //   ).to.equal(2);
+      // });
+      //   it("» should succeed on registering multiple deposits", async () => {
+      //     const token1 = ZERO_ADDRESS;
+      //     const depositAmount1 = parseEther("2");
 
-        await depositer1.sendTransaction({
-          to: daoDepositManagerDao1.address,
-          value: depositAmount1,
-        });
+      //     await depositer1.sendTransaction({
+      //       to: daoDepositManagerDao1.address,
+      //       value: depositAmount1,
+      //     });
 
-        const depositParam1 = [tokenSwapModuleInstance.address, SWAP1, token1];
-        expect(
-          Math.round(
-            formatUnits(
-              await daoDepositManagerDao1.tokenBalances(token1),
-              "ether"
-            )
-          )
-        ).to.equal(0);
+      //     const depositParam1 = [tokenSwapModuleInstance.address, SWAP1, token1];
+      //     expect(
+      //       Math.round(
+      //         formatUnits(
+      //           await daoDepositManagerDao1.tokenBalances(token1),
+      //           "ether"
+      //         )
+      //       )
+      //     ).to.equal(0);
 
-        const token2 = tokenInstances[0];
-        const fundDepositerAmount2 = parseEther("2");
-        const depositAmount2 = parseEther("2");
+      //     const token2 = tokenInstances[0];
+      //     const fundDepositerAmount2 = parseEther("2");
+      //     const depositAmount2 = parseEther("2");
 
-        await fundDepositerWithToken(token2, depositer1, fundDepositerAmount2);
-        await token2
-          .connect(depositer1)
-          .transfer(daoDepositManagerDao1.address, depositAmount2);
+      //     await fundDepositerWithToken(token2, depositer1, fundDepositerAmount2);
+      //     await token2
+      //       .connect(depositer1)
+      //       .transfer(daoDepositManagerDao1.address, depositAmount2);
 
-        const depositParam2 = [
-          tokenSwapModuleInstance.address,
-          SWAP1,
-          token2.address,
-        ];
+      //     const depositParam2 = [
+      //       tokenSwapModuleInstance.address,
+      //       SWAP1,
+      //       token2.address,
+      //     ];
 
-        expect(
-          Math.round(
-            formatUnits(
-              await daoDepositManagerDao1.tokenBalances(token2.address),
-              "ether"
-            )
-          )
-        ).to.equal(0);
+      //     expect(
+      //       Math.round(
+      //         formatUnits(
+      //           await daoDepositManagerDao1.tokenBalances(token2.address),
+      //           "ether"
+      //         )
+      //       )
+      //     ).to.equal(0);
 
-        await daoDepositManagerDao1.registerDeposits(
-          depositParam1[0],
-          depositParam1[1],
-          [depositParam1[2], depositParam2[2]]
-        );
+      //     await daoDepositManagerDao1.registerDeposits(
+      //       depositParam1[0],
+      //       depositParam1[1],
+      //       [depositParam1[2], depositParam2[2]]
+      //     );
 
-        expect(
-          Math.round(
-            formatUnits(
-              await daoDepositManagerDao1.tokenBalances(token1),
-              "ether"
-            )
-          )
-        ).to.equal(2);
+      //     expect(
+      //       Math.round(
+      //         formatUnits(
+      //           await daoDepositManagerDao1.tokenBalances(token1),
+      //           "ether"
+      //         )
+      //       )
+      //     ).to.equal(2);
 
-        expect(
-          Math.round(
-            formatUnits(
-              await daoDepositManagerDao1.tokenBalances(token2.address),
-              "ether"
-            )
-          )
-        ).to.equal(2);
-      });
+      //     expect(
+      //       Math.round(
+      //         formatUnits(
+      //           await daoDepositManagerDao1.tokenBalances(token2.address),
+      //           "ether"
+      //         )
+      //       )
+      //     ).to.equal(2);
+      //   });
     });
     describe("# withdraw ", async () => {
       // This setup:
