@@ -3,7 +3,7 @@
   "chainId": "4",
   "contracts": {
     "DaoDepositManager": {
-      "address": "0x001430c94Eaced0C942a6B2A1faF0c9ecA665DB5",
+      "address": "0x4621eC063FA5C199BFdd2aC1f7a7fF3A1EdB0ef2",
       "abi": [
         {
           "anonymous": false,
@@ -613,52 +613,6 @@
         {
           "inputs": [
             {
-              "internalType": "address",
-              "name": "_module",
-              "type": "address"
-            },
-            {
-              "internalType": "uint32",
-              "name": "_dealId",
-              "type": "uint32"
-            },
-            {
-              "internalType": "address",
-              "name": "_token",
-              "type": "address"
-            }
-          ],
-          "name": "registerDeposit",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "_module",
-              "type": "address"
-            },
-            {
-              "internalType": "uint32",
-              "name": "_dealId",
-              "type": "uint32"
-            },
-            {
-              "internalType": "address[]",
-              "name": "_tokens",
-              "type": "address[]"
-            }
-          ],
-          "name": "registerDeposits",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
               "internalType": "uint32",
               "name": "_dealId",
               "type": "uint32"
@@ -938,7 +892,7 @@
       ]
     },
     "DealManager": {
-      "address": "0x4cD0415c9488Fd0779bc4cAA991b372314E8Ce9A",
+      "address": "0xdFB4bEd32051382576BD5f6147347Cb59d2E492A",
       "abi": [
         {
           "inputs": [
@@ -1202,7 +1156,7 @@
       ]
     },
     "TokenSwapModule": {
-      "address": "0xe7AaE21228aEEf1BAAdc45dA203E1792f06A825D",
+      "address": "0x014aFcFA24A5302b371F5A83270E5472AFd668F3",
       "abi": [
         {
           "inputs": [

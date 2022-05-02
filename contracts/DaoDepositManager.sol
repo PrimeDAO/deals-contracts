@@ -236,71 +236,8 @@ contract DaoDepositManager {
     }
 
     /**
-     * @notice              Registers deposits of ERC20 tokens or ETH that have been sent
-                            to the contract directly, without envoking the method deposit().
-                            The funds will be stored with the DAO address as the depositor address
-     * @dev                 Note: if ETH has been sent, the token address for registering
-                            should be ZERO (0)
-     * @param _module       The address of the module for which is being deposited
-     * @param _dealId       The dealId to which this deposit is part of
-     * @param _token        The address of the ERC20 token or ETH (ZERO address)
-     */
-    function registerDeposit(
-        address _module,
-        uint32 _dealId,
-        address _token
-    ) public {
-        uint256 currentBalance = getBalance(_token);
-        uint256 total = tokenBalances[_token] + vestedBalances[_token];
-        if (currentBalance > total) {
-            uint256 amount = currentBalance - total;
-            tokenBalances[_token] = currentBalance;
-            availableDealBalances[_token][_module][_dealId] += amount;
-            deposits[_module][_dealId].push(
-                // solhint-disable-next-line not-rely-on-time
-                Deposit(dao, _token, amount, 0, uint32(block.timestamp))
-            );
-            emit Deposited(
-                _module,
-                _dealId,
-                dao,
-                uint32(deposits[_module][_dealId].length - 1),
-                _token,
-                amount
-            );
-        }
-        verifyBalance(_token);
-    }
-
-    /**
-     * @notice              Registers multiple deposits of ERC20 tokens and/or ETH that have been
-                            sent to the contract directly, without envoking the method deposit()
-                            or multipleDeposits(). The funds will be stored with the DAO address
-                            as the depositor address
-     * @dev                 Note: if ETH has been sent, the token address for registering
-                            should be ZERO (0)
-     * @param _module       The address of the module for which is being deposited
-     * @param _dealId       The dealId to which this deposit is part of
-     * @param _tokens       An array of ERC20 token address and/or
-                            ZERO address, symbolizing an ETH deposit
-     */
-    function registerDeposits(
-        address _module,
-        uint32 _dealId,
-        address[] calldata _tokens
-    ) external {
-        uint256 tokenArrayLength = _tokens.length;
-        for (uint256 i; i < tokenArrayLength; ++i) {
-            registerDeposit(_module, _dealId, _tokens[i]);
-        }
-    }
-
-    /**
      * @notice              Sends the token and amount, stored in the Deposit associated with the
                             depositId to the depositor
-     * @dev                 Note: if the deposit has been registered through the function
-                            registerDeposit(), withdrawing can only happen after the periode for
-                            funding deal has been expired
      * @param _module       The address of the module to which the dealId is part of
      * @param _dealId       The dealId to for which the deposit has been made, that is being
                             withdrawn
@@ -327,15 +264,7 @@ contract DaoDepositManager {
         );
         Deposit storage d = deposits[_module][_dealId][_depositId];
 
-        // Either the caller did the deposit or it's a dao deposit
-        // and the caller facilitates the withdraw for the dao
-        // (which is only possible after the deal expired)
-        require(
-            d.depositor == msg.sender ||
-                (d.depositor == dao &&
-                    IModuleBase(_module).hasDealExpired(_dealId)),
-            "DaoDepositManager: Error 222"
-        );
+        require(d.depositor == msg.sender, "DaoDepositManager: Error 222");
 
         uint256 freeAmount = d.amount - d.used;
         // Deposit can't be used by a module or withdrawn already
