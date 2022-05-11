@@ -80,7 +80,6 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "14"
-
         # Runs a single command using the runners shell
       - name: Installs needed packages using npm
         run: npm i && npm install -g codecov
@@ -91,4 +90,4 @@ jobs:
       - name: Tests the project
         run: codecov
     env:
-      CODECOV_TOKEN: "e07e4cc4-7393-4325-b1d1-cb53f7346b05"
+      CODECOV_TOKEN: "668fc0fc-6d79-4f78-856d-ccef34a144f4"
