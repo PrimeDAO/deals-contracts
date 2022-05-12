@@ -1,8 +1,12 @@
 {
-  "name": "hardhat-project",
+  "name": "prime-deals",
+  "version": "1.0.0",
+  "description": "Smart contracts for PrimeDAO's Prime Deals",
   "scripts": {
     "compile": "npx hardhat compile",
+    "clean": "npx hardhat clean",
     "test": "npx hardhat test",
+    "format": "npx prettier --write \"**/*.js\" \"**/*.sol\"",
     "lint": "eslint . --ext .js && solhint 'contracts/**/*.sol'",
     "coverage": "hardhat coverage",
     "deploy:contracts:rinkeby": "npx hardhat deploy --network rinkeby --tags Export,$npm_config_tags",
