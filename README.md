@@ -46,6 +46,10 @@ The `DealModule` contract serves as the first point of contact in creating a dea
 
 When the deal is executed, the `DealModule` will verify if all the conditions for the deal are met, i.e. that all deposits have been made. Next, the module will proceed to pull all the tokens involved in the token swap from each DAOs `DaoDepositContract` into the module. By doing this, all the tokens involved are pooled into the module. The following step in the execution process is to transfer all the unvested tokens to the DAO addresses, after which it sends the to-be-vested token amount into the respective DAOs `DaoDepositContract` to start the vesting period.
 
+### Schematics
+
+<iframe src="https://pitch.com/embed/1b8854a9-aa39-46de-afc9-177380e7c920" allow="fullscreen" allowfullscreen="" width="560" height="368" style="border:0"></iframe>
+
 ## Security
 
 Security was one of our main concerns during the building of Prime Deals.
