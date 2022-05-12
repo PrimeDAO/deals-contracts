@@ -2,15 +2,14 @@ require("dotenv").config({ path: "./.env" });
 require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-ethers");
 require("@openzeppelin/hardhat-upgrades");
-// require("hardhat-gas-reporter");
 require("@nomiclabs/hardhat-waffle");
-
 require("hardhat-contract-sizer");
 require("solidity-coverage");
 require("hardhat-deploy");
 require("hardhat-deploy-ethers");
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-web3");
+// require("hardhat-gas-reporter");
 
 const { INFURA_KEY, MNEMONIC, ETHERSCAN_API_KEY, PK } = process.env;
 const DEFAULT_MNEMONIC = "hello darkness my old friend";
@@ -70,42 +69,19 @@ module.exports = {
     },
   },
   solidity: {
-    compilers: [
-      {
-        version: "0.8.10",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
+    version: "0.8.9",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
       },
-      {
-        version: "0.8.9",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      {
-        version: "0.8.6",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      { version: "0.6.12" },
-      { version: "0.5.16" },
-    ],
+    },
   },
   etherscan: {
     apiKey: {
       mainnet: ETHERSCAN_API_KEY,
       rinkeby: ETHERSCAN_API_KEY,
+      kovan: ETHERSCAN_API_KEY,
     },
   },
   namedAccounts: {
