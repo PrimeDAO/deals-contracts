@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "./ModuleBase.sol";
-import "../interfaces/IDealManager.sol";
+import "../utils/interfaces/IDealManager.sol";
 
 contract BlueprintModule is ModuleBase {
     Blueprint[] public blueprints;

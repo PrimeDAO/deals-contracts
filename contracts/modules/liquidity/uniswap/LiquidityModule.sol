@@ -1,10 +1,20 @@
+/*
+
+██████╗░██████╗░██╗███╗░░░███╗███████╗██████╗░░█████╗░░█████╗░
+██╔══██╗██╔══██╗██║████╗░████║██╔════╝██╔══██╗██╔══██╗██╔══██╗
+██████╔╝██████╔╝██║██╔████╔██║█████╗░░██║░░██║███████║██║░░██║
+██╔═══╝░██╔══██╗██║██║╚██╔╝██║██╔══╝░░██║░░██║██╔══██║██║░░██║
+██║░░░░░██║░░██║██║██║░╚═╝░██║███████╗██████╔╝██║░░██║╚█████╔╝
+╚═╝░░░░░╚═╝░░╚═╝╚═╝╚═╝░░░░░╚═╝╚══════╝╚═════╝░╚═╝░░╚═╝░╚════╝░
+
+*/
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.9;
 
 import "../../ModuleBaseWithFee.sol";
-import "../../../interfaces/IUniswapV2Router02.sol";
-import "../../../interfaces/IUniswapV2Factory.sol";
-import "../../../interfaces/IWETH.sol";
+import "../../../utils/interfaces/IUniswapV2Router02.sol";
+import "../../../utils/interfaces/IUniswapV2Factory.sol";
+import "../../../utils/interfaces/IWETH.sol";
 
 /**
  * @title PrimeDeals Liquidity Module (Uniswap)
