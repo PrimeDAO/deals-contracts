@@ -4,7 +4,7 @@
 
 # Prime Deals Smart Contracts
 
-This repo contains the smart contracts making up Prim Deals.
+This repo contains the smart contracts making up Prime Deals.
 
 ## What is Prime Deals
 
