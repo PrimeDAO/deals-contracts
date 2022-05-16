@@ -933,4 +933,252 @@ describe("> Contract: TokenSwapModule", () => {
       });
     });
   });
+  describe("$ Fee Mechanism", () => {
+    describe("# when able to execute", () => {
+      it("» should not be able to change fee as non-admin", async () => {
+        await expect(await tokenSwapModuleInstance.feeInBasisPoints()).to.eql(
+          30
+        );
+
+        await expect(
+          tokenSwapModuleInstance.connect(depositer1).setFee(50)
+        ).to.be.revertedWith("ModuleBaseWithFee: Error 221");
+
+        await expect(await tokenSwapModuleInstance.feeInBasisPoints()).to.eql(
+          30
+        );
+      });
+      it("» should be able to change fee as admin", async () => {
+        await expect(await tokenSwapModuleInstance.feeInBasisPoints()).to.eql(
+          30
+        );
+
+        // Setting the same value that currently is the fee, should not do anything
+        // and hence not emit an event
+        await expect(
+          tokenSwapModuleInstance.connect(root).setFee(30)
+        ).to.not.emit(tokenSwapModuleInstance, "FeeChanged");
+
+        await expect(tokenSwapModuleInstance.connect(root).setFee(40)).to.emit(
+          tokenSwapModuleInstance,
+          "FeeChanged"
+        );
+
+        await expect(await tokenSwapModuleInstance.feeInBasisPoints()).to.eql(
+          40
+        );
+      });
+      it("» should not be able to change feewallet as non-admin", async () => {
+        await expect(await tokenSwapModuleInstance.feeWallet()).to.eql(
+          prime.address
+        );
+
+        await expect(
+          tokenSwapModuleInstance
+            .connect(depositer1)
+            .setFeeWallet(depositer1.address)
+        ).to.be.revertedWith("ModuleBaseWithFee: Error 221");
+
+        await expect(await tokenSwapModuleInstance.feeWallet()).to.eql(
+          prime.address
+        );
+      });
+      it("» should be able to change feewallet as admin", async () => {
+        await expect(await tokenSwapModuleInstance.feeWallet()).to.eql(
+          prime.address
+        );
+
+        // Setting the same value that currently is the feewallet, should
+        // not do anything and hence not emit an event
+        await expect(
+          tokenSwapModuleInstance.connect(root).setFeeWallet(prime.address)
+        ).to.not.emit(tokenSwapModuleInstance, "FeeWalletChanged");
+
+        await expect(
+          tokenSwapModuleInstance.connect(root).setFeeWallet(depositer1.address)
+        ).to.emit(tokenSwapModuleInstance, "FeeWalletChanged");
+
+        await expect(await tokenSwapModuleInstance.feeWallet()).to.eql(
+          depositer1.address
+        );
+      });
+      it("» should not charge any fee with fee = 0", async () => {
+        await tokenSwapModuleInstance.connect(root).setFee(0);
+        await expect(await tokenSwapModuleInstance.feeInBasisPoints()).to.eql(
+          0
+        );
+
+        const primaryDao = dao1.address;
+        const partneredDao = dao2.address;
+        const dealTokens = [tokenAddresses[0], tokenAddresses[1]];
+        const dealPathFrom = [
+          [parseEther("1500"), 0],
+          [0, parseEther("4000")],
+        ];
+        const dealPathTo = [
+          [0, 0, 0, 0, parseEther("1500"), 0, 0, 0],
+          [parseEther("4000"), 0, 0, 0, 0, 0, 0, 0],
+        ];
+        const fundingDeadline = 2 * DAY;
+
+        const createNewSwapParameters = initializeParameters(
+          [primaryDao, partneredDao],
+          dealTokens,
+          dealPathFrom,
+          dealPathTo,
+          METADATA1,
+          fundingDeadline
+        );
+
+        ({ tokenInstancesSubset, tokenSwapModuleInstance } =
+          await setupExecuteSwapStateSingleDeal(
+            contractInstances,
+            daosDeal1,
+            createNewSwapParameters,
+            tokenInstances,
+            depositer1,
+            SWAP1
+          ));
+
+        // Balance before swap
+        expect(await tokenInstances[0].balanceOf(prime.address)).to.equal(
+          parseEther("0")
+        );
+        expect(await tokenInstances[1].balanceOf(prime.address)).to.equal(
+          parseEther("0")
+        );
+
+        // Execute swap
+        await expect(tokenSwapModuleInstance.executeSwap(SWAP1))
+          .to.emit(tokenSwapModuleInstance, "TokenSwapExecuted")
+          .withArgs(tokenSwapModuleInstance.address, SWAP1, METADATA1);
+
+        const tokenSwap1 =
+          await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA1);
+        expect(tokenSwap1.isExecuted).to.equal(true);
+
+        // Balance after swap
+
+        // Token 1
+        expect(
+          Math.round(
+            formatUnits(
+              await tokenInstances[0].balanceOf(prime.address),
+              "ether"
+            )
+          )
+        ).to.equal(0);
+
+        expect(
+          Math.round(
+            formatUnits(
+              await tokenInstances[0].balanceOf(partneredDao),
+              "ether"
+            )
+          )
+        ).to.equal(1500);
+
+        // Token 2
+        expect(
+          Math.round(
+            formatUnits(
+              await tokenInstances[1].balanceOf(prime.address),
+              "ether"
+            )
+          )
+        ).to.equal(0);
+
+        expect(
+          Math.round(
+            formatUnits(await tokenInstances[1].balanceOf(primaryDao), "ether")
+          )
+        ).to.equal(4000);
+      });
+      it("» should charge correct fee with fee = 30", async () => {
+        await expect(await tokenSwapModuleInstance.feeInBasisPoints()).to.eql(
+          30
+        );
+
+        const primaryDao = dao1.address;
+        const partneredDao = dao2.address;
+        const dealTokens = [tokenAddresses[0], tokenAddresses[1]];
+        const dealPathFrom = [
+          [parseEther("1500"), 0],
+          [0, parseEther("4000")],
+        ];
+        const dealPathTo = [
+          [0, 0, 0, 0, parseEther("1500"), 0, 0, 0],
+          [parseEther("4000"), 0, 0, 0, 0, 0, 0, 0],
+        ];
+        const fundingDeadline = 2 * DAY;
+
+        const createNewSwapParameters = initializeParameters(
+          [primaryDao, partneredDao],
+          dealTokens,
+          dealPathFrom,
+          dealPathTo,
+          METADATA1,
+          fundingDeadline
+        );
+
+        ({ tokenInstancesSubset, tokenSwapModuleInstance } =
+          await setupExecuteSwapStateSingleDeal(
+            contractInstances,
+            daosDeal1,
+            createNewSwapParameters,
+            tokenInstances,
+            depositer1,
+            SWAP1
+          ));
+
+        // Balance before swap
+        expect(await tokenInstances[0].balanceOf(prime.address)).to.equal(
+          parseEther("0")
+        );
+        expect(await tokenInstances[1].balanceOf(prime.address)).to.equal(
+          parseEther("0")
+        );
+
+        // Execute swap
+        await expect(tokenSwapModuleInstance.executeSwap(SWAP1))
+          .to.emit(tokenSwapModuleInstance, "TokenSwapExecuted")
+          .withArgs(tokenSwapModuleInstance.address, SWAP1, METADATA1);
+
+        const tokenSwap1 =
+          await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA1);
+        expect(tokenSwap1.isExecuted).to.equal(true);
+
+        // Balance after swap
+
+        // Token 1
+        // Note: 16 decimals, so 1 ETH is represented as 100 for more accuracy
+        expect(
+          Math.round(
+            formatUnits(await tokenInstances[0].balanceOf(prime.address), 16)
+          )
+        ).to.equal(450); // swap of 1500, 0.3% is 4.5 -> 450
+
+        // Note: 16 decimals, so 1 ETH is represented as 100 for more accuracy
+        expect(
+          Math.round(
+            formatUnits(await tokenInstances[0].balanceOf(partneredDao), 16)
+          )
+        ).to.equal(149550); // swap of 1500, 0.3% deducted so 1495.5 -> 149550
+
+        // Token 2
+        expect(
+          Math.round(
+            formatUnits(await tokenInstances[1].balanceOf(prime.address), 16)
+          )
+        ).to.equal(1200); // swap of 4000, 0.3% is 12 -> 1200
+
+        // Note: 16 decimals, so 1 ETH is represented as 100 for more accuracy
+        expect(
+          Math.round(
+            formatUnits(await tokenInstances[1].balanceOf(primaryDao), 16)
+          )
+        ).to.equal(398800); // swap of 4000, 0.3% deducted so 3988 -> 398800
+      });
+    });
+  });
 });
