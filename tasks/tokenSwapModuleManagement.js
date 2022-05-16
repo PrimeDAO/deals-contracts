@@ -1,8 +1,6 @@
 const { task } = require("hardhat/config");
 const { parseEther, formatBytes32String } = require("ethers/lib/utils");
-const {
-  registrations,
-} = require("../test/test-input/test-network-config.json");
+const { registrations } = require("./test-input/test-network-config.json");
 const { BigNumber } = require("ethers");
 
 const constructParameters = (deal) => {

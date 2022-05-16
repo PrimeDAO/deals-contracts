@@ -1,5 +1,5 @@
 const { network } = require("hardhat");
-const { multisig } = require("../inputs/primeMultisig.json");
+const { multisig } = require("./inputs/primeMultisig.json");
 
 const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const { deploy } = deployments;

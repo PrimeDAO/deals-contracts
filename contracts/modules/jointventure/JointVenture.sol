@@ -1,9 +1,19 @@
+/*
+
+██████╗░██████╗░██╗███╗░░░███╗███████╗██████╗░░█████╗░░█████╗░
+██╔══██╗██╔══██╗██║████╗░████║██╔════╝██╔══██╗██╔══██╗██╔══██╗
+██████╔╝██████╔╝██║██╔████╔██║█████╗░░██║░░██║███████║██║░░██║
+██╔═══╝░██╔══██╗██║██║╚██╔╝██║██╔══╝░░██║░░██║██╔══██║██║░░██║
+██║░░░░░██║░░██║██║██║░╚═╝░██║███████╗██████╔╝██║░░██║╚█████╔╝
+╚═╝░░░░░╚═╝░░╚═╝╚═╝╚═╝░░░░░╚═╝╚══════╝╚═════╝░╚═╝░░╚═╝░╚════╝░
+
+*/
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.9;
 
-import "../../interfaces/IGnosisSafe.sol";
-import "../../interfaces/IDealManager.sol";
-import "../../interfaces/IWETH.sol";
+import "../../utils/interfaces/IGnosisSafe.sol";
+import "../../utils/interfaces/IDealManager.sol";
+import "../../utils/interfaces/IWETH.sol";
 import "../ModuleBase.sol";
 
 /**

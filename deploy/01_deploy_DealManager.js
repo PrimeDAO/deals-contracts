@@ -1,5 +1,5 @@
 const { network } = require("hardhat");
-const { WETH } = require("../inputs/WETH.json");
+const { WETH } = require("./inputs/WETH.json");
 
 const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const { deploy } = deployments;

@@ -1,9 +1,19 @@
+/*
+
+██████╗░██████╗░██╗███╗░░░███╗███████╗██████╗░░█████╗░░█████╗░
+██╔══██╗██╔══██╗██║████╗░████║██╔════╝██╔══██╗██╔══██╗██╔══██╗
+██████╔╝██████╔╝██║██╔████╔██║█████╗░░██║░░██║███████║██║░░██║
+██╔═══╝░██╔══██╗██║██║╚██╔╝██║██╔══╝░░██║░░██║██╔══██║██║░░██║
+██║░░░░░██║░░██║██║██║░╚═╝░██║███████╗██████╔╝██║░░██║╚█████╔╝
+╚═╝░░░░░╚═╝░░╚═╝╚═╝╚═╝░░░░░╚═╝╚══════╝╚═════╝░╚═╝░░╚═╝░╚════╝░
+
+*/
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../interfaces/IDaoDepositManager.sol";
-import "../interfaces/IDealManager.sol";
+import "../utils/interfaces/IDaoDepositManager.sol";
+import "../utils/interfaces/IDealManager.sol";
 
 /**
  * @title                   PrimeDeals Module Base
