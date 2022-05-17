@@ -11,7 +11,8 @@
     "coverage": "hardhat coverage",
     "deploy:contracts:rinkeby": "npx hardhat deploy --network rinkeby --tags Export,$npm_config_tags",
     "deploy:contracts:kovan": "npx hardhat deploy --network kovan --tags Export,$npm_config_tags",
-    "deploy:contracts:mainnet": "npx hardhat deploy --network mainnet --tags Export,$npm_config_tags"
+    "deploy:contracts:mainnet": "npx hardhat deploy --network mainnet --tags Export,$npm_config_tags",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.13",
@@ -33,6 +34,7 @@
     "hardhat-deploy": "^0.11.4",
     "hardhat-deploy-ethers": "^0.3.0-beta.13",
     "hardhat-gas-reporter": "^1.0.4",
+    "husky": "^8.0.1",
     "solhint": "^3.3.6",
     "solidity-coverage": "^0.7.16",
     "web3": "^1.7.1"
