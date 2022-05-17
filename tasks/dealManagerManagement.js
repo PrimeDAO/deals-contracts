@@ -1,4 +1,4 @@
-const { task } = require("hardhat/config");
+const { task, types } = require("hardhat/config");
 
 task(
   "activateModule",
@@ -45,5 +45,15 @@ task("setDaoDepositManager", "will set a new DaoDepositManager implementation")
     await dealMangerInstance.setDaoDepositManagerImplementation(address);
     console.log(
       `New DaoDepositManager implementation with address ${address} has been set `
+    );
+  });
+
+task("transferOwnership", "will transfer the ownership of the DealManager")
+  .addParam("address", "address of the new owner", undefined, types.string)
+  .setAction(async ({ address }, { ethers }) => {
+    const dealManagerInstance = await ethers.getContract("DealManager");
+    await dealManagerInstance.transferOwnership(address);
+    console.log(
+      `Ownership for the DealManager has been transferred to address ${address}`
     );
   });
