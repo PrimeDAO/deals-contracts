@@ -100,6 +100,7 @@ describe("> Contract: TokenSwapModule", () => {
   describe("$ Function: createSwap", () => {
     describe("# when initializing with invalid parameters", () => {
       it("» should fail on invalid DAO address", async () => {
+        console.log(parseEther("10"));
         const invalidParameters = [
           [dao1.address, ZERO_ADDRESS],
           createSwapParameters[1],
