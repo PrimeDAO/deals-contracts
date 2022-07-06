@@ -110,6 +110,30 @@ contract ModuleBaseWithFee is ModuleBase {
     }
 
     /**
+     * @notice                          Pays the fee in a token and returns the remainder
+     * @param _token                    Token in which the transfer happens
+     * @param _amount                   Amount of the transfer
+     * @param _percentDaoplomatReward   Total percentage of DAOplomat reward in basepoints
+     * @return uint256                  Total amount minus fee and Daoplomat reward
+     * @return uint256                  To
+     */
+    function _payFeeAndReturnRemainderAndReward(
+        address _token,
+        uint256 _amount,
+        uint256 _percentDaoplomatReward
+    ) internal returns (uint256, uint256) {
+        uint256 amountDaoplomatReward = (_amount * _percentDaoplomatReward) /
+            BPS;
+
+        uint256 amountAfterFee = _payFeeAndReturnRemainder(_token, _amount);
+
+        return (
+            (amountAfterFee - amountDaoplomatReward),
+            amountDaoplomatReward
+        );
+    }
+
+    /**
      * @notice                  Transfers a token amount with automated fee payment
      * @param _token            Token in which the transfer happens
      * @param _to               Target of the transfer
@@ -123,6 +147,47 @@ contract ModuleBaseWithFee is ModuleBase {
     ) internal returns (uint256 amountAfterFee) {
         amountAfterFee = _payFeeAndReturnRemainder(_token, _amount);
         _transfer(_token, _to, amountAfterFee);
+    }
+
+    /**
+     * @notice              Transfers a token amount with automated fee payment
+     * @param _token        Token in which the transfer happens
+     * @param _rewardAmount Amount of the transfer
+     * @param _daoplomats    Array containing the DAOplomat address that will receive the
+                                DAOplomat reward.
+     * @param _rewardPathTo  Array containing the amount of reward each DAOplomat receives.
+     */
+    function _payDaoplomatReward(
+        address _token,
+        uint256 _rewardAmount,
+        address[] memory _daoplomats,
+        uint256[] memory _rewardPathTo
+    ) internal returns (uint256 amountsOut) {
+        for (uint256 i; i < _daoplomats.length; ++i) {
+            uint256 reward = (_rewardAmount * _rewardPathTo[i]) / BPS;
+            _transfer(_token, _daoplomats[i], reward);
+            amountsOut += reward;
+        }
+    }
+
+    /**
+     * @notice                          Transfers a token amount with automated fee payment
+     * @param _token                    Token in which the transfer happens
+     * @param _to                       Target of the transfer
+     * @param _amount                   Amount of the transfer
+     * @param _percentDaoplomatReward   Total percentage of DAOplomat reward in basepoints
+     * @return amountDaoplomatReward    The amount minus the fee
+     */
+    function _transferWithFeeAndReturnReward(
+        address _token,
+        address _to,
+        uint256 _amount,
+        uint256 _percentDaoplomatReward
+    ) internal returns (uint256 amountDaoplomatReward) {
+        amountDaoplomatReward = (_amount * _percentDaoplomatReward) / BPS;
+
+        uint256 amountAfterFee = _payFeeAndReturnRemainder(_token, _amount);
+        _transfer(_token, _to, amountAfterFee - amountDaoplomatReward);
     }
 
     /**

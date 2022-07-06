@@ -205,6 +205,135 @@ describe("> Contract: TokenSwapModule", () => {
           tokenSwapModuleInstance.createSwap(...invalidParameters)
         ).to.be.revertedWith("TokenSwapModule: Error 104");
       });
+      it("» should fail on number of daoplomat > 8", async () => {
+        const invalidNumberOfDaoplomats = [
+          ...daosDeal1,
+          ...daosDeal2,
+          ...daosDeal3,
+        ].map((daoplomat) => daoplomat.address);
+        const invalidParameters = [
+          createSwapParameters[0],
+          createSwapParameters[1],
+          createSwapParameters[2],
+          createSwapParameters[3],
+          invalidNumberOfDaoplomats,
+          createSwapParameters[5],
+          createSwapParameters[6],
+          createSwapParameters[7],
+        ];
+
+        await expect(
+          tokenSwapModuleInstance.createSwap(...invalidParameters)
+        ).to.be.revertedWith("TokenSwapModule: Error 267");
+      });
+      it("» should fail on daoplomat reward array mismatch", async () => {
+        const invalidRewardPathTo = [[100], [5000, 5000]];
+        const invalidParameters = [
+          createSwapParameters[0],
+          createSwapParameters[1],
+          createSwapParameters[2],
+          createSwapParameters[3],
+          createSwapParameters[4],
+          invalidRewardPathTo,
+          createSwapParameters[6],
+          createSwapParameters[7],
+        ];
+
+        await expect(
+          tokenSwapModuleInstance.createSwap(...invalidParameters)
+        ).to.be.revertedWith("TokenSwapModule: Error 102");
+      });
+      it("» should fail on daoplomat reward to small", async () => {
+        const invalidRewardPathTo = [
+          [parseUnits("0.0001")],
+          [1000, 3000, 4000, 2000],
+        ];
+        const invalidParameters = [
+          createSwapParameters[0],
+          createSwapParameters[1],
+          createSwapParameters[2],
+          createSwapParameters[3],
+          createSwapParameters[4],
+          invalidRewardPathTo,
+          createSwapParameters[6],
+          createSwapParameters[7],
+        ];
+
+        await expect(
+          tokenSwapModuleInstance.createSwap(...invalidParameters)
+        ).to.be.revertedWith("TokenSwapModule: Error 268");
+      });
+      it("» should fail on daoplomats array not empty", async () => {
+        const validRewardParameter = [[0], []];
+        const invalidParameters = [
+          createSwapParameters[0],
+          createSwapParameters[1],
+          createSwapParameters[2],
+          createSwapParameters[3],
+          createSwapParameters[4],
+          validRewardParameter,
+          createSwapParameters[6],
+          createSwapParameters[7],
+        ];
+
+        await expect(
+          tokenSwapModuleInstance.createSwap(...invalidParameters)
+        ).to.be.revertedWith("TokenSwapModule: Error 102");
+      });
+      it("» should fail on daoplomat reward to big", async () => {
+        const invalidRewardPathTo = [[501], [1000, 3000, 4000, 2000]];
+        const invalidParameters = [
+          createSwapParameters[0],
+          createSwapParameters[1],
+          createSwapParameters[2],
+          createSwapParameters[3],
+          createSwapParameters[4],
+          invalidRewardPathTo,
+          createSwapParameters[6],
+          createSwapParameters[7],
+        ];
+
+        await expect(
+          tokenSwapModuleInstance.createSwap(...invalidParameters)
+        ).to.be.revertedWith("TokenSwapModule: Error 268");
+      });
+      it("» should fail on combined reward > 100%", async () => {
+        const invalidRewardPathTo = [[500], [2000, 3000, 4000, 2000]];
+        const invalidParameters = [
+          createSwapParameters[0],
+          createSwapParameters[1],
+          createSwapParameters[2],
+          createSwapParameters[3],
+          createSwapParameters[4],
+          invalidRewardPathTo,
+          createSwapParameters[6],
+          createSwapParameters[7],
+        ];
+
+        await expect(
+          tokenSwapModuleInstance.createSwap(...invalidParameters)
+        ).to.be.revertedWith("TokenSwapModule: Error 103");
+      });
+      it("» should fail on combined reward > 100%", async () => {
+        const invalidRewardPathTo = [
+          [100, 100],
+          [1000, 3000, 4000, 2000],
+        ];
+        const invalidParameters = [
+          createSwapParameters[0],
+          createSwapParameters[1],
+          createSwapParameters[2],
+          createSwapParameters[3],
+          createSwapParameters[4],
+          invalidRewardPathTo,
+          createSwapParameters[6],
+          createSwapParameters[7],
+        ];
+
+        await expect(
+          tokenSwapModuleInstance.createSwap(...invalidParameters)
+        ).to.be.revertedWith("TokenSwapModule: Error 105");
+      });
       it("» should fail on input array lengths don't match", async () => {
         const mismatchLengthTokensAndPathFrom = [
           createSwapParameters[0],

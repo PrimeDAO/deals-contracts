@@ -12,6 +12,7 @@
 pragma solidity ^0.8.9;
 
 import "../ModuleBaseWithFee.sol";
+import "hardhat/console.sol";
 
 /**
  * @title                   PrimeDeals Token Swap Module
@@ -24,6 +25,12 @@ contract TokenSwapModule is ModuleBaseWithFee {
     mapping(uint32 => TokenSwap) public tokenSwaps;
     /// Metadata => deal ID
     mapping(bytes32 => uint32) public metadataToDealId;
+    /// Maximum DAOplomat reward (5%)
+    // solhint-disable-next-line var-name-mixedcase
+    uint256 public immutable MAX_REWARD = 500;
+    /// Minimum DAOplomat reward (0.001%)
+    // solhint-disable-next-line var-name-mixedcase
+    uint256 public immutable MAX_DAOplomats = 8;
 
     /**
      * @dev
@@ -56,6 +63,10 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256[][] pathFrom;
         /// The token flow from the module to the DAO, see above
         uint256[][] pathTo;
+        /// The DAOplomats who will receive a reward for facilitating the deal creation
+        address[] daoplomats;
+        /// The percentage of DAOplomat reward that each DAOplomat will receive
+        uint256[][] rewardPathTo;
         /// Amount of time in seconds the token swap can be executed
         uint32 deadline;
         /// Unix timestamp of the execution
@@ -77,6 +88,9 @@ contract TokenSwapModule is ModuleBaseWithFee {
                             DAOs into the module
      * @param pathTo        Two-dimensional array containing the tokens flowing from the
                             module to the DAOs
+     * @param daoplomats    Array containing the DAOplomat address that will receive the
+                                DAOplomat reward.
+     * @param rewardPathTo  Array containing the amount of reward each DAOplomat receives.
      * @param deadline      The amount of time between the creation of the swap and the time when
                             it can no longer be executed, in seconds
      */
@@ -88,6 +102,8 @@ contract TokenSwapModule is ModuleBaseWithFee {
         address[] tokens,
         uint256[][] pathFrom,
         uint256[][] pathTo,
+        address[] daoplomats,
+        uint256[][] rewardPathTo,
         uint32 deadline
     );
 
@@ -107,68 +123,59 @@ contract TokenSwapModule is ModuleBaseWithFee {
     constructor(address _dealManager) ModuleBaseWithFee(_dealManager) {}
 
     /**
-      * @notice             Creates a new token swap action
-      * @param _daos        Array containing the DAOs that are involed in this action
-      * @param _tokens      Array containing the tokens that are involed in this action
-      * @param _pathFrom    Two-dimensional array containing the tokens flowing from the
-                            DAOs into the module:
-                              - First array level is for each token
-                              - Second array level is for each dao
-                              - Detailed overview on how to configure the array can be found at the
-                                TokenSwap struct description
-      * @param _pathTo      Two-dimensional array containing the tokens flowing from the
-                            module to the DAOs:
-                              - First array level is for each token
-                              - Second array level is for each dao
-                              - Detailed overview on how to configure the array can be found at the
-                                TokenSwap struct description
-      * @param _metadata    Unique ID that is generated throught the Prime Deals frontend
-      * @param _deadline    The amount of time between the creation of the swap and the time when
-                            it can no longer be executed, in seconds
-      * @return uint32      The dealId of the new token swap
+      * @notice                 Creates a new token swap action
+      * @param _daos            Array containing the DAOs that are involed in this action
+      * @param _tokens          Array containing the tokens that are involed in this action
+      * @param _pathFrom        Two-dimensional array containing the tokens flowing from the
+                                DAOs into the module:
+                                    - First array level is for each token
+                                    - Second array level is for each dao
+                                    - Detailed overview on how to configure the array can be found at
+                                        the TokenSwap struct description
+      * @param _pathTo          Two-dimensional array containing the tokens flowing from the
+                                module to the DAOs:
+                                    - First array level is for each token
+                                    - Second array level is for each dao
+                                    - Detailed overview on how to configure the array can be found at
+                                        the TokenSwap struct description
+      * @param _daoplomats      Array containing the DAOplomat address that will receive the
+                                    DAOplomat reward. The sorting should match the `_rewardPathTo`
+                                    array
+      * @param _rewardPathTo    Array containing the amount of reward each DAOplomat receives.
+                                    The sorting should match the `_daoplomats` array
+      * @param _metadata        Unique ID that is generated throught the Prime Deals frontend
+      * @param _deadline        The amount of time between the creation of the swap and the time
+                                    when it can no longer be executed, in seconds
+      * @return uint32          The dealId of the new token swap
     */
     function _createSwap(
         address[] memory _daos,
         address[] memory _tokens,
         uint256[][] memory _pathFrom,
         uint256[][] memory _pathTo,
+        address[] memory _daoplomats,
+        uint256[][] memory _rewardPathTo,
         bytes32 _metadata,
         uint32 _deadline
     ) internal returns (uint32) {
-        require(_metadata != "", "TokenSwapModule: Error 101");
-        require(_metadataDoesNotExist(_metadata), "TokenSwapModule: Error 203");
-        require(_daos.length >= 2, "TokenSwapModule: Error 204");
-        require(_tokens.length != 0, "TokenSwapModule: Error 205");
-        require(_deadline != 0, "TokenSwapModule: Error 101");
-
-        // Check outer arrays
-        uint256 pathFromLen = _pathFrom.length;
-        require(
-            _tokens.length == pathFromLen && pathFromLen == _pathTo.length,
-            "TokenSwapModule: Error 102"
+        _validateCreateSwapInput(
+            _daos,
+            _tokens,
+            _pathFrom,
+            _pathTo,
+            _daoplomats,
+            _rewardPathTo,
+            _metadata,
+            _deadline
         );
-
-        // Check duplicate token addresses
-        for (uint256 i; i < _tokens.length; ++i) {
-            for (uint256 j = i + 1; j < _tokens.length; ++j)
-                require(_tokens[i] != _tokens[j], "TokenSwapModule: Error 104");
-        }
-
-        // Check inner arrays
-        uint256 daosLen = _daos.length;
-        for (uint256 i; i < pathFromLen; ++i) {
-            require(
-                _pathFrom[i].length == daosLen &&
-                    _pathTo[i].length == daosLen << 2,
-                "TokenSwapModule: Error 102"
-            );
-        }
 
         TokenSwap memory ts = TokenSwap(
             _daos,
             _tokens,
             _pathFrom,
             _pathTo,
+            _daoplomats,
+            _rewardPathTo,
             // solhint-disable-next-line not-rely-on-time
             uint32(block.timestamp) + _deadline,
             0,
@@ -190,38 +197,113 @@ contract TokenSwapModule is ModuleBaseWithFee {
             _tokens,
             _pathFrom,
             _pathTo,
+            _daoplomats,
+            _rewardPathTo,
             _deadline
         );
         return lastDealId;
     }
 
+    function _validateCreateSwapInput(
+        address[] memory _daos,
+        address[] memory _tokens,
+        uint256[][] memory _pathFrom,
+        uint256[][] memory _pathTo,
+        address[] memory _daoplomats,
+        uint256[][] memory _rewardPathTo,
+        bytes32 _metadata,
+        uint32 _deadline
+    ) internal view {
+        require(_metadata != "", "TokenSwapModule: Error 101");
+        require(_metadataDoesNotExist(_metadata), "TokenSwapModule: Error 203");
+        require(_daos.length >= 2, "TokenSwapModule: Error 204");
+        require(_tokens.length != 0, "TokenSwapModule: Error 205");
+        require(_deadline != 0, "TokenSwapModule: Error 101");
+        // Check outer arrays
+        uint256 pathFromLen = _pathFrom.length;
+        require(
+            _tokens.length == pathFromLen && pathFromLen == _pathTo.length,
+            "TokenSwapModule: Error 102"
+        );
+        // Check duplicate token addresses
+        for (uint256 i; i < _tokens.length; ++i) {
+            for (uint256 j = i + 1; j < _tokens.length; ++j)
+                require(_tokens[i] != _tokens[j], "TokenSwapModule: Error 104");
+        }
+        // Check inner arrays
+        uint256 daosLen = _daos.length;
+        for (uint256 i; i < pathFromLen; ++i) {
+            require(
+                _pathFrom[i].length == daosLen &&
+                    _pathTo[i].length == daosLen << 2,
+                "TokenSwapModule: Error 102"
+            );
+        }
+        uint256 daoplomatLen = _daoplomats.length;
+        // If no DAOplomat reward is set
+        if (daoplomatLen == 0 && _rewardPathTo[0][0] == 0) {
+            require(_rewardPathTo[1].length == 0, "TokenSwapModule: Error 102");
+        } else {
+            // Max number of DAOplomats
+            require(
+                daoplomatLen <= MAX_DAOplomats,
+                "TokenSwapModule: Error 267"
+            );
+            // Matching number of DAOplomats & reward
+            require(
+                _rewardPathTo[1].length == daoplomatLen,
+                "TokenSwapModule: Error 102"
+            );
+            // Only 1 value absolut reward
+            require(_rewardPathTo[0].length == 1, "TokenSwapModule: Error 105");
+            // Check for max and min reward
+            require(
+                _rewardPathTo[0][0] > 0 && _rewardPathTo[0][0] <= MAX_REWARD,
+                "TokenSwapModule: Error 268"
+            );
+            // Total relative reward add up to 100%
+            uint256 totalReward;
+            for (uint256 i; i < daoplomatLen; ++i) {
+                totalReward += _rewardPathTo[1][i];
+            }
+            require(totalReward == BPS, "TokenSwapModule: Error 103");
+        }
+    }
+
     /**
-      * @notice             Create a new token swap action and automatically
-                            creates Dao Deposit Manager for each DAO that does not have one
-      * @param _daos        Array containing the DAOs that are involed in this action
-      * @param _tokens      Array containing the tokens that are involed in this action
-      * @param _pathFrom    Two-dimensional array containing the tokens flowing from the
-                            DAOs into the module:
-                              - First array level is for each token
-                              - Second array level is for each dao
-                              - Detailed overview on how to configure the array can be found at the
-                                TokenSwap struct description
-      * @param _pathTo      Two-dimensional array containing the tokens flowing from the
-                            module to the DAOs:
-                              - First array level is for each token
-                              - Second array level is for each dao
-                              - Detailed overview on how to configure the array can be found at the
-                                TokenSwap struct description
-      * @param _metadata    Unique ID that is generated throught the Prime Deals frontend
-      * @param _deadline    The amount of time between the creation of the swap and the time when
-                            it can no longer be executed, in seconds
-      * @return uin32       The dealId of the new token swap
+      * @notice                 Create a new token swap action and automatically
+                                creates Dao Deposit Manager for each DAO that does not have one
+      * @param _daos            Array containing the DAOs that are involed in this action
+      * @param _tokens          Array containing the tokens that are involed in this action
+      * @param _pathFrom        Two-dimensional array containing the tokens flowing from the
+                                DAOs into the module:
+                                - First array level is for each token
+                                - Second array level is for each dao
+                                - Detailed overview on how to configure the array can be found at
+                                    the TokenSwap struct description
+      * @param _pathTo          Two-dimensional array containing the tokens flowing from the
+                                module to the DAOs:
+                                 - First array level is for each token
+                                - Second array level is for each dao
+                                - Detailed overview on how to configure the array can be found at
+                                    the TokenSwap struct description
+      * @param _daoplomats      Array containing the DAOplomat address that will receive the
+                                    DAOplomat reward. The sorting should match the `_rewardPathTo`
+                                    array
+      * @param _rewardPathTo    Array containing the amount of reward each DAOplomat receives.
+                                    The sorting should match the `_daoplomats` array
+      * @param _metadata        Unique ID that is generated throught the Prime Deals frontend
+      * @param _deadline        The amount of time between the creation of the swap and the time
+                                    when it can no longer be executed, in seconds
+      * @return uin32           The dealId of the new token swap
     */
     function createSwap(
         address[] calldata _daos,
         address[] calldata _tokens,
         uint256[][] calldata _pathFrom,
         uint256[][] calldata _pathTo,
+        address[] memory _daoplomats,
+        uint256[][] memory _rewardPathTo,
         bytes32 _metadata,
         uint32 _deadline
     ) external returns (uint32) {
@@ -231,12 +313,15 @@ contract TokenSwapModule is ModuleBaseWithFee {
                 dealManager.createDaoDepositManager(dao);
             }
         }
+
         return (
             _createSwap(
                 _daos,
                 _tokens,
                 _pathFrom,
                 _pathTo,
+                _daoplomats,
+                _rewardPathTo,
                 _metadata,
                 _deadline
             )
@@ -344,44 +429,142 @@ contract TokenSwapModule is ModuleBaseWithFee {
         uint256 tokenArrayLength = _ts.tokens.length;
         for (uint256 i; i < tokenArrayLength; ++i) {
             uint256[] memory pt = _ts.pathTo[i];
-            address token = _ts.tokens[i];
             uint256 pathArrayLength = pt.length >> 2;
+            uint256 totalRewardForToken = 0;
+            uint256 reward = 0;
+            uint256 amount = 0;
             for (uint256 k; k < pathArrayLength; ++k) {
-                // every 4 values, the values for a new dao start
-                // value 0 = instant amount
-                // value 1 = vested amount
-                // value 2 = vesting cliff
-                // value 3 = vesting duration
-                uint256 instant = pt[k << 2];
-                uint256 vested = pt[(k << 2) + 1];
-
-                if (instant > 0) {
-                    amountsOut[i] += instant;
-                    _transferWithFee(token, _ts.daos[k], instant);
-                }
-
-                if (vested > 0) {
-                    amountsOut[i] += vested;
-                    uint256 amount = _payFeeAndReturnRemainder(token, vested);
-                    address daoDepositManager = dealManager
-                        .getDaoDepositManager(_ts.daos[k]);
-                    if (token != address(0)) {
-                        _approveDaoDepositManager(token, _ts.daos[k], amount);
-                    }
-
-                    uint256 callValue = token == address(0) ? amount : 0;
-                    IDaoDepositManager(daoDepositManager).startVesting{
-                        value: callValue
-                    }(
-                        _dealId,
-                        token,
-                        amount, // amount
-                        uint32(pt[(k << 2) + 2]), // cliff
-                        uint32(pt[(k << 2) + 3]) // duration
-                    );
-                }
+                // Distributes the instant and vested amount for the given token
+                (amount, reward) = _distributeTokenToDAO(
+                    _ts.tokens[i],
+                    _ts.daos[k],
+                    pt,
+                    k,
+                    _ts.rewardPathTo[0][0],
+                    _dealId
+                );
+                amountsOut[i] += amount;
+                totalRewardForToken += reward;
+            }
+            // Sends DAOplomat reward for the given token
+            if (_ts.rewardPathTo[0][0] > 0) {
+                amount = _payDaoplomatReward(
+                    _ts.tokens[i],
+                    totalRewardForToken,
+                    _ts.daoplomats,
+                    _ts.rewardPathTo[1]
+                );
+                amountsOut[i] += amount;
             }
         }
+    }
+
+    function _distributeTokenToDAO(
+        address _token,
+        address _dao,
+        uint256[] memory _pathTo,
+        uint256 _pathIndex,
+        uint256 _totalPercentageReward,
+        uint32 _dealId
+    ) internal returns (uint256 amountsOut, uint256 daoplomatReward) {
+        // every 4 values, the values for a new dao start
+        // value 0 = instant amount
+        // value 1 = vested amount
+        // value 2 = vesting cliff
+        // value 3 = vesting duration
+        uint256 instantAmount = _pathTo[_pathIndex << 2];
+        uint256 vestedAmount = _pathTo[(_pathIndex << 2) + 1];
+        uint256 reward;
+        uint256 amount;
+
+        if (instantAmount > 0) {
+            (amount, reward) = _distributeInstantToken(
+                _token,
+                _dao,
+                instantAmount,
+                _totalPercentageReward
+            );
+            amountsOut += amount;
+            daoplomatReward += reward;
+        }
+
+        if (vestedAmount > 0) {
+            (amount, reward) = _distributeVestedTokens(
+                _token,
+                _dao,
+                _pathTo,
+                _pathIndex,
+                vestedAmount,
+                _totalPercentageReward,
+                _dealId
+            );
+            amountsOut += amount;
+            daoplomatReward += reward;
+        }
+    }
+
+    function _distributeInstantToken(
+        address _token,
+        address _dao,
+        uint256 _instantAmount,
+        uint256 _totalPercentageReward
+    ) internal returns (uint256 amountsOut, uint256 instantDaoplomatReward) {
+        instantDaoplomatReward += _transferWithFeeAndReturnReward(
+            _token,
+            _dao,
+            _instantAmount,
+            _totalPercentageReward
+        );
+        amountsOut = _instantAmount - instantDaoplomatReward;
+    }
+
+    function _distributeVestedTokens(
+        address _token,
+        address _dao,
+        uint256[] memory _pathTo,
+        uint256 _pathIndex,
+        uint256 _vestedAmount,
+        uint256 _totalPercentageReward,
+        uint32 _dealId
+    ) internal returns (uint256 amountsOut, uint256 vestedDaoplomatReward) {
+        uint256 amount;
+        (amount, vestedDaoplomatReward) = _payFeeAndReturnRemainderAndReward(
+            _token,
+            _vestedAmount,
+            _totalPercentageReward
+        );
+        amountsOut = _vestedAmount - vestedDaoplomatReward;
+
+        address daoDepositManager = dealManager.getDaoDepositManager(_dao);
+        if (_token != address(0)) {
+            _approveDaoDepositManager(_token, _dao, amount);
+        }
+        _startVesting(
+            _token,
+            daoDepositManager,
+            amount,
+            _pathTo,
+            _pathIndex,
+            _dealId
+        );
+    }
+
+    function _startVesting(
+        address _token,
+        address _daoDepositManager,
+        uint256 _amount,
+        uint256[] memory _pathTo,
+        uint256 _pathIndex,
+        uint32 _dealId
+    ) internal {
+        uint256 callValue = _token == address(0) ? _amount : 0;
+        IDaoDepositManager(_daoDepositManager).startVesting{value: callValue}(
+            _dealId,
+            _token,
+            _amount, // amount
+            uint32(_pathTo[(_pathIndex << 2) + 2]), // cliff
+            uint32(_pathTo[(_pathIndex << 2) + 3]) // duration
+        );
     }
 
     /**
