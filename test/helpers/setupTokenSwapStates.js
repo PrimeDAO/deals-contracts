@@ -7,10 +7,21 @@ const initializeParameters = (
   tokens,
   pathFrom,
   pathTo,
+  daoplomats,
+  rewardPathTo,
   metadata,
   deadline
 ) => {
-  return [daos, tokens, pathFrom, pathTo, metadata, deadline];
+  return [
+    daos,
+    tokens,
+    pathFrom,
+    pathTo,
+    daoplomats,
+    rewardPathTo,
+    metadata,
+    deadline,
+  ];
 };
 
 // Still need to replace
@@ -43,24 +54,30 @@ const setupMultipleCreateSwapStates = async (
     tokenAddressesForSwap,
     createSwapParameters[2],
     createSwapParameters[3],
+    createSwapParameters[4],
+    createSwapParameters[5],
     metadatas[0],
-    createSwapParameters[5]
+    createSwapParameters[7]
   );
   const createNewSwapParameters2 = initializeParameters(
     daos2,
     tokenAddressesForSwap,
     createSwapParameters[2],
     createSwapParameters[3],
+    createSwapParameters[4],
+    createSwapParameters[5],
     metadatas[1],
-    createSwapParameters[5]
+    createSwapParameters[7]
   );
   const createNewSwapParameters3 = initializeParameters(
     daos3,
     tokenAddressesForSwap,
     createSwapParameters[2],
     createSwapParameters[3],
+    createSwapParameters[4],
+    createSwapParameters[5],
     metadatas[2],
-    createSwapParameters[5]
+    createSwapParameters[7]
   );
   const createSwapParametersArray = [
     createNewSwapParameters1,

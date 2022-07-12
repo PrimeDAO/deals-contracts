@@ -25,6 +25,7 @@ const {
   setupFundingStateSingleDeal,
   getdaoDepositManagerFromDAOArray,
 } = require("../helpers/setupTokenSwapStates.js");
+const { parseUnits } = require("ethers/lib/utils.js");
 
 let root,
   prime,
@@ -37,8 +38,14 @@ let root,
   daosDeal1,
   daosDeal2,
   daosDeal3,
-  allDaos;
-let tokenAddresses, tokenInstancesSubset;
+  allDaos,
+  daoplomat1,
+  daoplomat2,
+  daoplomat3,
+  daoplomat4,
+  allDaoplomats;
+let tokenAddresses, tokenInstancesSubset, allDaoplomatsAddresses;
+let rewardPathTo;
 let createSwapParameters, createSwapParametersArray;
 let dealManagerInstance, tokenSwapModuleInstance, tokenInstances;
 let deadline1, deadline2, deadline3;
@@ -66,11 +73,25 @@ const METADATAS = [METADATA1, METADATA2, METADATA3];
 describe("> Contract: TokenSwapModule", () => {
   before(async () => {
     const signers = await ethers.getSigners();
-    [root, prime, dao1, dao2, dao3, dao4, dao5, depositer1] = signers;
+    [
+      root,
+      prime,
+      dao1,
+      dao2,
+      dao3,
+      dao4,
+      dao5,
+      depositer1,
+      daoplomat1,
+      daoplomat2,
+      daoplomat3,
+      daoplomat4,
+    ] = signers;
     daosDeal1 = [dao1, dao2, dao3];
     daosDeal2 = [dao1, dao3, dao4];
     daosDeal3 = [dao4, dao2, dao5];
     allDaos = [...daosDeal1, dao4, dao5];
+    allDaoplomats = [daoplomat1, daoplomat2, daoplomat3, daoplomat4];
   });
 
   beforeEach(async () => {
@@ -82,6 +103,11 @@ describe("> Contract: TokenSwapModule", () => {
     deadline1 = DAY * 7;
     deadline2 = DAY * 10;
     deadline3 = DAY * 12;
+    // DAOplomat Rewards
+    rewardPathTo = [[200], [1000, 3000, 4000, 2000]];
+    allDaoplomatsAddresses = allDaoplomats.map(
+      (daoplomat) => daoplomat.address
+    );
 
     createSwapParameters = initializeParameters(
       [daosDeal1[0].address, daosDeal1[1].address, daosDeal1[2].address],
@@ -93,6 +119,8 @@ describe("> Contract: TokenSwapModule", () => {
       ],
       setupPathFromDeal1(),
       setupPathToDeal1(VESTING_CLIFF1, VESTING_DURATION1),
+      allDaoplomatsAddresses,
+      rewardPathTo,
       METADATA1,
       deadline1
     );
@@ -107,6 +135,8 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters[3],
           createSwapParameters[4],
           createSwapParameters[5],
+          createSwapParameters[6],
+          createSwapParameters[7],
         ];
 
         await expect(
@@ -121,6 +151,8 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters[3],
           createSwapParameters[4],
           createSwapParameters[5],
+          createSwapParameters[6],
+          createSwapParameters[7],
         ];
 
         await expect(
@@ -135,8 +167,10 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters[1],
           createSwapParameters[2],
           createSwapParameters[3],
-          METADATA2,
+          createSwapParameters[4],
           createSwapParameters[5],
+          METADATA2,
+          createSwapParameters[7],
         ];
         await tokenSwapModuleInstance.createSwap(...createSwapParameters1);
 
@@ -150,8 +184,10 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters[1],
           createSwapParameters[2],
           createSwapParameters[3],
-          EMPTY_METADATA,
+          createSwapParameters[4],
           createSwapParameters[5],
+          EMPTY_METADATA,
+          createSwapParameters[7],
         ];
 
         await expect(
@@ -165,6 +201,8 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters[2],
           createSwapParameters[3],
           createSwapParameters[4],
+          createSwapParameters[5],
+          createSwapParameters[6],
           0,
         ];
 
@@ -180,6 +218,8 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters[3],
           createSwapParameters[4],
           createSwapParameters[5],
+          createSwapParameters[6],
+          createSwapParameters[7],
         ];
 
         await expect(
@@ -199,6 +239,8 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters[3],
           createSwapParameters[4],
           createSwapParameters[5],
+          createSwapParameters[6],
+          createSwapParameters[7],
         ];
 
         await expect(
@@ -342,6 +384,8 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters[3],
           createSwapParameters[4],
           createSwapParameters[5],
+          createSwapParameters[6],
+          createSwapParameters[7],
         ];
         const invalidLengthTokensAndPathTo = [
           createSwapParameters[0],
@@ -350,6 +394,8 @@ describe("> Contract: TokenSwapModule", () => {
           [...createSwapParameters[3], [0, 0, 0, 0]],
           createSwapParameters[4],
           createSwapParameters[5],
+          createSwapParameters[6],
+          createSwapParameters[7],
         ];
         const invalidPathFromLength = [
           createSwapParameters[0],
@@ -363,6 +409,8 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters[3],
           createSwapParameters[4],
           createSwapParameters[5],
+          createSwapParameters[6],
+          createSwapParameters[7],
         ];
         const invalidPathToLength = [
           createSwapParameters[0],
@@ -376,6 +424,8 @@ describe("> Contract: TokenSwapModule", () => {
           ],
           createSwapParameters[4],
           createSwapParameters[5],
+          createSwapParameters[6],
+          createSwapParameters[7],
         ];
 
         await expect(
@@ -433,8 +483,10 @@ describe("> Contract: TokenSwapModule", () => {
             createSwapParameters[1],
             createSwapParameters[2],
             createSwapParameters[3],
+            createSwapParameters[4],
+            createSwapParameters[5],
             METADATA2,
-            createSwapParameters[5]
+            createSwapParameters[7]
           )
         ).to.emit(tokenSwapModuleInstance, "TokenSwapCreated");
         await expect(
@@ -456,16 +508,20 @@ describe("> Contract: TokenSwapModule", () => {
           createSwapParameters[1],
           createSwapParameters[2],
           createSwapParameters[3],
-          METADATA2,
+          createSwapParameters[4],
           createSwapParameters[5],
+          METADATA2,
+          createSwapParameters[7],
         ];
         const createSwapParameters2 = [
           [daosDeal3[0].address, daosDeal3[1].address, daosDeal3[2].address],
           createSwapParameters[1],
           createSwapParameters[2],
           createSwapParameters[3],
-          METADATA3,
+          createSwapParameters[4],
           createSwapParameters[5],
+          METADATA3,
+          createSwapParameters[7],
         ];
 
         await expect(
@@ -543,6 +599,8 @@ describe("> Contract: TokenSwapModule", () => {
           ],
           setupPathFromDeal1(),
           setupPathToDeal1(VESTING_CLIFF1, VESTING_DURATION1),
+          allDaoplomatsAddresses,
+          rewardPathTo,
           METADATA2,
           deadline1
         );
@@ -617,6 +675,8 @@ describe("> Contract: TokenSwapModule", () => {
           ],
           setupPathFromDeal1(),
           setupPathToDeal1(VESTING_CLIFF1, VESTING_DURATION1),
+          allDaoplomatsAddresses,
+          rewardPathTo,
           METADATA2,
           deadline1
         );
@@ -799,6 +859,8 @@ describe("> Contract: TokenSwapModule", () => {
         dealTokens,
         dealPathFrom,
         dealPathTo,
+        allDaoplomatsAddresses,
+        rewardPathTo,
         METADATA1,
         fundingDeadline
       );
@@ -829,6 +891,8 @@ describe("> Contract: TokenSwapModule", () => {
           ],
           setupPathFromDeal1(),
           setupPathToDeal1(VESTING_CLIFF1, VESTING_DURATION1),
+          allDaoplomatsAddresses,
+          rewardPathTo,
           METADATA2,
           deadline1
         );
@@ -1023,9 +1087,9 @@ describe("> Contract: TokenSwapModule", () => {
         expect(tokenSwap1.daos).to.eql(createSwapParametersArray[0][0]);
         expect(tokenSwap1.tokens).to.eql(createSwapParametersArray[0][1]);
         expect(tokenSwap1.executionDate).to.equal(0);
-        expect(tokenSwap1.metadata).to.eql(createSwapParametersArray[0][4]);
+        expect(tokenSwap1.metadata).to.eql(createSwapParametersArray[0][6]);
         expect(tokenSwap1.deadline).to.be.closeTo(
-          createSwapParametersArray[0][5] + currentTime,
+          createSwapParametersArray[0][7] + currentTime,
           delta
         );
         expect(tokenSwap1.isExecuted).to.equal(false);
@@ -1038,9 +1102,9 @@ describe("> Contract: TokenSwapModule", () => {
         expect(tokenSwap2.daos).to.eql(createSwapParametersArray[1][0]);
         expect(tokenSwap2.tokens).to.eql(createSwapParametersArray[1][1]);
         expect(tokenSwap2.executionDate).to.equal(0);
-        expect(tokenSwap2.metadata).to.equal(createSwapParametersArray[1][4]);
+        expect(tokenSwap2.metadata).to.equal(createSwapParametersArray[1][6]);
         expect(tokenSwap2.deadline).to.be.closeTo(
-          createSwapParametersArray[1][5] + currentTime,
+          createSwapParametersArray[1][7] + currentTime,
           delta
         );
         expect(tokenSwap2.isExecuted).to.equal(false);
@@ -1053,9 +1117,9 @@ describe("> Contract: TokenSwapModule", () => {
         expect(tokenSwap3.daos).to.eql(createSwapParametersArray[2][0]);
         expect(tokenSwap3.tokens).to.eql(createSwapParametersArray[2][1]);
         expect(tokenSwap3.executionDate).to.equal(0);
-        expect(tokenSwap3.metadata).to.equal(createSwapParametersArray[2][4]);
+        expect(tokenSwap3.metadata).to.equal(createSwapParametersArray[2][6]);
         expect(tokenSwap3.deadline).to.be.closeTo(
-          createSwapParametersArray[2][5] + currentTime,
+          createSwapParametersArray[2][7] + currentTime,
           delta
         );
         expect(tokenSwap3.isExecuted).to.equal(false);
@@ -1133,13 +1197,13 @@ describe("> Contract: TokenSwapModule", () => {
       });
       it("» should not charge any fee with fee = 0", async () => {
         await tokenSwapModuleInstance.connect(root).setFee(0);
-        await expect(await tokenSwapModuleInstance.feeInBasisPoints()).to.eql(
-          0
-        );
+        expect(await tokenSwapModuleInstance.feeInBasisPoints()).to.eql(0);
 
         const primaryDao = dao1.address;
         const partneredDao = dao2.address;
         const dealTokens = [tokenAddresses[0], tokenAddresses[1]];
+        const daoplomats = [];
+        const daoplmatReward = [[0], []];
         const dealPathFrom = [
           [parseEther("1500"), 0],
           [0, parseEther("4000")],
@@ -1155,6 +1219,8 @@ describe("> Contract: TokenSwapModule", () => {
           dealTokens,
           dealPathFrom,
           dealPathTo,
+          daoplomats,
+          daoplmatReward,
           METADATA1,
           fundingDeadline
         );
@@ -1224,13 +1290,13 @@ describe("> Contract: TokenSwapModule", () => {
         ).to.equal(4000);
       });
       it("» should charge correct fee with fee = 30", async () => {
-        await expect(await tokenSwapModuleInstance.feeInBasisPoints()).to.eql(
-          30
-        );
+        expect(await tokenSwapModuleInstance.feeInBasisPoints()).to.eql(30);
 
         const primaryDao = dao1.address;
         const partneredDao = dao2.address;
         const dealTokens = [tokenAddresses[0], tokenAddresses[1]];
+        const daoplomats = [];
+        const daoplmatReward = [[0], []];
         const dealPathFrom = [
           [parseEther("1500"), 0],
           [0, parseEther("4000")],
@@ -1246,6 +1312,8 @@ describe("> Contract: TokenSwapModule", () => {
           dealTokens,
           dealPathFrom,
           dealPathTo,
+          daoplomats,
+          daoplmatReward,
           METADATA1,
           fundingDeadline
         );

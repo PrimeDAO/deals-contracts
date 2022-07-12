@@ -38,8 +38,14 @@ let root,
   daosDeal3,
   allDaos,
   depositer1,
-  depositer2;
-let tokenAddresses;
+  depositer2,
+  daoplomat1,
+  daoplomat2,
+  daoplomat3,
+  daoplomat4,
+  allDaoplomatsAddresses,
+  allDaoplomats;
+let tokenAddresses, rewardPathTo;
 let deal1Parameters, deal2Parameters, deal3Parameters, dealParametersArray;
 let daoDepositManagerDao1, daoDepositManagerDao2, daoDepositManagerDao3;
 let daoDepositManagerInstance,
@@ -73,12 +79,26 @@ const METADATA3 = formatBytes32String("helloaodfs");
 describe("> Contract: DaoDepositManager", () => {
   before(async () => {
     const signers = await ethers.getSigners();
-    [root, prime, dao1, dao2, dao3, dao4, dao5, depositer1, depositer2] =
-      signers;
+    [
+      root,
+      prime,
+      dao1,
+      dao2,
+      dao3,
+      dao4,
+      dao5,
+      depositer1,
+      depositer2,
+      daoplomat1,
+      daoplomat2,
+      daoplomat3,
+      daoplomat4,
+    ] = signers;
     daosDeal1 = [dao1, dao2, dao3];
     daosDeal2 = [dao1, dao3, dao4];
     daosDeal3 = [dao4, dao2, dao5];
     allDaos = [daosDeal1, daosDeal2, daosDeal3];
+    allDaoplomats = [daoplomat1, daoplomat2, daoplomat3, daoplomat4];
   });
 
   beforeEach(async () => {
@@ -92,6 +112,10 @@ describe("> Contract: DaoDepositManager", () => {
     } = contractInstances);
     deadline = BigNumber.from((await time.latest()).toNumber() + DAY * 7);
     tokenAddresses = tokenInstances.map((token) => token.address);
+    allDaoplomatsAddresses = allDaoplomats.map(
+      (daoplomat) => daoplomat.address
+    );
+    rewardPathTo = [[200], [1000, 3000, 4000, 2000]];
 
     deal1Parameters = initializeParameters(
       [daosDeal1[0].address, daosDeal1[1].address, daosDeal1[2].address],
@@ -103,6 +127,8 @@ describe("> Contract: DaoDepositManager", () => {
       ],
       setupPathFromDeal1(),
       setupPathToDeal1(VESTING_CLIFF1, VESTING_DURATION1),
+      allDaoplomatsAddresses,
+      rewardPathTo,
       METADATA1,
       deadline
     );
@@ -116,6 +142,8 @@ describe("> Contract: DaoDepositManager", () => {
       ],
       setupPathFromDeal2(),
       setupPathToDeal2(VESTING_CLIFF2, VESTING_DURATION2),
+      allDaoplomatsAddresses,
+      rewardPathTo,
       METADATA2,
       deadline
     );
@@ -129,6 +157,8 @@ describe("> Contract: DaoDepositManager", () => {
       ],
       setupPathFromDeal3(),
       setupPathToDeal3(VESTING_CLIFF3, VESTING_DURATION3),
+      allDaoplomatsAddresses,
+      rewardPathTo,
       METADATA3,
       deadline
     );
