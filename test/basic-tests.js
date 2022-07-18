@@ -32,6 +32,9 @@ contract("Whole rundown", async (accounts) => {
     [accounts[6], accounts[7]],
     [accounts[8], accounts[9]],
   ];
+
+  const daoplomats = [];
+  const rewardPathTo = [[0], []];
   const METADATA1 = formatBytes32String("Uad8AA2CFPaVdyxa805p");
   const METADATA2 = formatBytes32String("pnthglKd0wFHOK6Bn78C");
 
@@ -319,6 +322,8 @@ contract("Whole rundown", async (accounts) => {
       ],
       pathFrom,
       pathTo,
+      daoplomats,
+      rewardPathTo,
       METADATA1,
       currTime + DAY * 7,
       { from: daos[0] }
@@ -661,6 +666,8 @@ contract("Whole rundown", async (accounts) => {
       [testToken1.address, testToken2.address, testToken3.address],
       pathFrom,
       pathTo,
+      daoplomats,
+      rewardPathTo,
       METADATA1,
       currTime + DAY * 7,
       { from: daos[0] }
@@ -698,6 +705,8 @@ contract("Whole rundown", async (accounts) => {
       [testToken4.address, testToken5.address, testToken6.address],
       pathFrom1,
       pathTo1,
+      daoplomats,
+      rewardPathTo,
       METADATA2,
       currTime + DAY * 7,
       { from: daos[0] }

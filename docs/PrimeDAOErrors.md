@@ -9,6 +9,7 @@
 - `102` : `Input arrays length mismatch`
 - `103` : `Amounts mismatch`
 - `104` : `Input has duplicates`
+- `105` : `Invalid array length`
 ## Deals (200 - 299)
 ### Input (200 - 219)
 - `200` : `Invalid deposit ID`
@@ -38,5 +39,7 @@
 - `264` : `Fee cannot be more then 20%`
 - `265` : `Swap is not executable`
 - `266` : `Deal has already been executed`
+- `267` : `Number of DAOplomats that receive the reward cannot be biger than 8`
+- `268` : `Combined DAOplomat reward cannot be bigger than 5%`
 ## Launch (300 - 399)
 
