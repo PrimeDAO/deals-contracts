@@ -11,7 +11,7 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
 
   await deploy("TokenSwapModule", {
     from: root,
-    args: [dealMangerInstance.address],
+    args: [dealMangerInstance.address, 0],
     log: true,
   });
 
