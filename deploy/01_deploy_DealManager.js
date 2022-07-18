@@ -1,5 +1,3 @@
-const { network } = require("hardhat");
-
 const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
