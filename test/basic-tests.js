@@ -16,13 +16,7 @@ const SWAP1 = 1;
 const SWAP2 = 2;
 
 contract("Whole rundown", async (accounts) => {
-  let testToken1,
-    testToken2,
-    testToken3,
-    testToken4,
-    testToken5,
-    testToken6,
-    weth;
+  let testToken1, testToken2, testToken3, testToken4, testToken5, testToken6;
   let currBlockNum, currBlock, currTime, vestingCliff, vestingDuration;
   let depositContractInstance;
   let admin = accounts[0];
@@ -55,7 +49,6 @@ contract("Whole rundown", async (accounts) => {
     testToken4 = await testERC20.new({ from: admin });
     testToken5 = await testERC20.new({ from: admin });
     testToken6 = await testERC20.new({ from: admin });
-    weth = await testERC20.new({ from: admin });
 
     depositContractInstance = await daoDepositManager.new({
       from: admin,
@@ -63,7 +56,7 @@ contract("Whole rundown", async (accounts) => {
 
     dealManagerInstance = await dealManager.new(
       depositContractInstance.address,
-      weth.address,
+
       {
         from: admin,
       }
@@ -102,9 +95,13 @@ contract("Whole rundown", async (accounts) => {
       "0x0000000000000000000000000000000000000000"
     );
 
-    tokenSwapInstance = await tokenSwapModule.new(dealManagerInstance.address, {
-      from: admin,
-    });
+    tokenSwapInstance = await tokenSwapModule.new(
+      dealManagerInstance.address,
+      0,
+      {
+        from: admin,
+      }
+    );
 
     await dealManagerInstance.activateModule(tokenSwapInstance.address, {
       from: admin,
@@ -518,9 +515,13 @@ contract("Whole rundown", async (accounts) => {
       depositContractInstance.address,
       { from: admin }
     );
-    tokenSwapInstance = await tokenSwapModule.new(dealManagerInstance.address, {
-      from: admin,
-    });
+    tokenSwapInstance = await tokenSwapModule.new(
+      dealManagerInstance.address,
+      0,
+      {
+        from: admin,
+      }
+    );
     await dealManagerInstance.activateModule(tokenSwapInstance.address, {
       from: admin,
     });

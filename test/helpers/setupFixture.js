@@ -12,23 +12,15 @@ const setupFixture = deployments.createFixture(
       log: true,
     });
 
-    await deploy("WETH", {
-      contract: "ERC20Mock",
-      from: root.address,
-      args: ["Wrapped Ether", "WETH"],
-      logs: true,
-    });
-
     const daoDepositManagerInstance = await ethers.getContract(
       "DaoDepositManager"
     );
-    const wethInstance = await ethers.getContract("WETH");
 
     // Set up DealManager contract
     await deploy("DealManager", {
       contract: "DealManager",
       from: root.address,
-      args: [daoDepositManagerInstance.address, wethInstance.address],
+      args: [daoDepositManagerInstance.address],
       log: true,
     });
 
@@ -38,7 +30,7 @@ const setupFixture = deployments.createFixture(
     await deploy("TokenSwapModule", {
       contract: "TokenSwapModule",
       from: root.address,
-      args: [dealManagerInstance.address],
+      args: [dealManagerInstance.address, 0],
       logs: true,
     });
 
@@ -58,7 +50,6 @@ const setupFixture = deployments.createFixture(
       daoDepositManagerFactoryInstance: await ethers.getContractFactory(
         "DaoDepositManager"
       ),
-      wethInstance: wethInstance,
     };
 
     return { ...contractInstances };

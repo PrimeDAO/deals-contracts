@@ -9,7 +9,6 @@ let root, baseContractMock, dao1, dao2, dao3, depositer1, depositer2;
 let tokenAddresses;
 let daoDepositManagerInstance,
   tokenInstances,
-  wethInstance,
   dealManagerInstance,
   tokenSwapModuleInstance,
   daoDepositManagerFactoryInstance;
@@ -30,21 +29,13 @@ describe("> Contract: DealManager", () => {
       Instance,
       tokenSwapModuleInstance,
       daoDepositManagerFactoryInstance,
-      wethInstance,
     } = contractInstances);
 
     tokenAddresses = tokenInstances.map((token) => token.address);
   });
   describe("$ When deploying the DealManager", () => {
     it("» should fail on Dao Deposit Manager zero address", async () => {
-      const deployArgs = [ZERO_ADDRESS, wethInstance.address];
-      const DealManagerFactory = await ethers.getContractFactory("DealManager");
-      await expect(DealManagerFactory.deploy(...deployArgs)).to.be.revertedWith(
-        "DealManager: Error 100"
-      );
-    });
-    it("» should fail on weth zero address", async () => {
-      const deployArgs = [daoDepositManagerInstance.address, ZERO_ADDRESS];
+      const deployArgs = [ZERO_ADDRESS];
       const DealManagerFactory = await ethers.getContractFactory("DealManager");
       await expect(DealManagerFactory.deploy(...deployArgs)).to.be.revertedWith(
         "DealManager: Error 100"
@@ -91,7 +82,8 @@ describe("> Contract: DealManager", () => {
         "TokenSwapModule"
       );
       const tokenswapModuleInstance2 = await TokenSwapModuleFactory.deploy(
-        wethInstance.address
+        dao1.address,
+        0
       );
 
       await expect(
