@@ -120,7 +120,11 @@ contract TokenSwapModule is ModuleBaseWithFee {
     );
 
     // solhint-disable-next-line no-empty-blocks
-    constructor(address _dealManager) ModuleBaseWithFee(_dealManager) {}
+    constructor(address _dealManager, uint32 _dealId)
+        ModuleBaseWithFee(_dealManager)
+    {
+        lastDealId = _dealId;
+    }
 
     /**
       * @notice                 Creates a new token swap action

@@ -54,7 +54,7 @@ let daoDepositManagerInstance,
   tokenSwapModuleInstance,
   tokenInstancesAllDeals,
   daoDepositManagerInstancesAllDeal;
-let tokenInstances, tokenInstancesSubset, wethInstance;
+let tokenInstances, tokenInstancesSubset;
 let deadline, currTime;
 
 const DAY = 60 * 60 * 24;

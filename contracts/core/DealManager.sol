@@ -26,8 +26,6 @@ contract DealManager is Ownable {
     /// Address of the current implementation of the
     /// DaoDepositManager
     address public daoDepositManagerImplementation;
-    /// Address of the ETH wrapping contract
-    address public immutable weth;
     /// Address DAO => address DaoDepositManager of the DAO
     mapping(address => address) public daoDepositManager;
     /// module address => true/false
@@ -47,18 +45,13 @@ contract DealManager is Ownable {
      * @notice                      Constructor
      * @param _daoDepositManager    The address of the DaoDepositManager implementation
      */
-    constructor(address _daoDepositManager, address _weth) {
+    constructor(address _daoDepositManager) {
         require(
             _daoDepositManager != address(0) &&
                 _daoDepositManager != address(this),
             "DealManager: Error 100"
         );
-        require(
-            _weth != address(0) && _weth != address(this),
-            "DealManager: Error 100"
-        );
         daoDepositManagerImplementation = _daoDepositManager;
-        weth = _weth;
     }
 
     /**
