@@ -30,6 +30,9 @@ contract ModuleBaseWithFee is ModuleBase {
     // Percentage precision to calculate the fee
     // solhint-disable-next-line var-name-mixedcase
     uint256 public immutable BPS = 10_000;
+    // Percentage precision to calculate the DAOplomat reward a Thousandth of a percent (0.001%)
+    // solhint-disable-next-line var-name-mixedcase
+    uint256 public immutable MBPS = 100_000;
 
     /**
      * @notice              Constructor
@@ -123,7 +126,7 @@ contract ModuleBaseWithFee is ModuleBase {
         uint256 _percentDaoplomatReward
     ) internal returns (uint256, uint256) {
         uint256 amountDaoplomatReward = (_amount * _percentDaoplomatReward) /
-            BPS;
+            MBPS;
 
         uint256 amountAfterFee = _payFeeAndReturnRemainder(_token, _amount);
 
@@ -164,7 +167,7 @@ contract ModuleBaseWithFee is ModuleBase {
         uint256[] memory _rewardPathTo
     ) internal returns (uint256 amountsOut) {
         for (uint256 i; i < _daoplomats.length; ++i) {
-            uint256 reward = (_rewardAmount * _rewardPathTo[i]) / BPS;
+            uint256 reward = (_rewardAmount * _rewardPathTo[i]) / MBPS;
             _transfer(_token, _daoplomats[i], reward);
             amountsOut += reward;
         }
@@ -184,7 +187,7 @@ contract ModuleBaseWithFee is ModuleBase {
         uint256 _amount,
         uint256 _percentDaoplomatReward
     ) internal returns (uint256 amountDaoplomatReward) {
-        amountDaoplomatReward = (_amount * _percentDaoplomatReward) / BPS;
+        amountDaoplomatReward = (_amount * _percentDaoplomatReward) / MBPS;
 
         uint256 amountAfterFee = _payFeeAndReturnRemainder(_token, _amount);
         _transfer(_token, _to, amountAfterFee - amountDaoplomatReward);
