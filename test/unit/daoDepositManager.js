@@ -115,7 +115,7 @@ describe("> Contract: DaoDepositManager", () => {
     allDaoplomatsAddresses = allDaoplomats.map(
       (daoplomat) => daoplomat.address
     );
-    rewardPathTo = [[200], [1000, 3000, 4000, 2000]];
+    rewardPathTo = [[2000], [10000, 30000, 40000, 20000]];
 
     deal1Parameters = initializeParameters(
       [daosDeal1[0].address, daosDeal1[1].address, daosDeal1[2].address],
