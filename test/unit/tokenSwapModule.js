@@ -25,7 +25,7 @@ const {
   setupFundingStateSingleDeal,
   getdaoDepositManagerFromDAOArray,
 } = require("../helpers/setupTokenSwapStates.js");
-const { parseUnits } = require("ethers/lib/utils.js");
+const { parseUnits, joinSignature } = require("ethers/lib/utils.js");
 
 let root,
   prime,
@@ -104,7 +104,7 @@ describe("> Contract: TokenSwapModule", () => {
     deadline2 = DAY * 10;
     deadline3 = DAY * 12;
     // DAOplomat Rewards
-    rewardPathTo = [[200], [1000, 3000, 4000, 2000]];
+    rewardPathTo = [[2000], [10000, 30000, 40000, 20000]];
     allDaoplomatsAddresses = allDaoplomats.map(
       (daoplomat) => daoplomat.address
     );
@@ -323,7 +323,7 @@ describe("> Contract: TokenSwapModule", () => {
         ).to.be.revertedWith("TokenSwapModule: Error 102");
       });
       it("» should fail on daoplomat reward to big", async () => {
-        const invalidRewardPathTo = [[501], [1000, 3000, 4000, 2000]];
+        const invalidRewardPathTo = [[5001], [1000, 3000, 4000, 2000]];
         const invalidParameters = [
           createSwapParameters[0],
           createSwapParameters[1],
@@ -1123,6 +1123,151 @@ describe("> Contract: TokenSwapModule", () => {
           delta
         );
         expect(tokenSwap3.isExecuted).to.equal(false);
+      });
+    });
+  });
+
+  describe("$ Daoplomat Reward Mechanism", () => {
+    describe("# when able to execute", () => {
+      let primaryDao,
+        partneredDao,
+        dealTokens,
+        daoplomats,
+        dealPathFrom,
+        dealPathTo,
+        fundingDeadline;
+      beforeEach(async () => {
+        await tokenSwapModuleInstance.connect(root).setFee(0);
+        expect(await tokenSwapModuleInstance.feeInBasisPoints()).to.eql(0);
+
+        primaryDao = dao1.address;
+        partneredDao = dao2.address;
+        dealTokens = [tokenAddresses[0], tokenAddresses[1]];
+        daoplomats = [daoplomat1.address, daoplomat2.address];
+        dealPathFrom = [
+          [parseEther("2000"), 0],
+          [0, parseEther("4000")],
+        ];
+        dealPathTo = [
+          [0, 0, 0, 0, parseEther("2000"), 0, 0, 0],
+          [parseEther("4000"), 0, 0, 0, 0, 0, 0, 0],
+        ];
+        fundingDeadline = 2 * DAY;
+      });
+      it(" should sent the correct centi DAOplomat reward", async () => {
+        const daoplmatReward = [[50], [50000, 50000]];
+
+        const createNewSwapParameters = initializeParameters(
+          [primaryDao, partneredDao],
+          dealTokens,
+          dealPathFrom,
+          dealPathTo,
+          daoplomats,
+          daoplmatReward,
+          METADATA1,
+          fundingDeadline
+        );
+
+        ({ tokenInstancesSubset, tokenSwapModuleInstance } =
+          await setupExecuteSwapStateSingleDeal(
+            contractInstances,
+            daosDeal1,
+            createNewSwapParameters,
+            tokenInstances,
+            depositer1,
+            SWAP1
+          ));
+        expect(await tokenInstances[0].balanceOf(daoplomat1.address)).to.equal(
+          parseEther("0")
+        );
+        expect(await tokenInstances[1].balanceOf(daoplomat1.address)).to.equal(
+          parseEther("0")
+        );
+        expect(await tokenInstances[0].balanceOf(daoplomat2.address)).to.equal(
+          parseEther("0")
+        );
+        expect(await tokenInstances[1].balanceOf(daoplomat2.address)).to.equal(
+          parseEther("0")
+        );
+
+        // Execute swap
+        await expect(tokenSwapModuleInstance.executeSwap(SWAP1))
+          .to.emit(tokenSwapModuleInstance, "TokenSwapExecuted")
+          .withArgs(tokenSwapModuleInstance.address, SWAP1, METADATA1);
+
+        const tokenSwap1 =
+          await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA1);
+        expect(tokenSwap1.isExecuted).to.equal(true);
+        expect(await tokenInstances[0].balanceOf(daoplomat1.address)).to.equal(
+          parseEther("0.5")
+        );
+        expect(await tokenInstances[0].balanceOf(daoplomat2.address)).to.equal(
+          parseEther("0.5")
+        );
+        expect(await tokenInstances[1].balanceOf(daoplomat1.address)).to.equal(
+          parseEther("1")
+        );
+        expect(await tokenInstances[1].balanceOf(daoplomat2.address)).to.equal(
+          parseEther("1")
+        );
+      });
+
+      it(" should sent the correct mill DAOplomat reward", async () => {
+        const daoplmatReward = [[5], [50000, 50000]];
+
+        const createNewSwapParameters = initializeParameters(
+          [primaryDao, partneredDao],
+          dealTokens,
+          dealPathFrom,
+          dealPathTo,
+          daoplomats,
+          daoplmatReward,
+          METADATA1,
+          fundingDeadline
+        );
+
+        ({ tokenInstancesSubset, tokenSwapModuleInstance } =
+          await setupExecuteSwapStateSingleDeal(
+            contractInstances,
+            daosDeal1,
+            createNewSwapParameters,
+            tokenInstances,
+            depositer1,
+            SWAP1
+          ));
+        expect(await tokenInstances[0].balanceOf(daoplomat1.address)).to.equal(
+          parseEther("0")
+        );
+        expect(await tokenInstances[1].balanceOf(daoplomat1.address)).to.equal(
+          parseEther("0")
+        );
+        expect(await tokenInstances[0].balanceOf(daoplomat2.address)).to.equal(
+          parseEther("0")
+        );
+        expect(await tokenInstances[1].balanceOf(daoplomat2.address)).to.equal(
+          parseEther("0")
+        );
+
+        // Execute swap
+        await expect(tokenSwapModuleInstance.executeSwap(SWAP1))
+          .to.emit(tokenSwapModuleInstance, "TokenSwapExecuted")
+          .withArgs(tokenSwapModuleInstance.address, SWAP1, METADATA1);
+
+        const tokenSwap1 =
+          await tokenSwapModuleInstance.getTokenswapFromMetadata(METADATA1);
+        expect(tokenSwap1.isExecuted).to.equal(true);
+        expect(await tokenInstances[0].balanceOf(daoplomat1.address)).to.equal(
+          parseEther("0.05")
+        );
+        expect(await tokenInstances[0].balanceOf(daoplomat2.address)).to.equal(
+          parseEther("0.05")
+        );
+        expect(await tokenInstances[1].balanceOf(daoplomat1.address)).to.equal(
+          parseEther("0.1")
+        );
+        expect(await tokenInstances[1].balanceOf(daoplomat2.address)).to.equal(
+          parseEther("0.1")
+        );
       });
     });
   });

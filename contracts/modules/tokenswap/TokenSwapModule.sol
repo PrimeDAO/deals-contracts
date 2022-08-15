@@ -12,7 +12,6 @@
 pragma solidity ^0.8.9;
 
 import "../ModuleBaseWithFee.sol";
-import "hardhat/console.sol";
 
 /**
  * @title                   PrimeDeals Token Swap Module
@@ -25,10 +24,9 @@ contract TokenSwapModule is ModuleBaseWithFee {
     mapping(uint32 => TokenSwap) public tokenSwaps;
     /// Metadata => deal ID
     mapping(bytes32 => uint32) public metadataToDealId;
-    /// Maximum DAOplomat reward (5%)
+    /// Maximum DAOplomat reward (5%) where 100000 is 100%
     // solhint-disable-next-line var-name-mixedcase
-    uint256 public immutable MAX_REWARD = 500;
-    /// Minimum DAOplomat reward (0.001%)
+    uint256 public immutable MAX_REWARD = 5000;
     // solhint-disable-next-line var-name-mixedcase
     uint256 public immutable MAX_DAOplomats = 8;
 
@@ -270,7 +268,7 @@ contract TokenSwapModule is ModuleBaseWithFee {
             for (uint256 i; i < daoplomatLen; ++i) {
                 totalReward += _rewardPathTo[1][i];
             }
-            require(totalReward == BPS, "TokenSwapModule: Error 103");
+            require(totalReward == MBPS, "TokenSwapModule: Error 103");
         }
     }
 
