@@ -63,6 +63,7 @@ const VESTING_DURATION3 = DAY * 3;
 const SWAP1 = 1;
 const SWAP2 = 2;
 const SWAP3 = 3;
+const SWAP4 = 4;
 const INVALID_SWAP = 20;
 const METADATA1 = formatBytes32String("Uad8AA2CFPaVdyxa805p");
 const METADATA2 = formatBytes32String("pnthglKd0wFHOK6Bn78C");
