@@ -70,7 +70,7 @@ const METADATA3 = formatBytes32String("TqoScXB3Dv79eDjsSvfh");
 const EMPTY_METADATA = formatBytes32String("");
 const METADATAS = [METADATA1, METADATA2, METADATA3];
 
-describe("> Contract: TokenSwapModule", () => {
+describe.only("> Contract: TokenSwapModule", () => {
   before(async () => {
     const signers = await ethers.getSigners();
     [
