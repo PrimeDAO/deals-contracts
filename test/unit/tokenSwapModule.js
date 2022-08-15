@@ -253,13 +253,17 @@ describe("> Contract: TokenSwapModule", () => {
           ...daosDeal2,
           ...daosDeal3,
         ].map((daoplomat) => daoplomat.address);
+        const rewardPathToForTheseDaoplomats = [
+          [2000],
+          [10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 20000],
+        ];
         const invalidParameters = [
           createSwapParameters[0],
           createSwapParameters[1],
           createSwapParameters[2],
           createSwapParameters[3],
           invalidNumberOfDaoplomats,
-          createSwapParameters[5],
+          rewardPathToForTheseDaoplomats,
           createSwapParameters[6],
           createSwapParameters[7],
         ];

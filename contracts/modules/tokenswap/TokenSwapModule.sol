@@ -26,9 +26,9 @@ contract TokenSwapModule is ModuleBaseWithFee {
     mapping(bytes32 => uint32) public metadataToDealId;
     /// Maximum DAOplomat reward (5%) where 100000 is 100%
     // solhint-disable-next-line var-name-mixedcase
-    uint256 public immutable MAX_REWARD = 5000;
+    uint256 public constant MAX_REWARD = 5000;
     // solhint-disable-next-line var-name-mixedcase
-    uint256 public immutable MAX_DAOplomats = 8;
+    uint256 public constant MAX_DAOplomats = 8;
 
     /**
      * @dev
@@ -241,28 +241,29 @@ contract TokenSwapModule is ModuleBaseWithFee {
                 "TokenSwapModule: Error 102"
             );
         }
+        uint256 totalDaoplomatRewards = _rewardPathTo[0][0];
         uint256 daoplomatLen = _daoplomats.length;
         // If no DAOplomat reward is set
-        if (daoplomatLen == 0 && _rewardPathTo[0][0] == 0) {
-            require(_rewardPathTo[1].length == 0, "TokenSwapModule: Error 102");
-        } else {
+
+        // Matching number of DAOplomats & reward
+        require(
+            _rewardPathTo[1].length == daoplomatLen,
+            "TokenSwapModule: Error 102"
+        );
+
+        if (daoplomatLen != 0 && totalDaoplomatRewards != 0) {
             // Max number of DAOplomats
             require(
                 daoplomatLen <= MAX_DAOplomats,
                 "TokenSwapModule: Error 267"
             );
-            // Matching number of DAOplomats & reward
+            // Check for max reward
             require(
-                _rewardPathTo[1].length == daoplomatLen,
-                "TokenSwapModule: Error 102"
+                totalDaoplomatRewards <= MAX_REWARD,
+                "TokenSwapModule: Error 268"
             );
             // Only 1 value absolut reward
             require(_rewardPathTo[0].length == 1, "TokenSwapModule: Error 105");
-            // Check for max and min reward
-            require(
-                _rewardPathTo[0][0] > 0 && _rewardPathTo[0][0] <= MAX_REWARD,
-                "TokenSwapModule: Error 268"
-            );
             // Total relative reward add up to 100%
             uint256 totalReward;
             for (uint256 i; i < daoplomatLen; ++i) {
