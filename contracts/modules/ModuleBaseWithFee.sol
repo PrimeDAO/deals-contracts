@@ -25,14 +25,14 @@ contract ModuleBaseWithFee is ModuleBase {
     uint32 public feeInBasisPoints;
     // Max fee 20%
     // solhint-disable-next-line var-name-mixedcase
-    uint32 public immutable MAX_FEE = 2_000;
+    uint32 public constant MAX_FEE = 2_000;
 
     // Percentage precision to calculate the fee
     // solhint-disable-next-line var-name-mixedcase
-    uint256 public immutable BPS = 10_000;
+    uint256 public constant BPS = 10_000;
     // Percentage precision to calculate the DAOplomat reward a Thousandth of a percent (0.001%)
     // solhint-disable-next-line var-name-mixedcase
-    uint256 public immutable MBPS = 100_000;
+    uint256 public constant MBPS = 100_000;
 
     /**
      * @notice              Constructor
